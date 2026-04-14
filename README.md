@@ -25,6 +25,7 @@ cp .env.example .env.local
 
 ```bash
 SESSION_SECRET=your-long-random-secret
+DATABASE_URL=postgresql://sport_user:your-password@127.0.0.1:5432/sport_app
 ```
 
 ## Продакшн-деплой на VPS
@@ -78,6 +79,7 @@ nano .env.local
 
 ```bash
 SESSION_SECRET=replace-with-a-long-random-secret
+DATABASE_URL=postgresql://sport_user:replace-with-your-db-password@127.0.0.1:5432/sport_app
 ```
 
 ### 4. Сборка и запуск
