@@ -31,6 +31,7 @@ export function getPool() {
 }
 
 let usersTableReadyPromise: Promise<void> | null = null;
+let postsTableReadyPromise: Promise<void> | null = null;
 
 export async function ensureUsersTable() {
   if (!hasDatabase()) {
@@ -55,4 +56,28 @@ export async function ensureUsersTable() {
   }
 
   await usersTableReadyPromise;
+}
+
+export async function ensurePostsTable() {
+  if (!hasDatabase()) {
+    return;
+  }
+
+  if (!postsTableReadyPromise) {
+    postsTableReadyPromise = getPool()
+      .query(`
+        CREATE TABLE IF NOT EXISTS posts (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          author_name TEXT NOT NULL,
+          workout TEXT NOT NULL,
+          stats TEXT NOT NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `)
+      .then(() => undefined);
+  }
+
+  await ensureUsersTable();
+  await postsTableReadyPromise;
 }

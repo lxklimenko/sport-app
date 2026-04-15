@@ -1,9 +1,16 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { createSession, clearSession } from "@/lib/auth";
-import { createUser, getUserByEmail, verifyPassword } from "@/lib/users";
+import { createSession, clearSession, getSessionUserId } from "@/lib/auth";
+import { createPost } from "@/lib/posts";
+import {
+  createUser,
+  getUserByEmail,
+  getUserById,
+  verifyPassword,
+} from "@/lib/users";
 
 export type SignupState = {
   errors?: {
@@ -19,6 +26,14 @@ export type LoginState = {
   errors?: {
     email?: string;
     password?: string;
+  };
+  message?: string;
+};
+
+export type CreatePostState = {
+  errors?: {
+    workout?: string;
+    stats?: string;
   };
   message?: string;
 };
@@ -140,4 +155,58 @@ export async function login(
   }
 
   redirect("/profile");
+}
+
+export async function publishPost(
+  _prevState: CreatePostState,
+  formData: FormData,
+): Promise<CreatePostState> {
+  const userId = await getSessionUserId();
+
+  if (!userId) {
+    redirect("/login");
+  }
+
+  const user = await getUserById(userId);
+  if (!user) {
+    redirect("/login");
+  }
+
+  const workout = getString(formData, "workout");
+  const stats = getString(formData, "stats");
+  const errors: CreatePostState["errors"] = {};
+
+  if (workout.length < 8) {
+    errors.workout = "Опиши тренировку чуть подробнее.";
+  }
+
+  if (stats.length < 4) {
+    errors.stats = "Добавь время, калории или другой результат.";
+  }
+
+  if (errors.workout || errors.stats) {
+    return {
+      errors,
+      message: "Не получилось опубликовать пост. Поправь поля.",
+    };
+  }
+
+  try {
+    await createPost({
+      userId: user.id,
+      authorName: user.name,
+      workout,
+      stats,
+    });
+  } catch {
+    return {
+      message: "Не удалось сохранить пост. Попробуй еще раз.",
+    };
+  }
+
+  revalidatePath("/profile");
+
+  return {
+    message: "Пост опубликован в ленте.",
+  };
 }

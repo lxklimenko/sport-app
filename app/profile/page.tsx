@@ -15,28 +15,9 @@ import {
 
 import { logout } from "@/app/actions/auth";
 import { getSessionUserId } from "@/lib/auth";
+import { getRecentPosts } from "@/lib/posts";
 import { getUserById, getUsersCount } from "@/lib/users";
-
-const feed = [
-  {
-    author: "Nika Sprint",
-    time: "18 минут назад",
-    workout: "Интервалы на дорожке: 8 х 400 м",
-    stats: "6.8 км • 472 ккал • фото после финиша",
-  },
-  {
-    author: "Alex Iron",
-    time: "42 минуты назад",
-    workout: "Грудь + спина, добил 20 минутами гребли",
-    stats: "75 минут • 690 ккал • новый личный рекорд",
-  },
-  {
-    author: "Mira Run",
-    time: "1 час назад",
-    workout: "Утренние 18 000 шагов и мобилити",
-    stats: "18k шагов • 2 сторис • заряд на весь день",
-  },
-];
+import { PostComposer } from "@/app/profile/post-composer";
 
 const battles = [
   {
@@ -66,6 +47,7 @@ export default async function ProfilePage() {
   }
 
   const usersCount = await getUsersCount();
+  const posts = await getRecentPosts();
   const placement = user.number === 1 ? "#1" : `#${Math.min(user.number + 11, 99)}`;
   const monthlySteps = 248430 + user.number * 20000;
   const prizeBank = 1000 + usersCount * 350;
@@ -206,6 +188,8 @@ export default async function ProfilePage() {
               </div>
             </section>
 
+            <PostComposer />
+
             <section className="rounded-[2rem] bg-[#171A1F] p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -216,42 +200,49 @@ export default async function ProfilePage() {
                     Что сегодня сделали участники
                   </h2>
                 </div>
-
-                <button className="rounded-full border border-white/10 px-5 py-3 transition hover:bg-white/5">
-                  Добавить пост
-                </button>
               </div>
 
               <div className="mt-6 space-y-4">
-                {feed.map((post) => (
-                  <article
-                    key={post.author}
-                    className="rounded-[1.6rem] border border-white/8 bg-[#111318] p-5"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h3 className="text-xl font-semibold">{post.author}</h3>
-                        <p className="mt-1 text-sm text-[#9AA0A6]">{post.time}</p>
+                {posts.length === 0 ? (
+                  <div className="rounded-[1.6rem] border border-dashed border-white/12 bg-[#111318] p-6 text-[#9AA0A6]">
+                    Лента пока пустая. Опубликуй первую тренировку и задай тон
+                    всей секте спортсменов.
+                  </div>
+                ) : (
+                  posts.map((post) => (
+                    <article
+                      key={post.id}
+                      className="rounded-[1.6rem] border border-white/8 bg-[#111318] p-5"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <h3 className="text-xl font-semibold">
+                            {post.authorName}
+                          </h3>
+                          <p className="mt-1 text-sm text-[#9AA0A6]">
+                            {formatPostTime(post.createdAt)}
+                          </p>
+                        </div>
+                        <div className="rounded-full bg-white/6 px-3 py-1 text-sm text-[#C4C7C5]">
+                          Тренировка
+                        </div>
                       </div>
-                      <div className="rounded-full bg-white/6 px-3 py-1 text-sm text-[#C4C7C5]">
-                        Тренировка
+
+                      <p className="mt-4 text-lg">{post.workout}</p>
+                      <p className="mt-2 text-[#C4C7C5]">{post.stats}</p>
+
+                      <div className="mt-5 flex items-center gap-5 text-sm text-[#9AA0A6]">
+                        <span className="flex items-center gap-2">
+                          <Flame className="h-4 w-4" />
+                          заряжает
+                        </span>
+                        <span className="flex items-center gap-2">
+                          <MessageCircle className="h-4 w-4" />скоро комментарии
+                        </span>
                       </div>
-                    </div>
-
-                    <p className="mt-4 text-lg">{post.workout}</p>
-                    <p className="mt-2 text-[#C4C7C5]">{post.stats}</p>
-
-                    <div className="mt-5 flex items-center gap-5 text-sm text-[#9AA0A6]">
-                      <span className="flex items-center gap-2">
-                        <Flame className="h-4 w-4" />
-                        заряжает
-                      </span>
-                      <span className="flex items-center gap-2">
-                        <MessageCircle className="h-4 w-4" />8 комментариев
-                      </span>
-                    </div>
-                  </article>
-                ))}
+                    </article>
+                  ))
+                )}
               </div>
             </section>
           </div>
@@ -331,4 +322,21 @@ export default async function ProfilePage() {
       </div>
     </main>
   );
+}
+
+function formatPostTime(createdAt: string) {
+  const diffMs = Date.now() - new Date(createdAt).getTime();
+  const minutes = Math.max(1, Math.floor(diffMs / (1000 * 60)));
+
+  if (minutes < 60) {
+    return `${minutes} мин назад`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) {
+    return `${hours} ч назад`;
+  }
+
+  const days = Math.floor(hours / 24);
+  return `${days} дн назад`;
 }
