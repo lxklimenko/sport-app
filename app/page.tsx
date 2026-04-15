@@ -33,7 +33,7 @@ export default function Home() {
         </div>
 
         <Link
-          href="/signup"
+          href="/login"
           className="px-6 py-2 rounded-full bg-[#333537] hover:bg-[#444746] transition"
         >
           Войти

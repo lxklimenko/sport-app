@@ -205,6 +205,59 @@ export async function getUserById(userId: string) {
   return users.find((user) => user.id === userId) ?? null;
 }
 
+export async function getUserByEmail(email: string) {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  if (hasDatabase()) {
+    await ensureUsersTable();
+    const result = await getPool().query<{
+      id: string;
+      number: number;
+      name: string;
+      email: string;
+      password_hash: string;
+      favorite_format: string;
+      goal: string;
+      created_at: Date;
+    }>(
+      `
+        SELECT
+          id,
+          number,
+          name,
+          email,
+          password_hash,
+          favorite_format,
+          goal,
+          created_at
+        FROM users
+        WHERE email = $1
+        LIMIT 1
+      `,
+      [normalizedEmail],
+    );
+
+    const row = result.rows[0];
+    if (!row) {
+      return null;
+    }
+
+    return {
+      id: row.id,
+      number: row.number,
+      name: row.name,
+      email: row.email,
+      passwordHash: row.password_hash,
+      favoriteFormat: row.favorite_format,
+      goal: row.goal,
+      createdAt: row.created_at.toISOString(),
+    };
+  }
+
+  const users = await readUsers();
+  return users.find((user) => user.email === normalizedEmail) ?? null;
+}
+
 export async function getUsersCount() {
   if (hasDatabase()) {
     await ensureUsersTable();

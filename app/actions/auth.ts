@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 
 import { createSession, clearSession } from "@/lib/auth";
-import { createUser } from "@/lib/users";
+import { createUser, getUserByEmail, verifyPassword } from "@/lib/users";
 
 export type SignupState = {
   errors?: {
@@ -11,6 +11,14 @@ export type SignupState = {
     email?: string;
     password?: string;
     favoriteFormat?: string;
+  };
+  message?: string;
+};
+
+export type LoginState = {
+  errors?: {
+    email?: string;
+    password?: string;
   };
   message?: string;
 };
@@ -85,4 +93,51 @@ export async function signup(
 export async function logout() {
   await clearSession();
   redirect("/");
+}
+
+export async function login(
+  _prevState: LoginState,
+  formData: FormData,
+): Promise<LoginState> {
+  const email = getString(formData, "email");
+  const password = getString(formData, "password");
+
+  const errors: LoginState["errors"] = {};
+
+  if (!email.includes("@")) {
+    errors.email = "Нужен корректный email.";
+  }
+
+  if (!password) {
+    errors.password = "Введи пароль.";
+  }
+
+  if (errors.email || errors.password) {
+    return {
+      errors,
+      message: "Проверь форму и попробуй еще раз.",
+    };
+  }
+
+  try {
+    const user = await getUserByEmail(email);
+
+    if (!user || !verifyPassword(password, user.passwordHash)) {
+      return {
+        errors: {
+          email: "Неверный email или пароль.",
+          password: "Неверный email или пароль.",
+        },
+        message: "Не удалось войти в аккаунт.",
+      };
+    }
+
+    await createSession(user.id);
+  } catch {
+    return {
+      message: "Не удалось выполнить вход. Попробуй еще раз.",
+    };
+  }
+
+  redirect("/profile");
 }
