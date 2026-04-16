@@ -70,6 +70,10 @@ export async function createUser(input: {
   favoriteFormat: string;
   goal: string;
 }) {
+  console.log("CREATE USER CALLED");
+  console.log("DB URL:", process.env.DATABASE_URL);
+  console.log("HAS DB:", hasDatabase());
+
   const normalizedEmail = input.email.trim().toLowerCase();
 
   if (hasDatabase()) {
@@ -89,6 +93,8 @@ export async function createUser(input: {
       goal: input.goal.trim(),
       createdAt: new Date().toISOString(),
     };
+
+    console.log("INSERTING USER:", user);
 
     try {
       await pool.query(
@@ -116,6 +122,7 @@ export async function createUser(input: {
         ],
       );
     } catch (error) {
+      console.error("INSERT ERROR:", error);
       if (
         typeof error === "object" &&
         error !== null &&
