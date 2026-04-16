@@ -27,7 +27,12 @@ export function SignupForm() {
   const [state, formAction] = useActionState(signup, initialState);
 
   return (
-    <form className="space-y-4" action={formAction}>
+    <form
+      className="space-y-4"
+      action={async (formData) => {
+        await formAction(formData);
+      }}
+    >
       <label className="block">
         <span className="mb-2 block text-sm text-[#C4C7C5]">Имя</span>
         <input
