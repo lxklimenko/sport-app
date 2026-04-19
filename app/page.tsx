@@ -114,7 +114,10 @@ export default async function Home() {
 
           {/* Главный */}
           {challenge && (
-            <div className="md:col-span-2 p-10 rounded-[2rem] bg-[#C4EEDB] text-[#003829] flex flex-col justify-between hover:bg-[#D5F5E4] transition">
+            <Link
+              href={`/challenge/${challenge.id}`}
+              className="md:col-span-2 p-10 rounded-[2rem] bg-[#C4EEDB] text-[#003829] flex flex-col justify-between hover:bg-[#D5F5E4] transition cursor-pointer"
+            >
               <div>
                 <div className="mb-6 px-4 py-2 bg-[#003829]/10 rounded-full text-sm font-bold w-fit">
                   Активен сейчас
@@ -136,7 +139,7 @@ export default async function Home() {
                   <ChevronRight />
                 </div>
               </div>
-            </div>
+            </Link>
           )}
 
           {/* Малые карточки */}
