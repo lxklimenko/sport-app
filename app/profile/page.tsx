@@ -14,10 +14,18 @@ import {
 } from "lucide-react";
 
 import { logout } from "@/app/actions/auth";
+import { addStepsAction } from "@/app/actions";
 import { getSessionUserId } from "@/lib/auth";
 import { getRecentPosts } from "@/lib/posts";
 import { getUserById, getUsersCount } from "@/lib/users";
+import {
+  getActiveChallenge,
+  getMyStats,
+  isParticipant,
+} from "@/lib/challenges";
 import { PostComposer } from "@/app/profile/post-composer";
+
+export const dynamic = "force-dynamic";
 
 const battles = [
   {
@@ -48,9 +56,24 @@ export default async function ProfilePage() {
 
   const usersCount = await getUsersCount();
   const posts = await getRecentPosts();
-  const placement = user.number === 1 ? "#1" : `#${Math.min(user.number + 11, 99)}`;
-  const monthlySteps = 248430 + user.number * 20000;
-  const prizeBank = 1000 + usersCount * 350;
+
+  const challenge = await getActiveChallenge();
+  const joined = challenge ? await isParticipant(userId, challenge.id) : false;
+  const stats = challenge && joined ? await getMyStats(userId, challenge.id) : null;
+
+  const totalSteps = stats?.totalSteps ?? 0;
+  const rank = stats?.rank ?? null;
+  const totalParticipants = stats?.totalParticipants ?? usersCount;
+
+  const placement = rank ? `#${rank}` : "—";
+  const prizeBank = 1000 + totalParticipants * 350;
+
+  const daysLeft = challenge
+    ? Math.max(0, Math.ceil((new Date(challenge.endDate).getTime() - Date.now()) / 86400000))
+    : 0;
+  const progress = challenge
+    ? Math.min(100, Math.round(((challenge.days - daysLeft) / challenge.days) * 100))
+    : 0;
 
   return (
     <main className="min-h-screen bg-[#0D0F12] px-6 py-6 text-[#F5F7FA]">
@@ -62,7 +85,7 @@ export default async function ProfilePage() {
                 Личный профиль
               </p>
               <h1 className="mt-3 text-4xl font-semibold lg:text-6xl">
-                {user.name}, ты {user.number === 1 ? "первый участник проекта." : "уже внутри сезона."}
+                {user.name}, {rank === 1 ? "ты лидер челленджа." : joined ? "ты внутри сезона." : "добавь шаги чтобы попасть в рейтинг."}
               </h1>
               <p className="mt-4 max-w-2xl text-lg text-[#C5D0D8]">
                 Здесь виден твой реальный аккаунт: можно вступать в челленджи,
@@ -77,9 +100,9 @@ export default async function ProfilePage() {
                 <div className="mt-2 text-3xl font-semibold">{placement}</div>
               </div>
               <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
-                <div className="text-sm text-[#9AA0A6]">Шаги за месяц</div>
+                <div className="text-sm text-[#9AA0A6]">Шаги в челлендже</div>
                 <div className="mt-2 text-3xl font-semibold">
-                  {monthlySteps.toLocaleString("ru-RU")}
+                  {totalSteps.toLocaleString("ru-RU")}
                 </div>
               </div>
               <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
@@ -100,16 +123,20 @@ export default async function ProfilePage() {
                   <Footprints className="h-5 w-5" />
                   <span className="text-sm">Главный челлендж</span>
                 </div>
-                <h2 className="mt-4 text-2xl font-semibold">Шаги апреля</h2>
+                <h2 className="mt-4 text-2xl font-semibold">
+                  {challenge?.title ?? "Нет активных"}
+                </h2>
                 <p className="mt-2 text-[#C4C7C5]">
-                  Осталось 17 дней. {user.number === 1
-                    ? "Ты первый зарегистрированный участник и уже задаешь темп."
-                    : "До следующей позиции в рейтинге не хватает совсем немного."}
+                  {challenge
+                    ? `Осталось ${daysLeft} дней. ${joined
+                        ? "Ты в челлендже — продолжай в том же духе."
+                        : "Вступи, чтобы попасть в рейтинг."}`
+                    : "Скоро появится новый челлендж."}
                 </p>
                 <div className="mt-6 h-3 rounded-full bg-white/10">
                   <div
                     className="h-3 rounded-full bg-[#A8C7FA]"
-                    style={{ width: `${Math.min(92, 55 + user.number * 8)}%` }}
+                    style={{ width: `${progress}%` }}
                   />
                 </div>
               </article>
@@ -128,11 +155,11 @@ export default async function ProfilePage() {
               <article className="rounded-[1.8rem] bg-[#171A1F] p-5">
                 <div className="flex items-center gap-3 text-[#C4EEDB]">
                   <Flame className="h-5 w-5" />
-                  <span className="text-sm">Серия дисциплины</span>
+                  <span className="text-sm">Участников</span>
                 </div>
-                <h2 className="mt-4 text-2xl font-semibold">16 дней</h2>
+                <h2 className="mt-4 text-2xl font-semibold">{totalParticipants}</h2>
                 <p className="mt-2 text-[#C4C7C5]">
-                  Ни одного пропуска тренировок. Еще 5 дней до нового бейджа.
+                  {totalParticipants === 0 ? "Будь первым!" : "В активном челлендже"}
                 </p>
               </article>
             </div>
@@ -141,51 +168,84 @@ export default async function ProfilePage() {
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-sm uppercase tracking-[0.24em] text-[#9AA0A6]">
-                    Тренировка дня
+                    Добавить шаги
                   </p>
                   <h2 className="mt-2 text-3xl font-semibold">
-                    5 кругов на время
+                    Сколько прошёл сегодня?
                   </h2>
                   <p className="mt-3 max-w-2xl text-[#C4C7C5]">
-                    400 м бег, 25 приседаний, 20 выпадов, 15 берпи, 1 минута
-                    планки. После выполнения пользователь может указать время,
-                    калории и прикрепить фото.
+                    Введи количество шагов за сегодня. Они добавятся к твоему
+                    общему счёту в челлендже и обновят позицию в рейтинге.
                   </p>
                   <p className="mt-3 text-sm text-[#9AA0A6]">
-                    Твоя цель: {user.goal || "выиграть сезон и не выпадать из ритма"}
+                    Лимит: до 50 000 шагов за раз.
                   </p>
                 </div>
-
-                <button className="rounded-full bg-[#C4EEDB] px-5 py-3 font-semibold text-[#062E2B] transition hover:bg-[#D8F6E9]">
-                  Отчитаться
-                </button>
               </div>
 
-              <div className="mt-6 grid gap-4 md:grid-cols-3">
-                <div className="rounded-[1.4rem] border border-white/10 bg-black/15 p-4">
-                  <div className="flex items-center gap-2 text-[#9AA0A6]">
-                    <Clock3 className="h-4 w-4" />
-                    Время
-                  </div>
-                  <div className="mt-2 text-xl font-semibold">22:14</div>
+              {!challenge ? (
+                <div className="mt-6 rounded-[1.4rem] bg-black/20 p-6 text-center text-[#9AA0A6]">
+                  Нет активного челленджа
                 </div>
+              ) : !joined ? (
+                <div className="mt-6 rounded-[1.4rem] bg-black/20 p-6 text-center">
+                  <p className="text-[#C4C7C5] mb-4">Сначала вступи в челлендж</p>
+                  <Link
+                    href="/"
+                    className="inline-flex items-center gap-2 rounded-full bg-[#C4EEDB] px-5 py-3 font-semibold text-[#062E2B] transition hover:bg-[#D8F6E9]"
+                  >
+                    На главную <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              ) : (
+                <form action={addStepsAction} className="mt-6 flex gap-3 flex-col md:flex-row">
+                  <input
+                    name="steps"
+                    type="number"
+                    min="1"
+                    max="50000"
+                    required
+                    placeholder="например 8500"
+                    className="flex-1 rounded-full bg-black/20 border border-white/10 px-6 py-4 text-lg text-white placeholder-[#9AA0A6] outline-none focus:border-[#C4EEDB]"
+                  />
+                  <button
+                    type="submit"
+                    className="rounded-full bg-[#C4EEDB] px-8 py-4 font-semibold text-[#062E2B] transition hover:bg-[#D8F6E9] cursor-pointer"
+                  >
+                    Добавить шаги
+                  </button>
+                </form>
+              )}
 
-                <div className="rounded-[1.4rem] border border-white/10 bg-black/15 p-4">
-                  <div className="flex items-center gap-2 text-[#9AA0A6]">
-                    <Flame className="h-4 w-4" />
-                    Калории
+              {joined && (
+                <div className="mt-6 grid gap-4 md:grid-cols-3">
+                  <div className="rounded-[1.4rem] border border-white/10 bg-black/15 p-4">
+                    <div className="flex items-center gap-2 text-[#9AA0A6]">
+                      <Footprints className="h-4 w-4" />
+                      Всего шагов
+                    </div>
+                    <div className="mt-2 text-xl font-semibold">
+                      {totalSteps.toLocaleString("ru-RU")}
+                    </div>
                   </div>
-                  <div className="mt-2 text-xl font-semibold">486 ккал</div>
-                </div>
 
-                <div className="rounded-[1.4rem] border border-white/10 bg-black/15 p-4">
-                  <div className="flex items-center gap-2 text-[#9AA0A6]">
-                    <Camera className="h-4 w-4" />
-                    Медиа
+                  <div className="rounded-[1.4rem] border border-white/10 bg-black/15 p-4">
+                    <div className="flex items-center gap-2 text-[#9AA0A6]">
+                      <Trophy className="h-4 w-4" />
+                      Позиция
+                    </div>
+                    <div className="mt-2 text-xl font-semibold">{placement}</div>
                   </div>
-                  <div className="mt-2 text-xl font-semibold">2 фото</div>
+
+                  <div className="rounded-[1.4rem] border border-white/10 bg-black/15 p-4">
+                    <div className="flex items-center gap-2 text-[#9AA0A6]">
+                      <Clock3 className="h-4 w-4" />
+                      Осталось дней
+                    </div>
+                    <div className="mt-2 text-xl font-semibold">{daysLeft}</div>
+                  </div>
                 </div>
-              </div>
+              )}
             </section>
 
             <PostComposer />
