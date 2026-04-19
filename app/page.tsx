@@ -49,7 +49,7 @@ export default function Home() {
         </div>
 
         <h1 className="text-6xl md:text-8xl leading-tight mb-8 text-[#F2F2F2]">
-          Будь впереди.<br />Каждый день.
+          Стань первым.<br />Каждый день.
         </h1>
 
         <p className="text-xl text-[#C4C7C5] mb-12 max-w-xl">
