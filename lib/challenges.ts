@@ -11,6 +11,9 @@ export type ChallengeRecord = {
   startDate: string;
   endDate: string;
   isActive: boolean;
+  metric: string;
+  dailyLimit: number;
+  unitLabel: string;
 };
 
 export type LeaderEntry = {
@@ -37,6 +40,9 @@ async function ensureChallengesTable() {
           start_date DATE NOT NULL,
           end_date DATE NOT NULL,
           is_active BOOLEAN DEFAULT true,
+          metric TEXT DEFAULT 'steps',
+          daily_limit INTEGER DEFAULT 50000,
+          unit_label TEXT DEFAULT 'шагов',
           created_at TIMESTAMPTZ DEFAULT NOW()
         )
       `)
@@ -75,7 +81,7 @@ async function ensureStepEntriesTable() {
           id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
           user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
           challenge_id UUID NOT NULL REFERENCES challenges(id) ON DELETE CASCADE,
-          steps INTEGER NOT NULL CHECK (steps > 0 AND steps <= 50000),
+          steps INTEGER NOT NULL,
           entry_date DATE DEFAULT CURRENT_DATE,
           image_url TEXT,
           created_at TIMESTAMPTZ DEFAULT NOW()
@@ -86,26 +92,19 @@ async function ensureStepEntriesTable() {
   await stepEntriesTableReadyPromise;
 }
 
-export async function getActiveChallenge(): Promise<ChallengeRecord | null> {
-  if (!hasDatabase()) return null;
-  await ensureChallengesTable();
-
-  const result = await getPool().query<{
-    id: string;
-    title: string;
-    description: string | null;
-    emoji: string;
-    days: number;
-    start_date: Date;
-    end_date: Date;
-    is_active: boolean;
-  }>(
-    `SELECT * FROM challenges WHERE is_active = true ORDER BY created_at DESC LIMIT 1`
-  );
-
-  const row = result.rows[0];
-  if (!row) return null;
-
+function mapChallenge(row: {
+  id: string;
+  title: string;
+  description: string | null;
+  emoji: string;
+  days: number;
+  start_date: Date;
+  end_date: Date;
+  is_active: boolean;
+  metric: string | null;
+  daily_limit: number | null;
+  unit_label: string | null;
+}): ChallengeRecord {
   return {
     id: row.id,
     title: row.title,
@@ -115,7 +114,50 @@ export async function getActiveChallenge(): Promise<ChallengeRecord | null> {
     startDate: row.start_date.toISOString(),
     endDate: row.end_date.toISOString(),
     isActive: row.is_active,
+    metric: row.metric ?? "steps",
+    dailyLimit: row.daily_limit ?? 50000,
+    unitLabel: row.unit_label ?? "шагов",
   };
+}
+
+export async function getActiveChallenge(): Promise<ChallengeRecord | null> {
+  if (!hasDatabase()) return null;
+  await ensureChallengesTable();
+
+  const result = await getPool().query(
+    `SELECT * FROM challenges WHERE is_active = true ORDER BY created_at DESC LIMIT 1`
+  );
+
+  const row = result.rows[0];
+  if (!row) return null;
+
+  return mapChallenge(row);
+}
+
+export async function getAllActiveChallenges(): Promise<ChallengeRecord[]> {
+  if (!hasDatabase()) return [];
+  await ensureChallengesTable();
+
+  const result = await getPool().query(
+    `SELECT * FROM challenges WHERE is_active = true ORDER BY created_at DESC`
+  );
+
+  return result.rows.map(mapChallenge);
+}
+
+export async function getChallengeById(id: string): Promise<ChallengeRecord | null> {
+  if (!hasDatabase()) return null;
+  await ensureChallengesTable();
+
+  const result = await getPool().query(
+    `SELECT * FROM challenges WHERE id = $1 LIMIT 1`,
+    [id]
+  );
+
+  const row = result.rows[0];
+  if (!row) return null;
+
+  return mapChallenge(row);
 }
 
 export async function joinChallenge(userId: string, challengeId: string) {
@@ -138,14 +180,18 @@ export async function isParticipant(userId: string, challengeId: string) {
   return result.rows.length > 0;
 }
 
-export async function addSteps(userId: string, challengeId: string, steps: number) {
-  if (steps <= 0 || steps > 50000) {
-    throw new Error("Шаги должны быть от 1 до 50 000");
+export async function addSteps(userId: string, challengeId: string, value: number) {
+  const challenge = await getChallengeById(challengeId);
+  if (!challenge) {
+    throw new Error("Челлендж не найден");
+  }
+  if (value <= 0 || value > challenge.dailyLimit) {
+    throw new Error(`Значение должно быть от 1 до ${challenge.dailyLimit}`);
   }
   await ensureStepEntriesTable();
   await getPool().query(
     `INSERT INTO step_entries (user_id, challenge_id, steps) VALUES ($1, $2, $3)`,
-    [userId, challengeId, steps]
+    [userId, challengeId, value]
   );
 }
 

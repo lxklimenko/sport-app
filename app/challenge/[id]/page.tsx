@@ -1,54 +1,21 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Users, Trophy, Flame, Footprints } from "lucide-react";
+import { ArrowLeft, Users, Trophy, Footprints } from "lucide-react";
 
 import { getSessionUserId } from "@/lib/auth";
-import { getPool, hasDatabase } from "@/lib/db";
 import {
   addStepsAction,
-  joinActiveChallengeAction,
+  joinChallengeAction,
 } from "@/app/actions";
 import {
+  getChallengeById,
   getLeaderboard,
   getMyStats,
   getParticipantsCount,
   isParticipant,
-  type ChallengeRecord,
 } from "@/lib/challenges";
 
 export const dynamic = "force-dynamic";
-
-async function getChallengeById(id: string): Promise<ChallengeRecord | null> {
-  if (!hasDatabase()) return null;
-
-  const result = await getPool().query<{
-    id: string;
-    title: string;
-    description: string | null;
-    emoji: string;
-    days: number;
-    start_date: Date;
-    end_date: Date;
-    is_active: boolean;
-  }>(
-    `SELECT * FROM challenges WHERE id = $1 LIMIT 1`,
-    [id]
-  );
-
-  const row = result.rows[0];
-  if (!row) return null;
-
-  return {
-    id: row.id,
-    title: row.title,
-    description: row.description,
-    emoji: row.emoji,
-    days: row.days,
-    startDate: row.start_date.toISOString(),
-    endDate: row.end_date.toISOString(),
-    isActive: row.is_active,
-  };
-}
 
 export default async function ChallengePage({
   params,
@@ -76,6 +43,8 @@ export default async function ChallengePage({
     100,
     Math.round(((challenge.days - daysLeft) / challenge.days) * 100)
   );
+
+  const unit = challenge.unitLabel;
 
   return (
     <main className="min-h-screen bg-[#0D0F12] px-6 py-6 text-[#F5F7FA]">
@@ -146,7 +115,8 @@ export default async function ChallengePage({
               <p className="text-lg text-[#C4C7C5] mb-4">
                 Ты ещё не в этом челлендже
               </p>
-              <form action={joinActiveChallengeAction}>
+              <form action={joinChallengeAction}>
+                <input type="hidden" name="challengeId" value={challenge.id} />
                 <button
                   type="submit"
                   className="rounded-full bg-[#C4EEDB] px-6 py-3 font-semibold text-[#062E2B] hover:bg-[#D8F6E9] transition cursor-pointer"
@@ -164,7 +134,7 @@ export default async function ChallengePage({
 
               <div className="grid gap-4 md:grid-cols-3 mb-6">
                 <div className="rounded-[1.4rem] bg-black/20 p-4">
-                  <div className="text-sm text-[#9AA0A6]">Всего шагов</div>
+                  <div className="text-sm text-[#9AA0A6]">Всего {unit}</div>
                   <div className="mt-2 text-3xl font-semibold">
                     {stats?.totalSteps.toLocaleString("ru-RU") ?? 0}
                   </div>
@@ -184,13 +154,14 @@ export default async function ChallengePage({
               </div>
 
               <form action={addStepsAction} className="flex gap-3 flex-col md:flex-row">
+                <input type="hidden" name="challengeId" value={challenge.id} />
                 <input
                   name="steps"
                   type="number"
                   min="1"
-                  max="50000"
+                  max={challenge.dailyLimit}
                   required
-                  placeholder="Сколько шагов сегодня?"
+                  placeholder={`Сколько ${unit} сегодня? (до ${challenge.dailyLimit})`}
                   className="flex-1 rounded-full bg-black/20 border border-white/10 px-6 py-4 text-lg text-white placeholder-[#9AA0A6] outline-none focus:border-[#C4EEDB]"
                 />
                 <button
@@ -213,7 +184,7 @@ export default async function ChallengePage({
           {leaders.length === 0 ? (
             <div className="text-center py-10 text-[#9AA0A6]">
               <Users className="w-12 h-12 mx-auto mb-3 opacity-40" />
-              <p>Пока никто не добавил шаги</p>
+              <p>Пока никто не добавил результаты</p>
               <p className="text-sm mt-2 opacity-70">Стань первым!</p>
             </div>
           ) : (
@@ -258,7 +229,7 @@ export default async function ChallengePage({
                       <div className="font-semibold text-lg">
                         {leader.totalSteps.toLocaleString("ru-RU")}
                       </div>
-                      <div className="text-xs text-[#9AA0A6]">шагов</div>
+                      <div className="text-xs text-[#9AA0A6]">{unit}</div>
                     </div>
                   </div>
                 );

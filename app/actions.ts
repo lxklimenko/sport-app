@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { getSessionUserId } from "@/lib/auth";
 import {
   getActiveChallenge,
+  getChallengeById,
   joinChallenge,
   addSteps,
 } from "@/lib/challenges";
@@ -25,7 +26,30 @@ export async function joinActiveChallengeAction() {
 
   revalidatePath("/");
   revalidatePath("/profile");
-  redirect("/profile");
+  redirect(`/challenge/${challenge.id}`);
+}
+
+export async function joinChallengeAction(formData: FormData) {
+  const userId = await getSessionUserId();
+  if (!userId) {
+    redirect("/login");
+  }
+
+  const challengeId = formData.get("challengeId");
+  if (typeof challengeId !== "string" || !challengeId) {
+    throw new Error("Не указан челлендж");
+  }
+
+  const challenge = await getChallengeById(challengeId);
+  if (!challenge) {
+    throw new Error("Челлендж не найден");
+  }
+
+  await joinChallenge(userId, challenge.id);
+
+  revalidatePath("/");
+  revalidatePath(`/challenge/${challenge.id}`);
+  redirect(`/challenge/${challenge.id}`);
 }
 
 export async function addStepsAction(formData: FormData) {
@@ -35,19 +59,25 @@ export async function addStepsAction(formData: FormData) {
   }
 
   const stepsRaw = formData.get("steps");
-  const steps = Number(stepsRaw);
+  const challengeId = formData.get("challengeId");
+  const value = Number(stepsRaw);
 
-  if (!steps || isNaN(steps) || steps <= 0 || steps > 50000) {
-    throw new Error("Введите число от 1 до 50 000");
+  if (!value || isNaN(value) || value <= 0) {
+    throw new Error("Введите корректное число");
   }
 
-  const challenge = await getActiveChallenge();
-  if (!challenge) {
-    throw new Error("Нет активного челленджа");
+  let targetChallengeId: string;
+  if (typeof challengeId === "string" && challengeId) {
+    targetChallengeId = challengeId;
+  } else {
+    const active = await getActiveChallenge();
+    if (!active) throw new Error("Нет активного челленджа");
+    targetChallengeId = active.id;
   }
 
-  await addSteps(userId, challenge.id, steps);
+  await addSteps(userId, targetChallengeId, value);
 
   revalidatePath("/");
   revalidatePath("/profile");
+  revalidatePath(`/challenge/${targetChallengeId}`);
 }
