@@ -270,16 +270,18 @@ export type MyChallenge = {
   totalParticipants: number;
 };
 
-export async function getMyChallenges(userId: string): Promise<MyChallenge[]> {
+export async function getMyChallenges(userId: string, onlyActive = true): Promise<MyChallenge[]> {
   if (!hasDatabase()) return [];
   await ensureParticipantsTable();
+
+  const activeFilter = onlyActive ? "AND c.is_active = true" : "";
 
   const result = await getPool().query(
     `SELECT c.*, p.total_steps::text AS total_steps
      FROM participants p
      JOIN challenges c ON c.id = p.challenge_id
-     WHERE p.user_id = $1 AND c.is_active = true
-     ORDER BY c.created_at DESC`,
+     WHERE p.user_id = $1 ${activeFilter}
+     ORDER BY c.is_active DESC, c.created_at DESC`,
     [userId]
   );
 

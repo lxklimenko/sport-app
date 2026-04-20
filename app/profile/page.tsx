@@ -1,22 +1,45 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import {
-  ArrowRight,
-  Flame,
-} from "lucide-react";
+import { Settings, Plus, Grid3x3, List } from "lucide-react";
 
 import { logout } from "@/app/actions/auth";
-import { addStepsAction, toggleLikeAction, deletePostAction } from "@/app/actions";
 import { getSessionUserId } from "@/lib/auth";
 import { getRecentPosts } from "@/lib/posts";
-import { CommentsSection } from "@/app/profile/comments-section";
-import { getCommentsCountByPostIds } from "@/lib/comments";
 import { getUserById } from "@/lib/users";
 import { getMyChallenges } from "@/lib/challenges";
 import { getPool, hasDatabase } from "@/lib/db";
-import { PostComposer } from "@/app/profile/post-composer";
 
 export const dynamic = "force-dynamic";
+
+async function getMyPostsWithStats(userId: string) {
+  if (!hasDatabase()) return [];
+
+  const result = await getPool().query<{
+    id: string;
+    workout: string;
+    image_url: string | null;
+    likes_count: string;
+    comments_count: string;
+  }>(
+    `SELECT p.id, p.workout, p.image_url,
+            COALESCE(l.cnt, 0)::text AS likes_count,
+            COALESCE(c.cnt, 0)::text AS comments_count
+     FROM posts p
+     LEFT JOIN (SELECT post_id, COUNT(*) AS cnt FROM likes GROUP BY post_id) l ON l.post_id = p.id
+     LEFT JOIN (SELECT post_id, COUNT(*) AS cnt FROM comments GROUP BY post_id) c ON c.post_id = p.id
+     WHERE p.user_id = $1
+     ORDER BY p.created_at DESC`,
+    [userId]
+  );
+
+  return result.rows.map(row => ({
+    id: row.id,
+    workout: row.workout,
+    imageUrl: row.image_url,
+    likesCount: Number(row.likes_count),
+    commentsCount: Number(row.comments_count),
+  }));
+}
 
 async function getTodaySteps(userId: string) {
   if (!hasDatabase()) return 0;
@@ -29,19 +52,6 @@ async function getTodaySteps(userId: string) {
   return Number(result.rows[0]?.total ?? 0);
 }
 
-async function getStepsToTop(challengeId: string, myTotalSteps: number) {
-  if (!hasDatabase()) return null;
-  const result = await getPool().query<{ total_steps: string }>(
-    `SELECT total_steps::text FROM participants 
-     WHERE challenge_id = $1 AND total_steps > $2
-     ORDER BY total_steps ASC LIMIT 1`,
-    [challengeId, myTotalSteps]
-  );
-  const nextAbove = result.rows[0];
-  if (!nextAbove) return null;
-  return Number(nextAbove.total_steps) - myTotalSteps + 1;
-}
-
 export default async function ProfilePage() {
   const userId = await getSessionUserId();
   if (!userId) redirect("/signup");
@@ -49,264 +59,194 @@ export default async function ProfilePage() {
   const user = await getUserById(userId);
   if (!user) redirect("/signup");
 
-  const myChallenges = await getMyChallenges(userId);
-  const posts = await getRecentPosts(20, userId);
+  const allChallenges = await getMyChallenges(userId, false);
+  const activeChallenges = allChallenges.filter(c => c.challenge.isActive);
+  const pastChallenges = allChallenges.filter(c => !c.challenge.isActive);
 
-  const postIds = posts.map(p => p.id);
-  const commentsCounts = await getCommentsCountByPostIds(postIds);
-
+  const myPosts = await getMyPostsWithStats(userId);
   const todaySteps = await getTodaySteps(userId);
 
-  const bestRank = myChallenges.length > 0
-    ? Math.min(...myChallenges.map(c => c.rank))
+  const totalSteps = allChallenges.reduce((sum, c) => sum + c.totalSteps, 0);
+  const bestRank = activeChallenges.length > 0
+    ? Math.min(...activeChallenges.map(c => c.rank))
     : null;
-
-  const mainChallenge = myChallenges[0];
-  const otherChallenges = myChallenges.slice(1);
-
-  const stepsToTop = mainChallenge && mainChallenge.rank > 1
-    ? await getStepsToTop(mainChallenge.challenge.id, mainChallenge.totalSteps)
-    : null;
-
-  const mainProgress = mainChallenge
-    ? Math.min(100, Math.round(((mainChallenge.challenge.days -
-        Math.max(0, Math.ceil((new Date(mainChallenge.challenge.endDate).getTime() - Date.now()) / 86400000))
-      ) / mainChallenge.challenge.days) * 100))
-    : 0;
 
   const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.name)}`;
 
   return (
-    <main className="min-h-screen bg-[#0D0F12] px-5 py-6 text-[#F5F7FA]">
-      <div className="mx-auto max-w-2xl">
+    <main className="min-h-screen bg-[#0D0F12] text-[#F5F7FA] pb-20">
 
-        <div className="flex items-center gap-5 mb-4">
+      <div className="sticky top-0 z-10 bg-[#0D0F12]/95 backdrop-blur border-b border-white/5 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-[#1E1F22]" />
+          <span className="font-semibold">{user.name}</span>
+        </div>
+        <div className="flex items-center gap-4 text-[#9AA0A6]">
+          <Link href="/" className="hover:text-white transition">
+            <Plus className="w-6 h-6" />
+          </Link>
+          <form action={logout}>
+            <button className="hover:text-white transition">
+              <Settings className="w-5 h-5" />
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <div className="px-4 pt-5">
+
+        <div className="flex items-center gap-4 mb-4">
           <img
             src={avatarUrl}
             alt={user.name}
             className="w-20 h-20 rounded-full bg-[#1E1F22]"
           />
-          <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-semibold truncate">{user.name}</h1>
-            <p className="text-[#9AA0A6] text-sm">{user.favoriteFormat}</p>
-            {user.goal && (
-              <p className="text-[#9AA0A6] text-sm mt-1">🎯 {user.goal}</p>
-            )}
+
+          <div className="flex-1 grid grid-cols-3 gap-2 text-center">
+            <div>
+              <div className="text-lg font-semibold">{myPosts.length}</div>
+              <div className="text-xs text-[#9AA0A6]">постов</div>
+            </div>
+            <div>
+              <div className="text-lg font-semibold">{totalSteps.toLocaleString("ru-RU")}</div>
+              <div className="text-xs text-[#9AA0A6]">очков</div>
+            </div>
+            <div>
+              <div className="text-lg font-semibold text-[#FDE293]">
+                {bestRank ? `#${bestRank}` : "—"}
+              </div>
+              <div className="text-xs text-[#9AA0A6]">место</div>
+            </div>
           </div>
         </div>
 
-        <div className="mb-8 text-[#C4C7C5] text-sm">
-          🔥 Сегодня: +{todaySteps.toLocaleString("ru-RU")}
-          {bestRank && (
-            <span> · Лучшее место: #{bestRank}</span>
+        <div className="mb-4">
+          <div className="font-semibold text-sm mb-0.5">{user.name}</div>
+          <div className="text-sm text-[#C4C7C5]">
+            {user.favoriteFormat}
+            {user.goal && ` · 🎯 ${user.goal}`}
+          </div>
+          {todaySteps > 0 && (
+            <div className="text-xs text-[#9AA0A6] mt-1">
+              🔥 Сегодня: +{todaySteps.toLocaleString("ru-RU")}
+            </div>
           )}
         </div>
 
-        {mainChallenge ? (
-          <div className="bg-[#1E1F22] rounded-3xl p-6 mb-6">
+        <div className="flex gap-2 mb-6">
+          <button className="flex-1 bg-[#1E1F22] text-[#E3E3E3] py-2 px-4 rounded-xl text-sm font-medium hover:bg-[#2A2D33] transition">
+            Редактировать
+          </button>
+          <button className="flex-1 bg-[#1E1F22] text-[#E3E3E3] py-2 px-4 rounded-xl text-sm font-medium hover:bg-[#2A2D33] transition">
+            Поделиться
+          </button>
+        </div>
 
-            <div className="flex justify-between items-center mb-4">
-              <div className="text-sm text-[#9AA0A6]">🔥 Сейчас</div>
-              <div className="text-sm font-semibold">#{mainChallenge.rank} из {mainChallenge.totalParticipants}</div>
-            </div>
+        {(activeChallenges.length > 0 || pastChallenges.length > 0) && (
+          <div className="mb-6">
+            {activeChallenges.length > 0 && (
+              <>
+                <div className="text-xs text-[#9AA0A6] uppercase tracking-widest mb-3 px-1">
+                  Сейчас
+                </div>
+                <div className="flex gap-4 overflow-x-auto pb-2 mb-4 -mx-4 px-4 scrollbar-hide">
+                  {activeChallenges.map(my => (
+                    <Link
+                      key={my.challenge.id}
+                      href={`/challenge/${my.challenge.id}`}
+                      className="flex-shrink-0 w-[70px] text-center"
+                    >
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#C4EEDB] to-[#8FD9B8] flex items-center justify-center text-2xl mb-1 mx-auto">
+                        {my.challenge.emoji}
+                      </div>
+                      <div className="text-xs truncate">#{my.rank}</div>
+                      <div className="text-[10px] text-[#9AA0A6] truncate">
+                        {my.challenge.title.split(" ")[0]}
+                      </div>
+                    </Link>
+                  ))}
+                  <Link href="/" className="flex-shrink-0 w-[70px] text-center">
+                    <div className="w-16 h-16 rounded-full bg-[#1E1F22] border-2 border-dashed border-[#444] flex items-center justify-center text-2xl text-[#9AA0A6] mb-1 mx-auto">
+                      +
+                    </div>
+                    <div className="text-[10px] text-[#9AA0A6]">ещё</div>
+                  </Link>
+                </div>
+              </>
+            )}
 
-            <Link href={`/challenge/${mainChallenge.challenge.id}`}>
-              <div className="flex items-center gap-3 mb-3">
-                <span className="text-3xl">{mainChallenge.challenge.emoji}</span>
-                <h2 className="text-2xl font-semibold">
-                  {mainChallenge.challenge.title}
-                </h2>
+            {pastChallenges.length > 0 && (
+              <>
+                <div className="text-xs text-[#9AA0A6] uppercase tracking-widest mb-3 px-1">
+                  История
+                </div>
+                <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+                  {pastChallenges.map(my => (
+                    <Link
+                      key={my.challenge.id}
+                      href={`/challenge/${my.challenge.id}`}
+                      className="flex-shrink-0 w-[70px] text-center opacity-70"
+                    >
+                      <div className="w-16 h-16 rounded-full bg-[#1E1F22] border border-[#2A2D33] flex items-center justify-center text-2xl mb-1 mx-auto">
+                        {my.challenge.emoji}
+                      </div>
+                      <div className="text-xs truncate">#{my.rank}</div>
+                      <div className="text-[10px] text-[#9AA0A6] truncate">завершён</div>
+                    </Link>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="flex border-t border-white/5">
+        <button className="flex-1 py-3 flex items-center justify-center text-[#E3E3E3] border-t-2 border-[#A8C7FA] -mt-px">
+          <Grid3x3 className="w-5 h-5" />
+        </button>
+        <button className="flex-1 py-3 flex items-center justify-center text-[#9AA0A6]">
+          <List className="w-5 h-5" />
+        </button>
+      </div>
+
+      {myPosts.length === 0 ? (
+        <div className="text-center py-16 px-4 text-[#9AA0A6]">
+          <div className="text-5xl mb-3">📸</div>
+          <p className="font-semibold mb-1">Пока нет постов</p>
+          <p className="text-sm">Опубликуй первую тренировку</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-3 gap-0.5">
+          {myPosts.map(post => (
+            <Link
+              key={post.id}
+              href={`/post/${post.id}`}
+              className="relative aspect-square bg-[#1E1F22] overflow-hidden group"
+            >
+              {post.imageUrl ? (
+                <img
+                  src={post.imageUrl}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center p-2">
+                  <p className="text-xs text-[#C4C7C5] line-clamp-4 text-center">
+                    {post.workout}
+                  </p>
+                </div>
+              )}
+
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-4 text-white text-sm font-semibold">
+                <span>🔥 {post.likesCount}</span>
+                <span>💬 {post.commentsCount}</span>
               </div>
             </Link>
-
-            <p className="text-[#C4C7C5] mb-1">
-              {mainChallenge.totalSteps.toLocaleString("ru-RU")} {mainChallenge.challenge.unitLabel}
-            </p>
-
-            {stepsToTop && (
-              <p className="text-xs text-[#A8C7FA] mb-4">
-                +{stepsToTop.toLocaleString("ru-RU")} {mainChallenge.challenge.unitLabel} до ТОП-{mainChallenge.rank - 1}
-              </p>
-            )}
-
-            <div className="h-2 bg-black/30 rounded-full mb-5">
-              <div
-                className="h-2 bg-[#A8C7FA] rounded-full transition-all"
-                style={{ width: `${mainProgress}%` }}
-              />
-            </div>
-
-            <form action={addStepsAction} className="flex gap-2">
-              <input type="hidden" name="challengeId" value={mainChallenge.challenge.id} />
-              <input
-                name="steps"
-                type="number"
-                min="1"
-                max={mainChallenge.challenge.dailyLimit}
-                required
-                placeholder={`Добавить ${mainChallenge.challenge.unitLabel}`}
-                className="flex-1 bg-black/30 rounded-full px-5 py-3 text-sm text-white placeholder-[#9AA0A6] outline-none focus:ring-1 focus:ring-[#A8C7FA]"
-              />
-              <button
-                type="submit"
-                className="bg-[#A8C7FA] text-[#062E6F] px-6 rounded-full font-semibold text-sm hover:bg-[#BBD6FE] transition cursor-pointer"
-              >
-                +
-              </button>
-            </form>
-          </div>
-        ) : (
-          <div className="bg-[#1E1F22] rounded-3xl p-6 text-center mb-6">
-            <div className="text-4xl mb-3">🏆</div>
-            <p className="text-lg font-semibold mb-2">Ты ещё не в челленджах</p>
-            <p className="text-[#9AA0A6] text-sm mb-5">Вступи и начни зарабатывать место в рейтинге</p>
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 rounded-full bg-[#A8C7FA] px-6 py-3 font-semibold text-[#062E6F] hover:bg-[#BBD6FE] transition"
-            >
-              Выбрать челлендж
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        )}
-
-        {otherChallenges.length > 0 && (
-          <div className="grid grid-cols-2 gap-3 mb-8">
-            {otherChallenges.map((my) => {
-              const daysLeft = Math.max(
-                0,
-                Math.ceil((new Date(my.challenge.endDate).getTime() - Date.now()) / 86400000)
-              );
-              return (
-                <Link
-                  key={my.challenge.id}
-                  href={`/challenge/${my.challenge.id}`}
-                  className="bg-[#1E1F22] rounded-2xl p-4 hover:bg-[#252730] transition"
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xl">{my.challenge.emoji}</span>
-                    <span className="text-sm font-semibold truncate">
-                      {my.challenge.title}
-                    </span>
-                  </div>
-                  <div className="text-xs text-[#9AA0A6]">
-                    #{my.rank} · {my.totalSteps.toLocaleString("ru-RU")} {my.challenge.unitLabel}
-                  </div>
-                  <div className="text-xs text-[#9AA0A6] mt-1">
-                    осталось {daysLeft} дн.
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-
-        <div className="mb-6">
-          <PostComposer />
+          ))}
         </div>
+      )}
 
-        <div>
-          <h2 className="text-lg font-semibold mb-4 px-1">Лента</h2>
-
-          {posts.length === 0 ? (
-            <div className="bg-[#1E1F22] rounded-3xl p-6 text-center text-[#9AA0A6]">
-              Пока пусто. Опубликуй первую тренировку.
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {posts.map((post) => (
-                <div key={post.id} className="bg-[#1E1F22] rounded-3xl overflow-hidden">
-                  <div className="p-5 pb-3">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="font-semibold">{post.authorName}</span>
-                      <div className="flex items-center gap-3">
-                        <span className="text-[#9AA0A6] text-xs">
-                          {formatPostTime(post.createdAt)}
-                        </span>
-                        {post.userId === userId && (
-                          <form action={deletePostAction}>
-                            <input type="hidden" name="postId" value={post.id} />
-                            <button
-                              type="submit"
-                              className="text-[#9AA0A6] hover:text-[#FFB4AB] transition text-xs"
-                              title="Удалить пост"
-                            >
-                              Удалить
-                            </button>
-                          </form>
-                        )}
-                      </div>
-                    </div>
-
-                    <p className="mt-3 text-lg leading-relaxed">{post.workout}</p>
-                    <p className="mt-1 text-sm text-[#C4C7C5]">{post.stats}</p>
-                  </div>
-
-                  {post.imageUrl && (
-                    <img
-                      src={post.imageUrl}
-                      alt=""
-                      className="w-full max-h-[500px] object-cover"
-                    />
-                  )}
-
-                  <div className="p-5 pt-3">
-                    <div className="flex items-center gap-5 text-[#9AA0A6] mb-3">
-                      <form action={toggleLikeAction}>
-                        <input type="hidden" name="postId" value={post.id} />
-                        <button
-                          type="submit"
-                          className={`flex items-center gap-1.5 text-sm transition ${
-                            post.likedByMe ? "text-[#FFB4AB]" : "hover:text-white"
-                          }`}
-                        >
-                          <Flame
-                            className="w-4 h-4"
-                            fill={post.likedByMe ? "currentColor" : "none"}
-                          />
-                          <span>{post.likesCount}</span>
-                        </button>
-                      </form>
-
-                      <CommentsSection
-                        postId={post.id}
-                        count={commentsCounts[post.id] ?? 0}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
-          <Link
-            href="/"
-            className="inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm hover:bg-white/5 transition"
-          >
-            На главную
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-
-          <form action={logout}>
-            <button className="rounded-full px-5 py-3 text-sm hover:bg-white/5 transition">
-              Выйти
-            </button>
-          </form>
-        </div>
-
-      </div>
     </main>
   );
-}
-
-function formatPostTime(createdAt: string) {
-  const diffMs = Date.now() - new Date(createdAt).getTime();
-  const minutes = Math.max(1, Math.floor(diffMs / (1000 * 60)));
-  if (minutes < 60) return `${minutes} мин назад`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} ч назад`;
-  const days = Math.floor(hours / 24);
-  return `${days} дн назад`;
 }
