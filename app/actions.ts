@@ -10,7 +10,7 @@ import {
   joinChallenge,
   addSteps,
 } from "@/lib/challenges";
-import { toggleLike } from "@/lib/posts";
+import { toggleLike, deletePost } from "@/lib/posts";
 
 export async function joinActiveChallengeAction() {
   const userId = await getSessionUserId();
@@ -95,5 +95,28 @@ export async function toggleLikeAction(formData: FormData) {
   }
 
   await toggleLike(userId, postId);
+  revalidatePath("/profile");
+}
+
+export async function deletePostAction(formData: FormData) {
+  const userId = await getSessionUserId();
+  if (!userId) {
+    redirect("/login");
+  }
+
+  const postId = formData.get("postId");
+  if (typeof postId !== "string" || !postId) {
+    throw new Error("Не указан пост");
+  }
+
+  try {
+    await deletePost(userId, postId);
+  } catch (error) {
+    if (error instanceof Error && error.message === "NOT_FOUND_OR_FORBIDDEN") {
+      throw new Error("Нельзя удалить чужой пост");
+    }
+    throw error;
+  }
+
   revalidatePath("/profile");
 }

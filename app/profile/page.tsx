@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 
 import { logout } from "@/app/actions/auth";
-import { addStepsAction, toggleLikeAction } from "@/app/actions";
+import { addStepsAction, toggleLikeAction, deletePostAction } from "@/app/actions";
 import { getSessionUserId } from "@/lib/auth";
 import { getRecentPosts } from "@/lib/posts";
 import { getUserById } from "@/lib/users";
@@ -214,9 +214,23 @@ export default async function ProfilePage() {
                   <div className="p-5 pb-3">
                     <div className="flex justify-between items-center text-sm">
                       <span className="font-semibold">{post.authorName}</span>
-                      <span className="text-[#9AA0A6] text-xs">
-                        {formatPostTime(post.createdAt)}
-                      </span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[#9AA0A6] text-xs">
+                          {formatPostTime(post.createdAt)}
+                        </span>
+                        {post.userId === userId && (
+                          <form action={deletePostAction}>
+                            <input type="hidden" name="postId" value={post.id} />
+                            <button
+                              type="submit"
+                              className="text-[#9AA0A6] hover:text-[#FFB4AB] transition text-xs"
+                              title="Удалить пост"
+                            >
+                              Удалить
+                            </button>
+                          </form>
+                        )}
+                      </div>
                     </div>
 
                     <p className="mt-3 text-lg leading-relaxed">{post.workout}</p>

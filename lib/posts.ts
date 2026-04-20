@@ -169,3 +169,36 @@ async function ensureLikesTable() {
   }
   await likesTableReadyPromise;
 }
+
+export async function deletePost(userId: string, postId: string) {
+  if (!hasDatabase()) {
+    throw new Error("Database required");
+  }
+  await ensurePostsTable();
+
+  const result = await getPool().query<{ image_url: string | null }>(
+    `SELECT image_url FROM posts WHERE id = $1 AND user_id = $2`,
+    [postId, userId]
+  );
+
+  const post = result.rows[0];
+  if (!post) {
+    throw new Error("NOT_FOUND_OR_FORBIDDEN");
+  }
+
+  await getPool().query(
+    `DELETE FROM posts WHERE id = $1 AND user_id = $2`,
+    [postId, userId]
+  );
+
+  if (post.image_url) {
+    try {
+      const { unlink } = await import("node:fs/promises");
+      const filename = post.image_url.replace("/uploads/", "");
+      const filepath = path.join(process.cwd(), "public", "uploads", filename);
+      await unlink(filepath);
+    } catch (error) {
+      console.error("Failed to delete photo file:", error);
+    }
+  }
+}
