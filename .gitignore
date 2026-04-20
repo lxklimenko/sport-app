@@ -6,3 +6,5 @@ node_modules
 npm-debug.log*
 data/*.json
 .DS_Store
+public/uploads/*
+!public/uploads/.gitkeep
