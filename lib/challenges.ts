@@ -262,3 +262,52 @@ export async function getParticipantsCount(challengeId: string) {
   );
   return Number(result.rows[0]?.count ?? 0);
 }
+
+export type MyChallenge = {
+  challenge: ChallengeRecord;
+  totalSteps: number;
+  rank: number;
+  totalParticipants: number;
+};
+
+export async function getMyChallenges(userId: string): Promise<MyChallenge[]> {
+  if (!hasDatabase()) return [];
+  await ensureParticipantsTable();
+
+  const result = await getPool().query(
+    `SELECT c.*, p.total_steps::text AS total_steps
+     FROM participants p
+     JOIN challenges c ON c.id = p.challenge_id
+     WHERE p.user_id = $1 AND c.is_active = true
+     ORDER BY c.created_at DESC`,
+    [userId]
+  );
+
+  const myChallenges = await Promise.all(
+    result.rows.map(async (row) => {
+      const challenge = mapChallenge(row);
+      const totalSteps = Number(row.total_steps);
+
+      const rankResult = await getPool().query<{ rank: string }>(
+        `SELECT COUNT(*) + 1 AS rank
+         FROM participants
+         WHERE challenge_id = $1 AND total_steps > $2`,
+        [challenge.id, totalSteps]
+      );
+
+      const totalResult = await getPool().query<{ count: string }>(
+        `SELECT COUNT(*)::text AS count FROM participants WHERE challenge_id = $1`,
+        [challenge.id]
+      );
+
+      return {
+        challenge,
+        totalSteps,
+        rank: Number(rankResult.rows[0]?.rank ?? 1),
+        totalParticipants: Number(totalResult.rows[0]?.count ?? 0),
+      };
+    })
+  );
+
+  return myChallenges;
+}
