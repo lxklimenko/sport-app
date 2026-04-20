@@ -3,13 +3,14 @@ import Link from "next/link";
 import {
   ArrowRight,
   Flame,
-  MessageCircle,
 } from "lucide-react";
 
 import { logout } from "@/app/actions/auth";
 import { addStepsAction, toggleLikeAction, deletePostAction } from "@/app/actions";
 import { getSessionUserId } from "@/lib/auth";
 import { getRecentPosts } from "@/lib/posts";
+import { CommentsSection } from "@/app/profile/comments-section";
+import { getCommentsByPostId, getCommentsCountByPostIds } from "@/lib/comments";
 import { getUserById } from "@/lib/users";
 import { getMyChallenges } from "@/lib/challenges";
 import { getPool, hasDatabase } from "@/lib/db";
@@ -50,6 +51,14 @@ export default async function ProfilePage() {
 
   const myChallenges = await getMyChallenges(userId);
   const posts = await getRecentPosts(20, userId);
+
+  const postIds = posts.map(p => p.id);
+  const commentsCounts = await getCommentsCountByPostIds(postIds);
+  const commentsMap: Record<string, Awaited<ReturnType<typeof getCommentsByPostId>>> = {};
+  for (const postId of postIds) {
+    commentsMap[postId] = await getCommentsByPostId(postId);
+  }
+
   const todaySteps = await getTodaySteps(userId);
 
   const bestRank = myChallenges.length > 0
@@ -245,25 +254,31 @@ export default async function ProfilePage() {
                     />
                   )}
 
-                  <div className="p-5 pt-3 flex gap-5 text-[#9AA0A6]">
-                    <form action={toggleLikeAction}>
-                      <input type="hidden" name="postId" value={post.id} />
-                      <button
-                        type="submit"
-                        className={`flex items-center gap-1.5 text-sm transition ${
-                          post.likedByMe ? "text-[#FFB4AB]" : "hover:text-white"
-                        }`}
-                      >
-                        <Flame
-                          className="w-4 h-4"
-                          fill={post.likedByMe ? "currentColor" : "none"}
-                        />
-                        <span>{post.likesCount}</span>
-                      </button>
-                    </form>
-                    <button className="flex items-center gap-1.5 text-sm hover:text-white transition">
-                      <MessageCircle className="w-4 h-4" />
-                    </button>
+                  <div className="p-5 pt-3">
+                    <div className="flex items-center gap-5 text-[#9AA0A6] mb-3">
+                      <form action={toggleLikeAction}>
+                        <input type="hidden" name="postId" value={post.id} />
+                        <button
+                          type="submit"
+                          className={`flex items-center gap-1.5 text-sm transition ${
+                            post.likedByMe ? "text-[#FFB4AB]" : "hover:text-white"
+                          }`}
+                        >
+                          <Flame
+                            className="w-4 h-4"
+                            fill={post.likedByMe ? "currentColor" : "none"}
+                          />
+                          <span>{post.likesCount}</span>
+                        </button>
+                      </form>
+
+                      <CommentsSection
+                        postId={post.id}
+                        count={commentsCounts[post.id] ?? 0}
+                        comments={commentsMap[post.id] ?? []}
+                        currentUserId={userId}
+                      />
+                    </div>
                   </div>
                 </div>
               ))}

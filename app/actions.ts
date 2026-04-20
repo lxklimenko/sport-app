@@ -11,6 +11,8 @@ import {
   addSteps,
 } from "@/lib/challenges";
 import { toggleLike, deletePost } from "@/lib/posts";
+import { createComment, deleteComment } from "@/lib/comments";
+import { getUserById } from "@/lib/users";
 
 export async function joinActiveChallengeAction() {
   const userId = await getSessionUserId();
@@ -114,6 +116,61 @@ export async function deletePostAction(formData: FormData) {
   } catch (error) {
     if (error instanceof Error && error.message === "NOT_FOUND_OR_FORBIDDEN") {
       throw new Error("Нельзя удалить чужой пост");
+    }
+    throw error;
+  }
+
+  revalidatePath("/profile");
+}
+
+export async function addCommentAction(formData: FormData) {
+  const userId = await getSessionUserId();
+  if (!userId) {
+    redirect("/login");
+  }
+
+  const user = await getUserById(userId);
+  if (!user) {
+    redirect("/login");
+  }
+
+  const postId = formData.get("postId");
+  const text = String(formData.get("text") ?? "").trim();
+
+  if (typeof postId !== "string" || !postId) {
+    throw new Error("Не указан пост");
+  }
+
+  if (text.length < 1 || text.length > 500) {
+    throw new Error("Комментарий должен быть от 1 до 500 символов");
+  }
+
+  await createComment({
+    postId,
+    userId: user.id,
+    authorName: user.name,
+    text,
+  });
+
+  revalidatePath("/profile");
+}
+
+export async function deleteCommentAction(formData: FormData) {
+  const userId = await getSessionUserId();
+  if (!userId) {
+    redirect("/login");
+  }
+
+  const commentId = formData.get("commentId");
+  if (typeof commentId !== "string" || !commentId) {
+    throw new Error("Не указан комментарий");
+  }
+
+  try {
+    await deleteComment(userId, commentId);
+  } catch (error) {
+    if (error instanceof Error && error.message === "NOT_FOUND_OR_FORBIDDEN") {
+      throw new Error("Нельзя удалить чужой комментарий");
     }
     throw error;
   }
