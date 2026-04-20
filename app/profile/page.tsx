@@ -8,6 +8,7 @@ import { getRecentPosts } from "@/lib/posts";
 import { getUserById } from "@/lib/users";
 import { getMyChallenges } from "@/lib/challenges";
 import { getPool, hasDatabase } from "@/lib/db";
+import { getFollowCounts } from "@/lib/follows";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +66,7 @@ export default async function ProfilePage() {
 
   const myPosts = await getMyPostsWithStats(userId);
   const todaySteps = await getTodaySteps(userId);
+  const followCounts = await getFollowCounts(userId);
 
   const totalSteps = allChallenges.reduce((sum, c) => sum + c.totalSteps, 0);
   const bestRank = activeChallenges.length > 0
@@ -108,14 +110,12 @@ export default async function ProfilePage() {
               <div className="text-xs text-[#9AA0A6]">постов</div>
             </div>
             <div>
-              <div className="text-lg font-semibold">{totalSteps.toLocaleString("ru-RU")}</div>
-              <div className="text-xs text-[#9AA0A6]">очков</div>
+              <div className="text-lg font-semibold">{followCounts.followers}</div>
+              <div className="text-xs text-[#9AA0A6]">подписчиков</div>
             </div>
             <div>
-              <div className="text-lg font-semibold text-[#FDE293]">
-                {bestRank ? `#${bestRank}` : "—"}
-              </div>
-              <div className="text-xs text-[#9AA0A6]">место</div>
+              <div className="text-lg font-semibold">{followCounts.following}</div>
+              <div className="text-xs text-[#9AA0A6]">подписок</div>
             </div>
           </div>
         </div>

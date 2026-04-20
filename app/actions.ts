@@ -11,6 +11,7 @@ import {
   addSteps,
 } from "@/lib/challenges";
 import { toggleLike, deletePost } from "@/lib/posts";
+import { toggleFollow } from "@/lib/follows";
 import { createComment, deleteComment } from "@/lib/comments";
 import { getUserById } from "@/lib/users";
 
@@ -152,6 +153,22 @@ export async function addCommentAction(formData: FormData) {
     text,
   });
 
+  revalidatePath("/profile");
+}
+
+export async function toggleFollowAction(formData: FormData) {
+  const userId = await getSessionUserId();
+  if (!userId) {
+    redirect("/login");
+  }
+
+  const followingId = formData.get("userId");
+  if (typeof followingId !== "string" || !followingId) {
+    throw new Error("Не указан пользователь");
+  }
+
+  await toggleFollow(userId, followingId);
+  revalidatePath(`/user/${followingId}`);
   revalidatePath("/profile");
 }
 

@@ -6,6 +6,8 @@ import { getSessionUserId } from "@/lib/auth";
 import { getUserById } from "@/lib/users";
 import { getMyChallenges } from "@/lib/challenges";
 import { getPool, hasDatabase } from "@/lib/db";
+import { isFollowing, getFollowCounts } from "@/lib/follows";
+import { toggleFollowAction } from "@/app/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +61,8 @@ export default async function UserPage({
   const pastChallenges = allChallenges.filter(c => !c.challenge.isActive);
 
   const posts = await getUserPostsWithStats(id);
+  const following = currentUserId ? await isFollowing(currentUserId, id) : false;
+  const followCounts = await getFollowCounts(id);
 
   const totalSteps = allChallenges.reduce((sum, c) => sum + c.totalSteps, 0);
   const bestRank = activeChallenges.length > 0
@@ -95,14 +99,12 @@ export default async function UserPage({
               <div className="text-xs text-[#9AA0A6]">постов</div>
             </div>
             <div>
-              <div className="text-lg font-semibold">{totalSteps.toLocaleString("ru-RU")}</div>
-              <div className="text-xs text-[#9AA0A6]">очков</div>
+              <div className="text-lg font-semibold">{followCounts.followers}</div>
+              <div className="text-xs text-[#9AA0A6]">подписчиков</div>
             </div>
             <div>
-              <div className="text-lg font-semibold text-[#FDE293]">
-                {bestRank ? `#${bestRank}` : "—"}
-              </div>
-              <div className="text-xs text-[#9AA0A6]">место</div>
+              <div className="text-lg font-semibold">{followCounts.following}</div>
+              <div className="text-xs text-[#9AA0A6]">подписок</div>
             </div>
           </div>
         </div>
