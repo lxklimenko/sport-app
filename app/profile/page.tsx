@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 
 import { logout } from "@/app/actions/auth";
-import { addStepsAction } from "@/app/actions";
+import { addStepsAction, toggleLikeAction } from "@/app/actions";
 import { getSessionUserId } from "@/lib/auth";
 import { getRecentPosts } from "@/lib/posts";
 import { getUserById } from "@/lib/users";
@@ -49,7 +49,7 @@ export default async function ProfilePage() {
   if (!user) redirect("/signup");
 
   const myChallenges = await getMyChallenges(userId);
-  const posts = await getRecentPosts();
+  const posts = await getRecentPosts(20, userId);
   const todaySteps = await getTodaySteps(userId);
 
   const bestRank = myChallenges.length > 0
@@ -232,9 +232,21 @@ export default async function ProfilePage() {
                   )}
 
                   <div className="p-5 pt-3 flex gap-5 text-[#9AA0A6]">
-                    <button className="flex items-center gap-1.5 text-sm hover:text-white transition">
-                      <Flame className="w-4 h-4" />
-                    </button>
+                    <form action={toggleLikeAction}>
+                      <input type="hidden" name="postId" value={post.id} />
+                      <button
+                        type="submit"
+                        className={`flex items-center gap-1.5 text-sm transition ${
+                          post.likedByMe ? "text-[#FFB4AB]" : "hover:text-white"
+                        }`}
+                      >
+                        <Flame
+                          className="w-4 h-4"
+                          fill={post.likedByMe ? "currentColor" : "none"}
+                        />
+                        <span>{post.likesCount}</span>
+                      </button>
+                    </form>
                     <button className="flex items-center gap-1.5 text-sm hover:text-white transition">
                       <MessageCircle className="w-4 h-4" />
                     </button>

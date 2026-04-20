@@ -10,6 +10,7 @@ import {
   joinChallenge,
   addSteps,
 } from "@/lib/challenges";
+import { toggleLike } from "@/lib/posts";
 
 export async function joinActiveChallengeAction() {
   const userId = await getSessionUserId();
@@ -80,4 +81,19 @@ export async function addStepsAction(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/profile");
   revalidatePath(`/challenge/${targetChallengeId}`);
+}
+
+export async function toggleLikeAction(formData: FormData) {
+  const userId = await getSessionUserId();
+  if (!userId) {
+    redirect("/login");
+  }
+
+  const postId = formData.get("postId");
+  if (typeof postId !== "string" || !postId) {
+    throw new Error("Не указан пост");
+  }
+
+  await toggleLike(userId, postId);
+  revalidatePath("/profile");
 }

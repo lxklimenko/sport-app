@@ -80,9 +80,11 @@ export async function createPost(input: {
   return post;
 }
 
-export async function getRecentPosts(limit = 20) {
+export async function getRecentPosts(limit = 20, currentUserId?: string) {
   if (hasDatabase()) {
     await ensurePostsTable();
+    await ensureLikesTable();
+
     const result = await getPool().query<{
       id: string;
       user_id: string;
@@ -91,10 +93,18 @@ export async function getRecentPosts(limit = 20) {
       stats: string;
       image_url: string | null;
       created_at: Date;
+      likes_count: string;
+      liked_by_me: boolean;
     }>(
-      `SELECT id, user_id, author_name, workout, stats, image_url, created_at
-       FROM posts ORDER BY created_at DESC LIMIT $1`,
-      [limit],
+      `SELECT p.id, p.user_id, p.author_name, p.workout, p.stats, p.image_url, p.created_at,
+              COALESCE(l.cnt, 0)::text AS likes_count,
+              CASE WHEN ml.user_id IS NOT NULL THEN true ELSE false END AS liked_by_me
+       FROM posts p
+       LEFT JOIN (SELECT post_id, COUNT(*) AS cnt FROM likes GROUP BY post_id) l ON l.post_id = p.id
+       LEFT JOIN likes ml ON ml.post_id = p.id AND ml.user_id = $2
+       ORDER BY p.created_at DESC
+       LIMIT $1`,
+      [limit, currentUserId ?? ""],
     );
 
     return result.rows.map((row) => ({
@@ -105,9 +115,57 @@ export async function getRecentPosts(limit = 20) {
       stats: row.stats,
       imageUrl: row.image_url,
       createdAt: row.created_at.toISOString(),
+      likesCount: Number(row.likes_count),
+      likedByMe: row.liked_by_me,
     }));
   }
 
   const posts = await readPosts();
-  return posts.slice(0, limit);
+  return posts.slice(0, limit).map(p => ({ ...p, likesCount: 0, likedByMe: false }));
+}
+
+export async function toggleLike(userId: string, postId: string) {
+  if (!hasDatabase()) {
+    throw new Error("Database required for likes");
+  }
+  await ensurePostsTable();
+  await ensureLikesTable();
+
+  const existing = await getPool().query(
+    `SELECT 1 FROM likes WHERE user_id = $1 AND post_id = $2`,
+    [userId, postId]
+  );
+
+  if (existing.rows.length > 0) {
+    await getPool().query(
+      `DELETE FROM likes WHERE user_id = $1 AND post_id = $2`,
+      [userId, postId]
+    );
+    return { liked: false };
+  } else {
+    await getPool().query(
+      `INSERT INTO likes (user_id, post_id) VALUES ($1, $2)`,
+      [userId, postId]
+    );
+    return { liked: true };
+  }
+}
+
+let likesTableReadyPromise: Promise<void> | null = null;
+
+async function ensureLikesTable() {
+  if (!hasDatabase()) return;
+  if (!likesTableReadyPromise) {
+    likesTableReadyPromise = getPool()
+      .query(`
+        CREATE TABLE IF NOT EXISTS likes (
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          post_id TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          PRIMARY KEY (user_id, post_id)
+        )
+      `)
+      .then(() => undefined);
+  }
+  await likesTableReadyPromise;
 }
