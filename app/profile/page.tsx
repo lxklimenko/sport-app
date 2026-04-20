@@ -10,7 +10,7 @@ import { addStepsAction, toggleLikeAction, deletePostAction } from "@/app/action
 import { getSessionUserId } from "@/lib/auth";
 import { getRecentPosts } from "@/lib/posts";
 import { CommentsSection } from "@/app/profile/comments-section";
-import { getCommentsByPostId, getCommentsCountByPostIds } from "@/lib/comments";
+import { getCommentsCountByPostIds } from "@/lib/comments";
 import { getUserById } from "@/lib/users";
 import { getMyChallenges } from "@/lib/challenges";
 import { getPool, hasDatabase } from "@/lib/db";
@@ -54,10 +54,6 @@ export default async function ProfilePage() {
 
   const postIds = posts.map(p => p.id);
   const commentsCounts = await getCommentsCountByPostIds(postIds);
-  const commentsMap: Record<string, Awaited<ReturnType<typeof getCommentsByPostId>>> = {};
-  for (const postId of postIds) {
-    commentsMap[postId] = await getCommentsByPostId(postId);
-  }
 
   const todaySteps = await getTodaySteps(userId);
 
@@ -275,8 +271,6 @@ export default async function ProfilePage() {
                       <CommentsSection
                         postId={post.id}
                         count={commentsCounts[post.id] ?? 0}
-                        comments={commentsMap[post.id] ?? []}
-                        currentUserId={userId}
                       />
                     </div>
                   </div>
