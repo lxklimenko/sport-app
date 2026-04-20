@@ -1,5 +1,9 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+import { writeFile, mkdir } from "node:fs/promises";
+import path from "node:path";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -174,6 +178,8 @@ export async function publishPost(
 
   const workout = getString(formData, "workout");
   const stats = getString(formData, "stats");
+  const photo = formData.get("photo");
+
   const errors: CreatePostState["errors"] = {};
 
   if (workout.length < 8) {
@@ -191,12 +197,48 @@ export async function publishPost(
     };
   }
 
+  let imageUrl: string | null = null;
+
+  if (photo instanceof File && photo.size > 0) {
+    if (photo.size > 5 * 1024 * 1024) {
+      return {
+        message: "Фото слишком большое. Максимум 5 МБ.",
+      };
+    }
+
+    if (!photo.type.startsWith("image/")) {
+      return {
+        message: "Нужен файл изображения (jpg, png, webp).",
+      };
+    }
+
+    try {
+      const uploadsDir = path.join(process.cwd(), "public", "uploads");
+      await mkdir(uploadsDir, { recursive: true });
+
+      const ext = photo.name.split(".").pop()?.toLowerCase() || "jpg";
+      const filename = `${randomUUID()}.${ext}`;
+      const filepath = path.join(uploadsDir, filename);
+
+      const bytes = await photo.arrayBuffer();
+      await writeFile(filepath, Buffer.from(bytes));
+
+      imageUrl = `/uploads/${filename}`;
+    } catch (error) {
+      console.error("Photo upload error:", error);
+      return {
+        message: "Не удалось сохранить фото. Попробуй ещё раз.",
+      };
+    }
+  }
+
   try {
     await createPost({
       userId: user.id,
       authorName: user.name,
       workout,
       stats,
+      imageUrl,
     });
   } catch {
     return {

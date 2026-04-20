@@ -12,6 +12,7 @@ export type PostRecord = {
   authorName: string;
   workout: string;
   stats: string;
+  imageUrl: string | null;
   createdAt: string;
 };
 
@@ -20,7 +21,6 @@ const postsFile = path.join(dataDirectory, "posts.json");
 
 async function ensurePostsFile() {
   await mkdir(dataDirectory, { recursive: true });
-
   try {
     await readFile(postsFile, "utf8");
   } catch {
@@ -44,6 +44,7 @@ export async function createPost(input: {
   authorName: string;
   workout: string;
   stats: string;
+  imageUrl?: string | null;
 }) {
   const post: PostRecord = {
     id: randomUUID(),
@@ -51,32 +52,25 @@ export async function createPost(input: {
     authorName: input.authorName.trim(),
     workout: input.workout.trim(),
     stats: input.stats.trim(),
+    imageUrl: input.imageUrl ?? null,
     createdAt: new Date().toISOString(),
   };
 
   if (hasDatabase()) {
     await ensurePostsTable();
     await getPool().query(
-      `
-        INSERT INTO posts (
-          id,
-          user_id,
-          author_name,
-          workout,
-          stats,
-          created_at
-        ) VALUES ($1, $2, $3, $4, $5, $6)
-      `,
+      `INSERT INTO posts (id, user_id, author_name, workout, stats, image_url, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [
         post.id,
         post.userId,
         post.authorName,
         post.workout,
         post.stats,
+        post.imageUrl,
         post.createdAt,
       ],
     );
-
     return post;
   }
 
@@ -95,20 +89,11 @@ export async function getRecentPosts(limit = 20) {
       author_name: string;
       workout: string;
       stats: string;
+      image_url: string | null;
       created_at: Date;
     }>(
-      `
-        SELECT
-          id,
-          user_id,
-          author_name,
-          workout,
-          stats,
-          created_at
-        FROM posts
-        ORDER BY created_at DESC
-        LIMIT $1
-      `,
+      `SELECT id, user_id, author_name, workout, stats, image_url, created_at
+       FROM posts ORDER BY created_at DESC LIMIT $1`,
       [limit],
     );
 
@@ -118,6 +103,7 @@ export async function getRecentPosts(limit = 20) {
       authorName: row.author_name,
       workout: row.workout,
       stats: row.stats,
+      imageUrl: row.image_url,
       createdAt: row.created_at.toISOString(),
     }));
   }

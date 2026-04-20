@@ -72,6 +72,7 @@ export async function ensurePostsTable() {
           author_name TEXT NOT NULL,
           workout TEXT NOT NULL,
           stats TEXT NOT NULL,
+          image_url TEXT,
           created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
       `)

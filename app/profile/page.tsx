@@ -210,18 +210,28 @@ export default async function ProfilePage() {
           ) : (
             <div className="space-y-4">
               {posts.map((post) => (
-                <div key={post.id} className="bg-[#1E1F22] rounded-3xl p-5">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="font-semibold">{post.authorName}</span>
-                    <span className="text-[#9AA0A6] text-xs">
-                      {formatPostTime(post.createdAt)}
-                    </span>
+                <div key={post.id} className="bg-[#1E1F22] rounded-3xl overflow-hidden">
+                  <div className="p-5 pb-3">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="font-semibold">{post.authorName}</span>
+                      <span className="text-[#9AA0A6] text-xs">
+                        {formatPostTime(post.createdAt)}
+                      </span>
+                    </div>
+
+                    <p className="mt-3 text-lg leading-relaxed">{post.workout}</p>
+                    <p className="mt-1 text-sm text-[#C4C7C5]">{post.stats}</p>
                   </div>
 
-                  <p className="mt-3 text-lg leading-relaxed">{post.workout}</p>
-                  <p className="mt-1 text-sm text-[#C4C7C5]">{post.stats}</p>
+                  {post.imageUrl && (
+                    <img
+                      src={post.imageUrl}
+                      alt=""
+                      className="w-full max-h-[500px] object-cover"
+                    />
+                  )}
 
-                  <div className="mt-4 flex gap-5 text-[#9AA0A6]">
+                  <div className="p-5 pt-3 flex gap-5 text-[#9AA0A6]">
                     <button className="flex items-center gap-1.5 text-sm hover:text-white transition">
                       <Flame className="w-4 h-4" />
                     </button>

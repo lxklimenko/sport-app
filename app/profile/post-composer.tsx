@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { Plus, Send } from "lucide-react";
+import { ImagePlus, Send, X } from "lucide-react";
 
 import { publishPost, type CreatePostState } from "@/app/actions/auth";
 
@@ -17,68 +17,113 @@ function SubmitButton() {
       disabled={pending}
       className="inline-flex items-center gap-2 rounded-full bg-[#A8C7FA] px-5 py-3 font-semibold text-[#062E6F] transition hover:bg-[#BBD6FE] disabled:cursor-not-allowed disabled:opacity-70"
     >
-      {pending ? "Публикуем..." : "Добавить пост"}
-      {pending ? <Plus className="h-4 w-4" /> : <Send className="h-4 w-4" />}
+      {pending ? "Публикуем..." : "Опубликовать"}
+      <Send className="h-4 w-4" />
     </button>
   );
 }
 
 export function PostComposer() {
   const [state, formAction] = useActionState(publishPost, initialState);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      setPreview(null);
+      setFileName(null);
+      return;
+    }
+    setFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = () => setPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const clearPhoto = () => {
+    setPreview(null);
+    setFileName(null);
+    const input = document.getElementById("photo-input") as HTMLInputElement | null;
+    if (input) input.value = "";
+  };
 
   return (
-    <section className="rounded-[2rem] bg-[#171A1F] p-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="text-sm uppercase tracking-[0.24em] text-[#9AA0A6]">
-            Новый пост
-          </p>
-          <h2 className="mt-2 text-3xl font-semibold">
-            Расскажи, что сделал сегодня
-          </h2>
-        </div>
-      </div>
+    <section className="rounded-3xl bg-[#1E1F22] p-5">
+      <p className="text-xs uppercase tracking-widest text-[#9AA0A6] mb-2">
+        Новый пост
+      </p>
+      <h2 className="text-xl font-semibold mb-4">
+        Расскажи, что сделал сегодня
+      </h2>
 
-      <form action={formAction} className="mt-6 space-y-4">
-        <label className="block">
-          <span className="mb-2 block text-sm text-[#C4C7C5]">
-            Что было на тренировке
-          </span>
-          <textarea
-            name="workout"
-            rows={4}
-            placeholder="Например: 5 км бег, потом 4 подхода подтягиваний и пресс"
-            className="w-full resize-none rounded-[1.4rem] border border-white/10 bg-[#111318] px-4 py-4 outline-none transition focus:border-[#A8C7FA]"
-          />
-          {state.errors?.workout ? (
-            <p className="mt-2 text-sm text-[#FFB4AB]">{state.errors.workout}</p>
-          ) : null}
-        </label>
+      <form action={formAction} className="space-y-3">
+        <textarea
+          name="workout"
+          rows={3}
+          placeholder="Что было на тренировке? Например: 5 км бег, 4 подхода подтягиваний"
+          className="w-full resize-none rounded-2xl bg-black/30 px-4 py-3 text-base outline-none transition focus:ring-1 focus:ring-[#A8C7FA] placeholder-[#9AA0A6]"
+        />
+        {state.errors?.workout && (
+          <p className="text-sm text-[#FFB4AB]">{state.errors.workout}</p>
+        )}
 
-        <label className="block">
-          <span className="mb-2 block text-sm text-[#C4C7C5]">
-            Результат и детали
-          </span>
-          <input
-            name="stats"
-            placeholder="Например: 42 минуты • 540 ккал • рекорд по темпу"
-            className="w-full rounded-[1.4rem] border border-white/10 bg-[#111318] px-4 py-4 outline-none transition focus:border-[#A8C7FA]"
-          />
-          {state.errors?.stats ? (
-            <p className="mt-2 text-sm text-[#FFB4AB]">{state.errors.stats}</p>
-          ) : null}
-        </label>
+        <input
+          name="stats"
+          placeholder="Результат: 42 минуты · 540 ккал · рекорд"
+          className="w-full rounded-2xl bg-black/30 px-4 py-3 text-base outline-none transition focus:ring-1 focus:ring-[#A8C7FA] placeholder-[#9AA0A6]"
+        />
+        {state.errors?.stats && (
+          <p className="text-sm text-[#FFB4AB]">{state.errors.stats}</p>
+        )}
 
-        <div className="flex items-center justify-between gap-4">
-          <p className="text-sm text-[#9AA0A6]">
-            Коротко, но по делу: что сделал и какой результат получил.
+        {preview ? (
+          <div className="relative rounded-2xl overflow-hidden bg-black/30">
+            <img
+              src={preview}
+              alt="Preview"
+              className="w-full max-h-80 object-cover"
+            />
+            <button
+              type="button"
+              onClick={clearPhoto}
+              className="absolute top-2 right-2 bg-black/60 backdrop-blur rounded-full p-2 hover:bg-black/80 transition"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <p className="absolute bottom-2 left-3 text-xs text-white/90 bg-black/40 backdrop-blur rounded-full px-2 py-0.5">
+              {fileName}
+            </p>
+          </div>
+        ) : (
+          <label
+            htmlFor="photo-input"
+            className="flex items-center gap-3 rounded-2xl bg-black/30 px-4 py-3 cursor-pointer hover:bg-black/50 transition"
+          >
+            <ImagePlus className="w-5 h-5 text-[#9AA0A6]" />
+            <span className="text-sm text-[#9AA0A6]">Добавить фото</span>
+          </label>
+        )}
+
+        <input
+          id="photo-input"
+          name="photo"
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+
+        <div className="flex items-center justify-between gap-3 pt-1">
+          <p className="text-xs text-[#9AA0A6] flex-1">
+            Коротко и по делу
           </p>
           <SubmitButton />
         </div>
 
-        {state.message ? (
+        {state.message && (
           <p className="text-sm text-[#C4C7C5]">{state.message}</p>
-        ) : null}
+        )}
       </form>
     </section>
   );
