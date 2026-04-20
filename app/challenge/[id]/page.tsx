@@ -216,11 +216,20 @@ export default async function ChallengePage({
 
                     <div className="flex-1">
                       <div className="font-semibold">
-                        {leader.userName}
-                        {isMe && (
-                          <span className="ml-2 text-sm text-[#A8C7FA]">
-                            это ты
-                          </span>
+                        {isMe ? (
+                          <>
+                            {leader.userName}
+                            <span className="ml-2 text-sm text-[#A8C7FA]">
+                              это ты
+                            </span>
+                          </>
+                        ) : (
+                          <Link
+                            href={`/user/${leader.userId}`}
+                            className="hover:text-[#A8C7FA] transition"
+                          >
+                            {leader.userName}
+                          </Link>
                         )}
                       </div>
                     </div>

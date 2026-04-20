@@ -1,17 +1,15 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { Settings, Plus, Grid3x3, List } from "lucide-react";
+import { ArrowLeft, Grid3x3, List } from "lucide-react";
 
-import { logout } from "@/app/actions/auth";
 import { getSessionUserId } from "@/lib/auth";
-import { getRecentPosts } from "@/lib/posts";
 import { getUserById } from "@/lib/users";
 import { getMyChallenges } from "@/lib/challenges";
 import { getPool, hasDatabase } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-async function getMyPostsWithStats(userId: string) {
+async function getUserPostsWithStats(userId: string) {
   if (!hasDatabase()) return [];
 
   const result = await getPool().query<{
@@ -41,30 +39,26 @@ async function getMyPostsWithStats(userId: string) {
   }));
 }
 
-async function getTodaySteps(userId: string) {
-  if (!hasDatabase()) return 0;
-  const result = await getPool().query<{ total: string }>(
-    `SELECT COALESCE(SUM(steps), 0)::text AS total 
-     FROM step_entries 
-     WHERE user_id = $1 AND entry_date = CURRENT_DATE`,
-    [userId]
-  );
-  return Number(result.rows[0]?.total ?? 0);
-}
+export default async function UserPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const currentUserId = await getSessionUserId();
 
-export default async function ProfilePage() {
-  const userId = await getSessionUserId();
-  if (!userId) redirect("/signup");
+  if (currentUserId === id) {
+    redirect("/profile");
+  }
 
-  const user = await getUserById(userId);
-  if (!user) redirect("/signup");
+  const user = await getUserById(id);
+  if (!user) notFound();
 
-  const allChallenges = await getMyChallenges(userId, false);
+  const allChallenges = await getMyChallenges(id, false);
   const activeChallenges = allChallenges.filter(c => c.challenge.isActive);
   const pastChallenges = allChallenges.filter(c => !c.challenge.isActive);
 
-  const myPosts = await getMyPostsWithStats(userId);
-  const todaySteps = await getTodaySteps(userId);
+  const posts = await getUserPostsWithStats(id);
 
   const totalSteps = allChallenges.reduce((sum, c) => sum + c.totalSteps, 0);
   const bestRank = activeChallenges.length > 0
@@ -76,21 +70,14 @@ export default async function ProfilePage() {
   return (
     <main className="min-h-screen bg-[#0D0F12] text-[#F5F7FA] pb-20">
 
-      <div className="sticky top-0 z-10 bg-[#0D0F12]/95 backdrop-blur border-b border-white/5 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-[#1E1F22]" />
-          <span className="font-semibold">{user.name}</span>
-        </div>
-        <div className="flex items-center gap-4 text-[#9AA0A6]">
-          <Link href="/" className="hover:text-white transition">
-            <Plus className="w-6 h-6" />
-          </Link>
-          <form action={logout}>
-            <button className="hover:text-white transition">
-              <Settings className="w-5 h-5" />
-            </button>
-          </form>
-        </div>
+      <div className="sticky top-0 z-10 bg-[#0D0F12]/95 backdrop-blur border-b border-white/5 px-4 py-3 flex items-center gap-3">
+        <Link
+          href="/profile"
+          className="p-2 -ml-2 hover:bg-white/5 rounded-full transition"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </Link>
+        <span className="font-semibold">{user.name}</span>
       </div>
 
       <div className="px-4 pt-5">
@@ -104,7 +91,7 @@ export default async function ProfilePage() {
 
           <div className="flex-1 grid grid-cols-3 gap-2 text-center">
             <div>
-              <div className="text-lg font-semibold">{myPosts.length}</div>
+              <div className="text-lg font-semibold">{posts.length}</div>
               <div className="text-xs text-[#9AA0A6]">постов</div>
             </div>
             <div>
@@ -126,19 +113,14 @@ export default async function ProfilePage() {
             {user.favoriteFormat}
             {user.goal && ` · 🎯 ${user.goal}`}
           </div>
-          {todaySteps > 0 && (
-            <div className="text-xs text-[#9AA0A6] mt-1">
-              🔥 Сегодня: +{todaySteps.toLocaleString("ru-RU")}
-            </div>
-          )}
         </div>
 
         <div className="flex gap-2 mb-6">
-          <button className="flex-1 bg-[#1E1F22] text-[#E3E3E3] py-2 px-4 rounded-xl text-sm font-medium hover:bg-[#2A2D33] transition">
-            Редактировать
+          <button className="flex-1 bg-[#A8C7FA] text-[#062E6F] py-2 px-4 rounded-xl text-sm font-semibold hover:bg-[#BBD6FE] transition">
+            Подписаться
           </button>
           <button className="flex-1 bg-[#1E1F22] text-[#E3E3E3] py-2 px-4 rounded-xl text-sm font-medium hover:bg-[#2A2D33] transition">
-            Поделиться
+            Сообщение
           </button>
         </div>
 
@@ -226,15 +208,15 @@ export default async function ProfilePage() {
         </button>
       </div>
 
-      {myPosts.length === 0 ? (
+      {posts.length === 0 ? (
         <div className="text-center py-16 px-4 text-[#9AA0A6]">
           <div className="text-5xl mb-3">📸</div>
           <p className="font-semibold mb-1">Пока нет постов</p>
-          <p className="text-sm">Опубликуй первую тренировку</p>
+          <p className="text-sm">Пользователь ещё не публиковал тренировки</p>
         </div>
       ) : (
         <div className="grid grid-cols-3 gap-0.5">
-          {myPosts.map(post => (
+          {posts.map(post => (
             <Link
               key={post.id}
               href={`/post/${post.id}`}

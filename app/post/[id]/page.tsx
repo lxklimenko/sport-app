@@ -119,7 +119,12 @@ export default async function PostPage({
         <div className="bg-[#1E1F22] mx-4 mt-4 rounded-3xl overflow-hidden">
           <div className="p-5 pb-3">
             <div className="flex justify-between items-center text-sm">
-              <span className="font-semibold">{post.authorName}</span>
+              <Link
+                href={`/user/${post.userId}`}
+                className="font-semibold hover:text-[#A8C7FA] transition"
+              >
+                {post.authorName}
+              </Link>
               <div className="flex items-center gap-3">
                 <span className="text-[#9AA0A6] text-xs">
                   {formatTime(post.createdAt)}
@@ -186,7 +191,12 @@ export default async function PostPage({
                   <div className="flex-1 min-w-0">
                     <div className="bg-[#1E1F22] rounded-2xl px-4 py-3">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold text-sm">{c.authorName}</span>
+                        <Link
+                          href={`/user/${c.userId}`}
+                          className="font-semibold text-sm hover:text-[#A8C7FA] transition"
+                        >
+                          {c.authorName}
+                        </Link>
                         <span className="text-xs text-[#9AA0A6]">
                           {formatTime(c.createdAt)}
                         </span>
