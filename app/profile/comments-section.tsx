@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { MessageCircle, Trash2 } from "lucide-react";
+import { MessageCircle, Trash2, Reply } from "lucide-react";
 
 import { addCommentAction, deleteCommentAction } from "@/app/actions";
 
@@ -27,6 +27,20 @@ function SubmitButton() {
   );
 }
 
+function renderTextWithMentions(text: string) {
+  const parts = text.split(/(@[\wа-яА-ЯёЁ]+)/gu);
+  return parts.map((part, i) => {
+    if (part.startsWith("@")) {
+      return (
+        <span key={i} className="text-[#A8C7FA] font-medium">
+          {part}
+        </span>
+      );
+    }
+    return <span key={i}>{part}</span>;
+  });
+}
+
 export function CommentsSection({
   postId,
   count,
@@ -39,6 +53,18 @@ export function CommentsSection({
   currentUserId: string;
 }) {
   const [open, setOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleReply = (authorName: string) => {
+    if (!inputRef.current) return;
+    const currentValue = inputRef.current.value;
+    const mention = `@${authorName.replace(/\s+/g, "_")} `;
+
+    if (!currentValue.includes(mention)) {
+      inputRef.current.value = mention + currentValue;
+    }
+    inputRef.current.focus();
+  };
 
   return (
     <div>
@@ -55,15 +81,29 @@ export function CommentsSection({
           {comments.length > 0 && (
             <div className="space-y-2">
               {comments.map((c) => (
-                <div key={c.id} className="flex items-start gap-2 text-sm">
-                  <span className="font-semibold shrink-0">{c.authorName}:</span>
-                  <span className="flex-1 text-[#C4C7C5]">{c.text}</span>
+                <div key={c.id} className="flex items-start gap-2 text-sm group">
+                  <div className="flex-1">
+                    <span className="font-semibold">{c.authorName}:</span>{" "}
+                    <span className="text-[#C4C7C5]">
+                      {renderTextWithMentions(c.text)}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleReply(c.authorName)}
+                    className="text-[#9AA0A6] hover:text-white transition shrink-0 opacity-0 group-hover:opacity-100"
+                    title="Ответить"
+                  >
+                    <Reply className="w-3.5 h-3.5" />
+                  </button>
+
                   {c.userId === currentUserId && (
                     <form action={deleteCommentAction}>
                       <input type="hidden" name="commentId" value={c.id} />
                       <button
                         type="submit"
-                        className="text-[#9AA0A6] hover:text-[#FFB4AB] transition shrink-0"
+                        className="text-[#9AA0A6] hover:text-[#FFB4AB] transition shrink-0 opacity-0 group-hover:opacity-100"
                         title="Удалить"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -78,6 +118,7 @@ export function CommentsSection({
           <form action={addCommentAction} className="flex gap-2">
             <input type="hidden" name="postId" value={postId} />
             <input
+              ref={inputRef}
               name="text"
               required
               maxLength={500}
