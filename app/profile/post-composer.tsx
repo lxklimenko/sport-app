@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { ImagePlus, Send, X } from "lucide-react";
 
@@ -27,6 +27,7 @@ export function PostComposer() {
   const [state, formAction] = useActionState(publishPost, initialState);
   const [preview, setPreview] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -44,8 +45,7 @@ export function PostComposer() {
   const clearPhoto = () => {
     setPreview(null);
     setFileName(null);
-    const input = document.getElementById("photo-input") as HTMLInputElement | null;
-    if (input) input.value = "";
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
@@ -77,6 +77,15 @@ export function PostComposer() {
           <p className="text-sm text-[#FFB4AB]">{state.errors.stats}</p>
         )}
 
+        <input
+          ref={fileInputRef}
+          name="photo"
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+
         {preview ? (
           <div className="relative rounded-2xl overflow-hidden bg-black/30">
             <img
@@ -96,23 +105,15 @@ export function PostComposer() {
             </p>
           </div>
         ) : (
-          <label
-            htmlFor="photo-input"
-            className="flex items-center gap-3 rounded-2xl bg-black/30 px-4 py-3 cursor-pointer hover:bg-black/50 transition"
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full flex items-center gap-3 rounded-2xl bg-black/30 px-4 py-3 cursor-pointer hover:bg-black/50 transition text-left"
           >
             <ImagePlus className="w-5 h-5 text-[#9AA0A6]" />
             <span className="text-sm text-[#9AA0A6]">Добавить фото</span>
-          </label>
+          </button>
         )}
-
-        <input
-          id="photo-input"
-          name="photo"
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          className="hidden"
-        />
 
         <div className="flex items-center justify-between gap-3 pt-1">
           <p className="text-xs text-[#9AA0A6] flex-1">
