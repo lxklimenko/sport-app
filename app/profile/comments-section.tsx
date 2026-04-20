@@ -92,7 +92,7 @@ export function CommentsSection({
                   <button
                     type="button"
                     onClick={() => handleReply(c.authorName)}
-                    className="text-[#9AA0A6] hover:text-white transition shrink-0 opacity-0 group-hover:opacity-100"
+                    className="text-[#9AA0A6] hover:text-white transition shrink-0 md:opacity-0 md:group-hover:opacity-100"
                     title="Ответить"
                   >
                     <Reply className="w-3.5 h-3.5" />
@@ -103,7 +103,7 @@ export function CommentsSection({
                       <input type="hidden" name="commentId" value={c.id} />
                       <button
                         type="submit"
-                        className="text-[#9AA0A6] hover:text-[#FFB4AB] transition shrink-0 opacity-0 group-hover:opacity-100"
+                        className="text-[#9AA0A6] hover:text-[#FFB4AB] transition shrink-0 md:opacity-0 md:group-hover:opacity-100"
                         title="Удалить"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
