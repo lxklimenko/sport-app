@@ -2,31 +2,35 @@ import "server-only";
 
 import { ensureUsersTable, getPool, hasDatabase } from "@/lib/db";
 
+export type AchievementCategory = "strength" | "discipline" | "social" | "challenge";
+
 export type AchievementDef = {
   code: string;
   emoji: string;
   title: string;
   description: string;
+  category: AchievementCategory;
+  rare?: boolean;
 };
 
 export const ACHIEVEMENTS: AchievementDef[] = [
-  { code: "first_steps", emoji: "🏁", title: "Первые шаги", description: "Первая запись в челлендже" },
-  { code: "10k_in_day", emoji: "💪", title: "Боевой день", description: "10 000 за один день" },
-  { code: "50k_total", emoji: "🔥", title: "Разгон", description: "50 000 суммарно" },
-  { code: "100k_total", emoji: "⚡", title: "Спринтер", description: "100 000 суммарно" },
-  { code: "500k_total", emoji: "👑", title: "Легенда", description: "500 000 суммарно" },
+  { code: "first_steps", emoji: "🏁", title: "Первые шаги", description: "Первая запись в челлендже", category: "strength" },
+  { code: "10k_in_day", emoji: "💪", title: "Боевой день", description: "10 000 за один день", category: "strength" },
+  { code: "50k_total", emoji: "🔥", title: "Разгон", description: "50 000 суммарно", category: "strength" },
+  { code: "100k_total", emoji: "⚡", title: "Спринтер", description: "100 000 суммарно", category: "strength" },
+  { code: "500k_total", emoji: "👑", title: "Легенда", description: "500 000 суммарно", category: "strength", rare: true },
 
-  { code: "streak_3", emoji: "🎯", title: "В ритме", description: "3 дня подряд" },
-  { code: "streak_7", emoji: "🔥", title: "Неделя без срыва", description: "7 дней подряд" },
-  { code: "streak_30", emoji: "⭐", title: "Железная дисциплина", description: "30 дней подряд" },
+  { code: "streak_3", emoji: "🎯", title: "В ритме", description: "3 дня подряд", category: "discipline" },
+  { code: "streak_7", emoji: "🔥", title: "Неделя без срыва", description: "7 дней подряд", category: "discipline" },
+  { code: "streak_30", emoji: "⭐", title: "Железная дисциплина", description: "30 дней подряд", category: "discipline", rare: true },
 
-  { code: "first_post", emoji: "📸", title: "Первый пост", description: "Опубликовал первую тренировку" },
-  { code: "10_followers", emoji: "👥", title: "Тренер", description: "10 подписчиков" },
-  { code: "10_comments", emoji: "💬", title: "Душа команды", description: "10 написанных комментариев" },
-  { code: "50_likes_received", emoji: "❤️", title: "Любимчик", description: "50 лайков на твои посты" },
+  { code: "first_post", emoji: "📸", title: "Первый пост", description: "Опубликовал первую тренировку", category: "social" },
+  { code: "10_followers", emoji: "👥", title: "Тренер", description: "10 подписчиков", category: "social" },
+  { code: "10_comments", emoji: "💬", title: "Душа команды", description: "10 написанных комментариев", category: "social" },
+  { code: "50_likes_received", emoji: "❤️", title: "Любимчик", description: "50 лайков на твои посты", category: "social", rare: true },
 
-  { code: "first_challenge", emoji: "🏆", title: "В игре", description: "Первый челлендж" },
-  { code: "top_1", emoji: "🥇", title: "Чемпион", description: "Стал первым в челлендже" },
+  { code: "first_challenge", emoji: "🏆", title: "В игре", description: "Первый челлендж", category: "challenge" },
+  { code: "top_1", emoji: "🥇", title: "Чемпион", description: "Стал первым в челлендже", category: "challenge", rare: true },
 ];
 
 let achievementsTableReadyPromise: Promise<void> | null = null;

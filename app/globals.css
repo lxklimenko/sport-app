@@ -1,28 +1,46 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0d0f12;
-  --foreground: #f5f7fa;
+  --background: #10121a;
+  --foreground: #f5f5fa;
+
+  --md-surface: #1d1b26;
+  --md-surface-hover: #2b2839;
+  --md-surface-dim: #14131d;
+
+  --md-primary: #b4a5ff;
+  --md-primary-hover: #c5b9ff;
+  --md-on-primary: #322654;
+  --md-primary-container: #4a3b7a;
+
+  --md-secondary: #c8bfff;
+  --md-tertiary: #ffd8a8;
+  --md-on-tertiary: #4a3521;
+
+  --md-error: #ffb4ab;
+  --md-on-error: #4a1b0c;
+
+  --md-outline: rgba(255, 255, 255, 0.08);
+  --md-outline-strong: rgba(255, 255, 255, 0.15);
+
+  --md-text-primary: #f5f5fa;
+  --md-text-secondary: #c8c6d4;
+  --md-text-muted: #8f8d9c;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: "Segoe UI", "Helvetica Neue", sans-serif;
+  --font-sans: "Google Sans", "Segoe UI", "Helvetica Neue", system-ui, sans-serif;
   --font-mono: "SFMono-Regular", "Menlo", monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: radial-gradient(circle at top, #1a1a1a, #000000);
+  background: var(--background);
   color: var(--foreground);
-  font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .scrollbar-hide {
@@ -31,4 +49,35 @@ body {
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+@keyframes md-ripple {
+  0% { transform: scale(0); opacity: 0.6; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+.md-card {
+  background: var(--md-surface);
+  border-radius: 1.5rem;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.md-card:hover {
+  background: var(--md-surface-hover);
+}
+
+.md-card:active {
+  transform: scale(0.98);
+}
+
+.md-glow-purple {
+  box-shadow: 0 0 32px -8px rgba(180, 165, 255, 0.25);
+}
+
+.md-glow-amber {
+  box-shadow: 0 0 32px -8px rgba(255, 216, 168, 0.3);
+}
+
+.md-glow-coral {
+  box-shadow: 0 0 32px -8px rgba(255, 180, 171, 0.25);
 }

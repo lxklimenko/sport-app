@@ -19,8 +19,8 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-40 bg-[#0D0F12]/95 backdrop-blur border-t border-white/5">
-      <div className="mx-auto max-w-2xl flex">
+    <nav className="fixed bottom-0 inset-x-0 z-40 bg-[#10121A]/95 backdrop-blur-xl border-t border-white/5">
+      <div className="mx-auto max-w-2xl flex items-center justify-around px-2 py-2">
         {items.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href ||
@@ -30,16 +30,30 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex-1 flex flex-col items-center justify-center py-3 transition ${
-                isActive ? "text-white" : "text-[#9AA0A6]"
-              }`}
+              className="relative flex-1 flex flex-col items-center py-1.5 group"
             >
-              <Icon
-                className="w-6 h-6"
-                fill={isActive ? "currentColor" : "none"}
-                strokeWidth={isActive ? 2 : 1.5}
-              />
-              <span className="text-[10px] mt-1">{item.label}</span>
+              <div className={`relative flex items-center justify-center transition-all duration-200 ${
+                isActive
+                  ? "px-5 py-1.5 rounded-full bg-gradient-to-br from-[#B4A5FF]/20 to-[#8E7AE0]/20 border border-[#B4A5FF]/30"
+                  : "p-1.5"
+              }`}>
+                <Icon
+                  className={`w-5 h-5 transition-all ${
+                    isActive
+                      ? "text-[#B4A5FF]"
+                      : "text-[#8F8D9C] group-hover:text-[#C8C6D4]"
+                  }`}
+                  fill={isActive ? "currentColor" : "none"}
+                  strokeWidth={isActive ? 2 : 1.75}
+                />
+              </div>
+              <span className={`text-[9px] mt-0.5 transition-all ${
+                isActive
+                  ? "text-[#B4A5FF] font-semibold"
+                  : "text-[#8F8D9C]"
+              }`}>
+                {item.label}
+              </span>
             </Link>
           );
         })}

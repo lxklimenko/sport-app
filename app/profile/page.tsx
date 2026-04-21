@@ -226,10 +226,10 @@ export default async function ProfilePage() {
           <div className="mb-6">
             {activeChallenges.length > 0 && (
               <>
-                <div className="text-xs text-[#9AA0A6] uppercase tracking-widest mb-3 px-1">
+                <div className="text-[10px] uppercase tracking-widest text-[#8F8D9C] mb-3 px-1">
                   Сейчас
                 </div>
-                <div className="grid grid-cols-2 gap-2 mb-4">
+                <div className="grid grid-cols-2 gap-3 mb-5">
                   {activeChallenges.map(my => {
                     const daysLeft = Math.max(
                       0,
@@ -239,27 +239,46 @@ export default async function ProfilePage() {
                       100,
                       Math.round(((my.challenge.days - daysLeft) / my.challenge.days) * 100)
                     );
+
+                    const metric = my.challenge.metric;
+                    const colors = metric === "pushups"
+                      ? { gradient: "from-[#FFB4D4] to-[#E074A8]", glow: "shadow-[0_0_24px_-6px_rgba(224,116,168,0.4)]", bar: "#FFB4D4", text: "text-[#4A1B33]" }
+                      : metric === "km"
+                      ? { gradient: "from-[#B4F5D8] to-[#6ED4A8]", glow: "shadow-[0_0_24px_-6px_rgba(110,212,168,0.4)]", bar: "#B4F5D8", text: "text-[#0F3D2C]" }
+                      : { gradient: "from-[#B4A5FF] to-[#8E7AE0]", glow: "shadow-[0_0_24px_-6px_rgba(180,165,255,0.4)]", bar: "#B4A5FF", text: "text-[#322654]" };
+
                     return (
                       <Link
                         key={my.challenge.id}
                         href={`/challenge/${my.challenge.id}`}
-                        className="bg-[#1E1F22] rounded-2xl p-3 relative hover:bg-[#2A2D33] transition"
+                        className={`relative bg-[#1D1B26] rounded-[1.25rem] p-4 transition-all hover:bg-[#2B2839] active:scale-[0.98] ${colors.glow}`}
                       >
-                        <div className="absolute top-2 right-2 bg-[#FDE293] text-[#3D2A00] text-[10px] font-bold px-2 py-0.5 rounded-md">
-                          #{my.rank}
+                        <div className={`absolute top-3 right-3 w-8 h-8 rounded-full bg-gradient-to-br ${colors.gradient} flex items-center justify-center`}>
+                          <span className={`text-[10px] font-bold ${colors.text}`}>
+                            #{my.rank}
+                          </span>
                         </div>
-                        <div className="text-xl mb-1">{my.challenge.emoji}</div>
-                        <div className="text-xs font-semibold truncate pr-8">
+
+                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${colors.gradient} flex items-center justify-center mb-2`}>
+                          <span className="text-xl">{my.challenge.emoji}</span>
+                        </div>
+
+                        <div className="text-sm font-semibold truncate pr-6">
                           {my.challenge.title}
                         </div>
-                        <div className="text-[10px] text-[#9AA0A6] mt-0.5 truncate">
+                        <div className="text-[10px] text-[#8F8D9C] mt-0.5 truncate">
                           {my.totalSteps.toLocaleString("ru-RU")} {my.challenge.unitLabel}
                         </div>
-                        <div className="mt-2 h-[2px] bg-[#2A2D33] rounded-full overflow-hidden">
+
+                        <div className="mt-3 h-[3px] bg-[#2B2839] rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-[#A8C7FA]"
-                            style={{ width: `${progress}%` }}
+                            className="h-full rounded-full transition-all"
+                            style={{ width: `${progress}%`, backgroundColor: colors.bar }}
                           />
+                        </div>
+                        <div className="mt-1.5 flex justify-between text-[9px] text-[#8F8D9C]">
+                          <span>{progress}%</span>
+                          <span>{daysLeft} дн</span>
                         </div>
                       </Link>
                     );
@@ -270,24 +289,32 @@ export default async function ProfilePage() {
 
             {pastChallenges.length > 0 && (
               <>
-                <div className="text-xs text-[#9AA0A6] uppercase tracking-widest mb-3 px-1">
+                <div className="text-[10px] uppercase tracking-widest text-[#8F8D9C] mb-3 px-1">
                   История
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   {pastChallenges.map(my => (
                     <Link
                       key={my.challenge.id}
                       href={`/challenge/${my.challenge.id}`}
-                      className="bg-[#1E1F22] rounded-2xl p-3 relative hover:bg-[#2A2D33] transition opacity-70"
+                      className="relative bg-[#14131D] rounded-[1.25rem] p-4 hover:bg-[#1D1B26] transition-all active:scale-[0.98]"
                     >
-                      <div className="absolute top-2 right-2 bg-[#2A2D33] text-[#9AA0A6] text-[10px] font-bold px-2 py-0.5 rounded-md">
-                        #{my.rank}
+                      <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-[#2B2839] flex items-center justify-center">
+                        <span className="text-[10px] font-bold text-[#8F8D9C]">
+                          #{my.rank}
+                        </span>
                       </div>
-                      <div className="text-xl mb-1">{my.challenge.emoji}</div>
-                      <div className="text-xs font-semibold truncate pr-8">
+
+                      <div className="w-10 h-10 rounded-xl bg-[#2B2839] flex items-center justify-center mb-2 opacity-70">
+                        <span className="text-xl grayscale">{my.challenge.emoji}</span>
+                      </div>
+
+                      <div className="text-sm font-semibold truncate pr-6 text-[#C8C6D4]">
                         {my.challenge.title}
                       </div>
-                      <div className="text-[10px] text-[#9AA0A6] mt-0.5">завершён</div>
+                      <div className="text-[10px] text-[#8F8D9C] mt-0.5">
+                        завершён · #{my.rank}
+                      </div>
                     </Link>
                   ))}
                 </div>
