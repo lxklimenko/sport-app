@@ -463,3 +463,53 @@ export async function getActivityHeatmap(userId: string): Promise<Record<string,
 
   return heatmap;
 }
+
+export async function getWeeklyProgress(userId: string): Promise<{
+  weeks: { label: string; total: number; startDate: string }[];
+}> {
+  if (!hasDatabase()) return { weeks: [] };
+
+  const result = await getPool().query<{
+    week_start: Date;
+    total: string;
+  }>(
+    `SELECT 
+       DATE_TRUNC('week', entry_date)::date AS week_start,
+       SUM(steps)::text AS total
+     FROM step_entries
+     WHERE user_id = $1 
+       AND entry_date >= CURRENT_DATE - INTERVAL '84 days'
+     GROUP BY week_start
+     ORDER BY week_start ASC`,
+    [userId]
+  );
+
+  const weeksMap = new Map<string, number>();
+  for (const row of result.rows) {
+    const key = row.week_start.toISOString().slice(0, 10);
+    weeksMap.set(key, Number(row.total));
+  }
+
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  const todayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const currentMonday = new Date(today);
+  currentMonday.setDate(today.getDate() - todayOffset);
+  currentMonday.setHours(0, 0, 0, 0);
+
+  const weeks: { label: string; total: number; startDate: string }[] = [];
+  for (let i = 11; i >= 0; i--) {
+    const weekStart = new Date(currentMonday);
+    weekStart.setDate(currentMonday.getDate() - i * 7);
+    const key = weekStart.toISOString().slice(0, 10);
+    const total = weeksMap.get(key) ?? 0;
+
+    const day = weekStart.getDate();
+    const month = weekStart.getMonth() + 1;
+    const label = `${day}.${String(month).padStart(2, "0")}`;
+
+    weeks.push({ label, total, startDate: key });
+  }
+
+  return { weeks };
+}

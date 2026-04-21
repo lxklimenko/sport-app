@@ -5,12 +5,13 @@ import { Settings, Plus, Grid3x3, List } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { getSessionUserId } from "@/lib/auth";
 import { getRecentPosts } from "@/lib/posts";
-import { getUserById, getUserStreak, getActivityHeatmap } from "@/lib/users";
+import { getUserById, getUserStreak, getActivityHeatmap, getWeeklyProgress } from "@/lib/users";
 import { getMyChallenges } from "@/lib/challenges";
 import { getPool, hasDatabase } from "@/lib/db";
 import { getFollowCounts } from "@/lib/follows";
 import { StreakBadge } from "@/app/profile/streak-badge";
 import { ActivityHeatmap } from "@/app/profile/heatmap";
+import { WeeklyChart } from "@/app/profile/weekly-chart";
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +72,7 @@ export default async function ProfilePage() {
   const followCounts = await getFollowCounts(userId);
   const streak = await getUserStreak(userId);
   const heatmap = await getActivityHeatmap(userId);
+  const weeklyProgress = await getWeeklyProgress(userId);
 
   const totalSteps = allChallenges.reduce((sum, c) => sum + c.totalSteps, 0);
   const bestRank = activeChallenges.length > 0
@@ -144,6 +146,9 @@ export default async function ProfilePage() {
           />
           <div className="mt-3">
             <ActivityHeatmap data={heatmap} />
+          </div>
+          <div className="mt-3">
+            <WeeklyChart weeks={weeklyProgress.weeks} />
           </div>
         </div>
 
