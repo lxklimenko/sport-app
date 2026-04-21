@@ -8,6 +8,7 @@ import { getMyChallenges } from "@/lib/challenges";
 import { getPool, hasDatabase } from "@/lib/db";
 import { isFollowing, getFollowCounts } from "@/lib/follows";
 import { toggleFollowAction } from "@/app/actions";
+import { StreakBadge } from "@/app/profile/streak-badge";
 
 export const dynamic = "force-dynamic";
 
@@ -116,22 +117,11 @@ export default async function UserPage({
             {user.favoriteFormat}
             {user.goal && ` · 🎯 ${user.goal}`}
           </div>
-          {streak.current > 0 && (
-            <div className="flex items-center gap-1 mt-1 text-xs">
-              <span className="text-base">🔥</span>
-              <span className="text-[#FDE293] font-semibold">
-                {streak.current}
-              </span>
-              <span className="text-[#9AA0A6]">
-                {streak.current === 1 ? "день" : "дней подряд"}
-              </span>
-              {streak.best > streak.current && (
-                <span className="text-[#9AA0A6] ml-2">
-                  · рекорд {streak.best}
-                </span>
-              )}
-            </div>
-          )}
+          <StreakBadge
+            current={streak.current}
+            best={streak.best}
+            weekDays={streak.weekDays}
+          />
         </div>
 
         <div className="flex gap-2 mb-6">

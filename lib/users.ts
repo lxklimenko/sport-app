@@ -365,8 +365,12 @@ export async function updateUserProfile(
   );
 }
 
-export async function getUserStreak(userId: string): Promise<{ current: number; best: number }> {
-  if (!hasDatabase()) return { current: 0, best: 0 };
+export async function getUserStreak(userId: string): Promise<{ 
+  current: number; 
+  best: number; 
+  weekDays: boolean[];
+}> {
+  if (!hasDatabase()) return { current: 0, best: 0, weekDays: [false, false, false, false, false, false, false] };
 
   const result = await getPool().query<{ entry_date: Date }>(
     `SELECT DISTINCT entry_date 
@@ -377,7 +381,7 @@ export async function getUserStreak(userId: string): Promise<{ current: number; 
   );
 
   if (result.rows.length === 0) {
-    return { current: 0, best: 0 };
+    return { current: 0, best: 0, weekDays: [false, false, false, false, false, false, false] };
   }
 
   const dates = result.rows.map(r => {
@@ -385,6 +389,8 @@ export async function getUserStreak(userId: string): Promise<{ current: number; 
     d.setHours(0, 0, 0, 0);
     return d.getTime();
   });
+
+  const datesSet = new Set(dates);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -418,5 +424,19 @@ export async function getUserStreak(userId: string): Promise<{ current: number; 
   }
   if (current > best) best = current;
 
-  return { current, best };
+  const dayOfWeek = today.getDay();
+  const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const mondayMs = todayMs - mondayOffset * oneDay;
+
+  const weekDays: boolean[] = [];
+  for (let i = 0; i < 7; i++) {
+    const dayMs = mondayMs + i * oneDay;
+    if (dayMs > todayMs) {
+      weekDays.push(false);
+    } else {
+      weekDays.push(datesSet.has(dayMs));
+    }
+  }
+
+  return { current, best, weekDays };
 }

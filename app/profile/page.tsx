@@ -9,6 +9,7 @@ import { getUserById, getUserStreak } from "@/lib/users";
 import { getMyChallenges } from "@/lib/challenges";
 import { getPool, hasDatabase } from "@/lib/db";
 import { getFollowCounts } from "@/lib/follows";
+import { StreakBadge } from "@/app/profile/streak-badge";
 
 export const dynamic = "force-dynamic";
 
@@ -127,29 +128,18 @@ export default async function ProfilePage() {
             {user.favoriteFormat}
             {user.goal && ` · 🎯 ${user.goal}`}
           </div>
-          <div className="flex items-center gap-4 mt-2 text-xs">
-            {streak.current > 0 && (
-              <div className="flex items-center gap-1">
-                <span className="text-base">🔥</span>
-                <span className="text-[#FDE293] font-semibold">
-                  {streak.current}
-                </span>
-                <span className="text-[#9AA0A6]">
-                  {streak.current === 1 ? "день" : "дней подряд"}
-                </span>
-              </div>
-            )}
-            {todaySteps > 0 && (
-              <div className="text-[#9AA0A6]">
-                Сегодня: +{todaySteps.toLocaleString("ru-RU")}
-              </div>
-            )}
-            {streak.best > streak.current && streak.best > 0 && (
-              <div className="text-[#9AA0A6]">
-                Рекорд: {streak.best}
-              </div>
-            )}
-          </div>
+
+          {todaySteps > 0 && (
+            <div className="text-xs text-[#9AA0A6] mt-1">
+              Сегодня: +{todaySteps.toLocaleString("ru-RU")}
+            </div>
+          )}
+
+          <StreakBadge
+            current={streak.current}
+            best={streak.best}
+            weekDays={streak.weekDays}
+          />
         </div>
 
         <div className="flex gap-2 mb-6">
