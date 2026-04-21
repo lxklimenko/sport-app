@@ -14,6 +14,8 @@ import { ActivityHeatmap } from "@/app/profile/heatmap";
 import { WeeklyChart } from "@/app/profile/weekly-chart";
 import { AchievementsBadges } from "@/app/profile/achievements";
 import { getUserAchievements, checkAndUnlockAchievements } from "@/lib/achievements";
+import { WeeklyGoalsBlock } from "@/app/profile/weekly-goals";
+import { getMyWeeklyGoals } from "@/lib/goals";
 
 export const dynamic = "force-dynamic";
 
@@ -78,6 +80,13 @@ export default async function ProfilePage() {
 
   await checkAndUnlockAchievements(userId);
   const achievements = await getUserAchievements(userId);
+  const weeklyGoals = await getMyWeeklyGoals(userId);
+  const availableChallenges = activeChallenges.map(c => ({
+    id: c.challenge.id,
+    title: c.challenge.title,
+    emoji: c.challenge.emoji,
+    unitLabel: c.challenge.unitLabel,
+  }));
 
   const totalSteps = allChallenges.reduce((sum, c) => sum + c.totalSteps, 0);
   const bestRank = activeChallenges.length > 0
@@ -154,6 +163,12 @@ export default async function ProfilePage() {
           </div>
           <div className="mt-3">
             <WeeklyChart weeks={weeklyProgress.weeks} />
+          </div>
+          <div className="mt-3">
+            <WeeklyGoalsBlock 
+              goals={weeklyGoals} 
+              availableChallenges={availableChallenges} 
+            />
           </div>
           <div className="mt-3">
             <AchievementsBadges unlocked={achievements} />

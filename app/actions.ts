@@ -16,6 +16,7 @@ import { createComment, deleteComment } from "@/lib/comments";
 import { getUserById } from "@/lib/users";
 import { sendMessage } from "@/lib/messages"; // добавленный импорт
 import { checkAndUnlockAchievements } from "@/lib/achievements"; // добавлено
+import { setWeeklyGoal } from "@/lib/goals"; // добавлено для недельной цели
 
 export async function joinActiveChallengeAction() {
   const userId = await getSessionUserId();
@@ -233,4 +234,26 @@ export async function sendMessageAction(formData: FormData) {
 
   revalidatePath(`/chat/${receiverId}`);
   revalidatePath("/messages");
+}
+
+export async function setWeeklyGoalAction(formData: FormData) {
+  const userId = await getSessionUserId();
+  if (!userId) {
+    redirect("/login");
+  }
+
+  const challengeId = formData.get("challengeId");
+  const targetRaw = formData.get("target");
+
+  if (typeof challengeId !== "string" || !challengeId) {
+    throw new Error("Не указан челлендж");
+  }
+
+  const target = Number(targetRaw);
+  if (!target || isNaN(target) || target <= 0) {
+    throw new Error("Введите корректное число");
+  }
+
+  await setWeeklyGoal(userId, challengeId, target);
+  revalidatePath("/profile");
 }
