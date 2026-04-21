@@ -12,6 +12,8 @@ import { getFollowCounts } from "@/lib/follows";
 import { StreakBadge } from "@/app/profile/streak-badge";
 import { ActivityHeatmap } from "@/app/profile/heatmap";
 import { WeeklyChart } from "@/app/profile/weekly-chart";
+import { AchievementsBadges } from "@/app/profile/achievements";
+import { getUserAchievements, checkAndUnlockAchievements } from "@/lib/achievements";
 
 export const dynamic = "force-dynamic";
 
@@ -73,6 +75,9 @@ export default async function ProfilePage() {
   const streak = await getUserStreak(userId);
   const heatmap = await getActivityHeatmap(userId);
   const weeklyProgress = await getWeeklyProgress(userId);
+
+  await checkAndUnlockAchievements(userId);
+  const achievements = await getUserAchievements(userId);
 
   const totalSteps = allChallenges.reduce((sum, c) => sum + c.totalSteps, 0);
   const bestRank = activeChallenges.length > 0
@@ -149,6 +154,9 @@ export default async function ProfilePage() {
           </div>
           <div className="mt-3">
             <WeeklyChart weeks={weeklyProgress.weeks} />
+          </div>
+          <div className="mt-3">
+            <AchievementsBadges unlocked={achievements} />
           </div>
         </div>
 

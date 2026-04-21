@@ -15,6 +15,7 @@ import { toggleFollow } from "@/lib/follows";
 import { createComment, deleteComment } from "@/lib/comments";
 import { getUserById } from "@/lib/users";
 import { sendMessage } from "@/lib/messages"; // добавленный импорт
+import { checkAndUnlockAchievements } from "@/lib/achievements"; // добавлено
 
 export async function joinActiveChallengeAction() {
   const userId = await getSessionUserId();
@@ -31,6 +32,7 @@ export async function joinActiveChallengeAction() {
 
   revalidatePath("/");
   revalidatePath("/profile");
+  await checkAndUnlockAchievements(userId); // добавлено
   redirect(`/challenge/${challenge.id}`);
 }
 
@@ -54,6 +56,7 @@ export async function joinChallengeAction(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath(`/challenge/${challenge.id}`);
+  await checkAndUnlockAchievements(userId); // добавлено
   redirect(`/challenge/${challenge.id}`);
 }
 
@@ -85,6 +88,7 @@ export async function addStepsAction(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/profile");
   revalidatePath(`/challenge/${targetChallengeId}`);
+  await checkAndUnlockAchievements(userId); // добавлено
 }
 
 export async function toggleLikeAction(formData: FormData) {
@@ -100,6 +104,14 @@ export async function toggleLikeAction(formData: FormData) {
 
   await toggleLike(userId, postId);
   revalidatePath("/profile");
+
+  // Получаем владельца поста и проверяем его достижения
+  const postResult = await (await import("@/lib/db")).getPool().query<{ user_id: string }>(
+    `SELECT user_id FROM posts WHERE id = $1`,
+    [postId]
+  );
+  const postOwnerId = postResult.rows[0]?.user_id;
+  if (postOwnerId) await checkAndUnlockAchievements(postOwnerId); // добавлено
 }
 
 export async function deletePostAction(formData: FormData) {
@@ -155,6 +167,7 @@ export async function addCommentAction(formData: FormData) {
   });
 
   revalidatePath("/profile");
+  await checkAndUnlockAchievements(userId); // добавлено
 }
 
 export async function toggleFollowAction(formData: FormData) {
@@ -173,6 +186,7 @@ export async function toggleFollowAction(formData: FormData) {
   revalidatePath("/profile");
   revalidatePath("/users");
   revalidatePath("/feed");
+  await checkAndUnlockAchievements(followingId); // добавлено
 }
 
 export async function deleteCommentAction(formData: FormData) {
