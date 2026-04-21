@@ -136,17 +136,48 @@ export async function toggleLike(userId: string, postId: string) {
     [userId, postId]
   );
 
+  const postResult = await getPool().query<{ user_id: string }>(
+    `SELECT user_id FROM posts WHERE id = $1`,
+    [postId]
+  );
+  const postOwnerId = postResult.rows[0]?.user_id;
+
+  const actorResult = await getPool().query<{ name: string }>(
+    `SELECT name FROM users WHERE id = $1`,
+    [userId]
+  );
+  const actorName = actorResult.rows[0]?.name;
+
   if (existing.rows.length > 0) {
     await getPool().query(
       `DELETE FROM likes WHERE user_id = $1 AND post_id = $2`,
       [userId, postId]
     );
+    if (postOwnerId && postOwnerId !== userId) {
+      const { removeNotification } = await import("@/lib/notifications");
+      await removeNotification({
+        recipientId: postOwnerId,
+        actorId: userId,
+        type: "like",
+        postId,
+      });
+    }
     return { liked: false };
   } else {
     await getPool().query(
       `INSERT INTO likes (user_id, post_id) VALUES ($1, $2)`,
       [userId, postId]
     );
+    if (postOwnerId && actorName && postOwnerId !== userId) {
+      const { createNotification } = await import("@/lib/notifications");
+      await createNotification({
+        recipientId: postOwnerId,
+        actorId: userId,
+        actorName,
+        type: "like",
+        postId,
+      });
+    }
     return { liked: true };
   }
 }

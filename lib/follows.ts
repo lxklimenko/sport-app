@@ -43,12 +43,32 @@ export async function toggleFollow(followerId: string, followingId: string) {
       `DELETE FROM follows WHERE follower_id = $1 AND following_id = $2`,
       [followerId, followingId]
     );
+    const { removeNotification } = await import("@/lib/notifications");
+    await removeNotification({
+      recipientId: followingId,
+      actorId: followerId,
+      type: "follow",
+    });
     return { following: false };
   } else {
     await getPool().query(
       `INSERT INTO follows (follower_id, following_id) VALUES ($1, $2)`,
       [followerId, followingId]
     );
+    const actorResult = await getPool().query<{ name: string }>(
+      `SELECT name FROM users WHERE id = $1`,
+      [followerId]
+    );
+    const actorName = actorResult.rows[0]?.name;
+    if (actorName) {
+      const { createNotification } = await import("@/lib/notifications");
+      await createNotification({
+        recipientId: followingId,
+        actorId: followerId,
+        actorName,
+        type: "follow",
+      });
+    }
     return { following: true };
   }
 }

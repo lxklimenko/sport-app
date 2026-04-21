@@ -57,6 +57,48 @@ export async function createComment(input: {
     [id, input.postId, input.userId, input.authorName.trim(), input.text.trim(), createdAt]
   );
 
+  const postResult = await getPool().query<{ user_id: string }>(
+    `SELECT user_id FROM posts WHERE id = $1`,
+    [input.postId]
+  );
+  const postOwnerId = postResult.rows[0]?.user_id;
+
+  if (postOwnerId && postOwnerId !== input.userId) {
+    const { createNotification } = await import("@/lib/notifications");
+    await createNotification({
+      recipientId: postOwnerId,
+      actorId: input.userId,
+      actorName: input.authorName.trim(),
+      type: "comment",
+      postId: input.postId,
+      commentId: id,
+      textPreview: input.text.trim().slice(0, 100),
+    });
+  }
+
+  const mentions = input.text.match(/@[\wа-яА-ЯёЁ]+/gu) ?? [];
+  for (const mention of mentions) {
+    const mentionedName = mention.slice(1).replace(/_/g, " ");
+    const userResult = await getPool().query<{ id: string }>(
+      `SELECT id FROM users WHERE LOWER(name) = LOWER($1) LIMIT 1`,
+      [mentionedName]
+    );
+    const mentionedUserId = userResult.rows[0]?.id;
+
+    if (mentionedUserId && mentionedUserId !== input.userId && mentionedUserId !== postOwnerId) {
+      const { createNotification } = await import("@/lib/notifications");
+      await createNotification({
+        recipientId: mentionedUserId,
+        actorId: input.userId,
+        actorName: input.authorName.trim(),
+        type: "mention",
+        postId: input.postId,
+        commentId: id,
+        textPreview: input.text.trim().slice(0, 100),
+      });
+    }
+  }
+
   return {
     id,
     postId: input.postId,
