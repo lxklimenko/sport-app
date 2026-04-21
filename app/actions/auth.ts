@@ -13,6 +13,7 @@ import {
   createUser,
   getUserByEmail,
   getUserById,
+  updateUserProfile,
   verifyPassword,
 } from "@/lib/users";
 
@@ -251,4 +252,52 @@ export async function publishPost(
   return {
     message: "Пост опубликован в ленте.",
   };
+}
+
+export type EditProfileState = {
+  errors?: {
+    name?: string;
+    favoriteFormat?: string;
+    goal?: string;
+  };
+  message?: string;
+};
+
+export async function editProfile(
+  _prevState: EditProfileState,
+  formData: FormData
+): Promise<EditProfileState> {
+  const userId = await getSessionUserId();
+  if (!userId) {
+    redirect("/login");
+  }
+
+  const name = getString(formData, "name");
+  const favoriteFormat = getString(formData, "favoriteFormat");
+  const goal = getString(formData, "goal");
+
+  const errors: EditProfileState["errors"] = {};
+
+  if (name.length < 2) {
+    errors.name = "Имя должно быть не короче 2 символов";
+  }
+  if (!favoriteFormat) {
+    errors.favoriteFormat = "Выбери формат";
+  }
+
+  if (errors.name || errors.favoriteFormat) {
+    return { errors, message: "Проверь форму" };
+  }
+
+  try {
+    await updateUserProfile(userId, { name, favoriteFormat, goal });
+  } catch (error) {
+    if (error instanceof Error) {
+      return { message: error.message };
+    }
+    return { message: "Не удалось сохранить" };
+  }
+
+  revalidatePath("/profile");
+  redirect("/profile");
 }

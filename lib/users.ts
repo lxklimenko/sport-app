@@ -324,3 +324,43 @@ export async function searchUsers(currentUserId: string, query: string = ""): Pr
     isFollowing: row.is_following,
   }));
 }
+
+export async function updateUserProfile(
+  userId: string,
+  updates: {
+    name: string;
+    favoriteFormat: string;
+    goal: string;
+  }
+) {
+  if (!hasDatabase()) {
+    throw new Error("Database required");
+  }
+  await ensureUsersTable();
+
+  const name = updates.name.trim();
+  const favoriteFormat = updates.favoriteFormat.trim();
+  const goal = updates.goal.trim();
+
+  if (name.length < 2) {
+    throw new Error("Имя должно быть не короче 2 символов");
+  }
+  if (!favoriteFormat) {
+    throw new Error("Выбери формат тренировок");
+  }
+
+  await getPool().query(
+    `UPDATE users SET name = $1, favorite_format = $2, goal = $3 WHERE id = $4`,
+    [name, favoriteFormat, goal, userId]
+  );
+
+  await getPool().query(
+    `UPDATE posts SET author_name = $1 WHERE user_id = $2`,
+    [name, userId]
+  );
+
+  await getPool().query(
+    `UPDATE comments SET author_name = $1 WHERE user_id = $2`,
+    [name, userId]
+  );
+}

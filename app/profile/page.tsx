@@ -134,9 +134,12 @@ export default async function ProfilePage() {
         </div>
 
         <div className="flex gap-2 mb-6">
-          <button className="flex-1 bg-[#1E1F22] text-[#E3E3E3] py-2 px-4 rounded-xl text-sm font-medium hover:bg-[#2A2D33] transition">
+          <Link
+            href="/profile/edit"
+            className="flex-1 bg-[#1E1F22] text-[#E3E3E3] py-2 px-4 rounded-xl text-sm font-medium hover:bg-[#2A2D33] transition text-center"
+          >
             Редактировать
-          </button>
+          </Link>
           <button className="flex-1 bg-[#1E1F22] text-[#E3E3E3] py-2 px-4 rounded-xl text-sm font-medium hover:bg-[#2A2D33] transition">
             Поделиться
           </button>
