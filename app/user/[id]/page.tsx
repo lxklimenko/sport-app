@@ -128,9 +128,12 @@ export default async function UserPage({
           <button className="flex-1 bg-[#A8C7FA] text-[#062E6F] py-2 px-4 rounded-xl text-sm font-semibold hover:bg-[#BBD6FE] transition">
             Подписаться
           </button>
-          <button className="flex-1 bg-[#1E1F22] text-[#E3E3E3] py-2 px-4 rounded-xl text-sm font-medium hover:bg-[#2A2D33] transition">
+          <Link
+            href={`/chat/${user.id}`}
+            className="flex-1 bg-[#1E1F22] text-[#E3E3E3] py-2 px-4 rounded-xl text-sm font-medium hover:bg-[#2A2D33] transition text-center"
+          >
             Сообщение
-          </button>
+          </Link>
         </div>
 
         {(activeChallenges.length > 0 || pastChallenges.length > 0) && (

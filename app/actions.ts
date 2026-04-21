@@ -14,6 +14,7 @@ import { toggleLike, deletePost } from "@/lib/posts";
 import { toggleFollow } from "@/lib/follows";
 import { createComment, deleteComment } from "@/lib/comments";
 import { getUserById } from "@/lib/users";
+import { sendMessage } from "@/lib/messages"; // добавленный импорт
 
 export async function joinActiveChallengeAction() {
   const userId = await getSessionUserId();
@@ -195,4 +196,27 @@ export async function deleteCommentAction(formData: FormData) {
   }
 
   revalidatePath("/profile");
+}
+
+export async function sendMessageAction(formData: FormData) {
+  const userId = await getSessionUserId();
+  if (!userId) {
+    redirect("/login");
+  }
+
+  const receiverId = formData.get("receiverId");
+  const text = String(formData.get("text") ?? "").trim();
+
+  if (typeof receiverId !== "string" || !receiverId) {
+    throw new Error("Не указан получатель");
+  }
+
+  if (!text) {
+    throw new Error("Введите текст");
+  }
+
+  await sendMessage({ senderId: userId, receiverId, text });
+
+  revalidatePath(`/chat/${receiverId}`);
+  revalidatePath("/messages");
 }
