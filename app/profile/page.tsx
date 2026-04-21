@@ -5,7 +5,7 @@ import { Settings, Plus, Grid3x3, List } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { getSessionUserId } from "@/lib/auth";
 import { getRecentPosts } from "@/lib/posts";
-import { getUserById } from "@/lib/users";
+import { getUserById, getUserStreak } from "@/lib/users";
 import { getMyChallenges } from "@/lib/challenges";
 import { getPool, hasDatabase } from "@/lib/db";
 import { getFollowCounts } from "@/lib/follows";
@@ -67,6 +67,7 @@ export default async function ProfilePage() {
   const myPosts = await getMyPostsWithStats(userId);
   const todaySteps = await getTodaySteps(userId);
   const followCounts = await getFollowCounts(userId);
+  const streak = await getUserStreak(userId);
 
   const totalSteps = allChallenges.reduce((sum, c) => sum + c.totalSteps, 0);
   const bestRank = activeChallenges.length > 0
@@ -126,11 +127,29 @@ export default async function ProfilePage() {
             {user.favoriteFormat}
             {user.goal && ` · 🎯 ${user.goal}`}
           </div>
-          {todaySteps > 0 && (
-            <div className="text-xs text-[#9AA0A6] mt-1">
-              🔥 Сегодня: +{todaySteps.toLocaleString("ru-RU")}
-            </div>
-          )}
+          <div className="flex items-center gap-4 mt-2 text-xs">
+            {streak.current > 0 && (
+              <div className="flex items-center gap-1">
+                <span className="text-base">🔥</span>
+                <span className="text-[#FDE293] font-semibold">
+                  {streak.current}
+                </span>
+                <span className="text-[#9AA0A6]">
+                  {streak.current === 1 ? "день" : "дней подряд"}
+                </span>
+              </div>
+            )}
+            {todaySteps > 0 && (
+              <div className="text-[#9AA0A6]">
+                Сегодня: +{todaySteps.toLocaleString("ru-RU")}
+              </div>
+            )}
+            {streak.best > streak.current && streak.best > 0 && (
+              <div className="text-[#9AA0A6]">
+                Рекорд: {streak.best}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex gap-2 mb-6">

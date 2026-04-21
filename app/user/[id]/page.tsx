@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, Grid3x3, List } from "lucide-react";
 
 import { getSessionUserId } from "@/lib/auth";
-import { getUserById } from "@/lib/users";
+import { getUserById, getUserStreak } from "@/lib/users";
 import { getMyChallenges } from "@/lib/challenges";
 import { getPool, hasDatabase } from "@/lib/db";
 import { isFollowing, getFollowCounts } from "@/lib/follows";
@@ -63,6 +63,7 @@ export default async function UserPage({
   const posts = await getUserPostsWithStats(id);
   const following = currentUserId ? await isFollowing(currentUserId, id) : false;
   const followCounts = await getFollowCounts(id);
+  const streak = await getUserStreak(id);
 
   const totalSteps = allChallenges.reduce((sum, c) => sum + c.totalSteps, 0);
   const bestRank = activeChallenges.length > 0
@@ -115,6 +116,22 @@ export default async function UserPage({
             {user.favoriteFormat}
             {user.goal && ` · 🎯 ${user.goal}`}
           </div>
+          {streak.current > 0 && (
+            <div className="flex items-center gap-1 mt-1 text-xs">
+              <span className="text-base">🔥</span>
+              <span className="text-[#FDE293] font-semibold">
+                {streak.current}
+              </span>
+              <span className="text-[#9AA0A6]">
+                {streak.current === 1 ? "день" : "дней подряд"}
+              </span>
+              {streak.best > streak.current && (
+                <span className="text-[#9AA0A6] ml-2">
+                  · рекорд {streak.best}
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex gap-2 mb-6">

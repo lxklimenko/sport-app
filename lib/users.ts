@@ -364,3 +364,59 @@ export async function updateUserProfile(
     [name, userId]
   );
 }
+
+export async function getUserStreak(userId: string): Promise<{ current: number; best: number }> {
+  if (!hasDatabase()) return { current: 0, best: 0 };
+
+  const result = await getPool().query<{ entry_date: Date }>(
+    `SELECT DISTINCT entry_date 
+     FROM step_entries 
+     WHERE user_id = $1 
+     ORDER BY entry_date DESC`,
+    [userId]
+  );
+
+  if (result.rows.length === 0) {
+    return { current: 0, best: 0 };
+  }
+
+  const dates = result.rows.map(r => {
+    const d = new Date(r.entry_date);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  });
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayMs = today.getTime();
+  const yesterdayMs = todayMs - 86400000;
+  const oneDay = 86400000;
+
+  let current = 0;
+  if (dates[0] === todayMs || dates[0] === yesterdayMs) {
+    current = 1;
+    let expectedNext = dates[0] - oneDay;
+    for (let i = 1; i < dates.length; i++) {
+      if (dates[i] === expectedNext) {
+        current++;
+        expectedNext -= oneDay;
+      } else {
+        break;
+      }
+    }
+  }
+
+  let best = 1;
+  let streak = 1;
+  for (let i = 1; i < dates.length; i++) {
+    if (dates[i - 1] - dates[i] === oneDay) {
+      streak++;
+      if (streak > best) best = streak;
+    } else {
+      streak = 1;
+    }
+  }
+  if (current > best) best = current;
+
+  return { current, best };
+}
