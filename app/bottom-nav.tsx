@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Flame, User, Users } from "lucide-react";
+import { Home, Flame, User, Users, Shield } from "lucide-react";
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -13,6 +13,7 @@ export function BottomNav() {
   const items = [
     { href: "/", icon: Home, label: "Главная" },
     { href: "/feed", icon: Flame, label: "Лента" },
+    { href: "/teams", icon: Shield, label: "Команды" },
     { href: "/users", icon: Users, label: "Люди" },
     { href: "/profile", icon: User, label: "Профиль" },
   ];

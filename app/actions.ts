@@ -14,9 +14,10 @@ import { toggleLike, deletePost } from "@/lib/posts";
 import { toggleFollow } from "@/lib/follows";
 import { createComment, deleteComment } from "@/lib/comments";
 import { getUserById } from "@/lib/users";
-import { sendMessage } from "@/lib/messages"; // добавленный импорт
-import { checkAndUnlockAchievements } from "@/lib/achievements"; // добавлено
-import { setWeeklyGoal } from "@/lib/goals"; // добавлено для недельной цели
+import { sendMessage } from "@/lib/messages";
+import { checkAndUnlockAchievements } from "@/lib/achievements";
+import { setWeeklyGoal } from "@/lib/goals";
+import { createTeam, joinTeam, leaveTeam } from "@/lib/teams"; // добавленный импорт для команд
 
 export async function joinActiveChallengeAction() {
   const userId = await getSessionUserId();
@@ -33,7 +34,7 @@ export async function joinActiveChallengeAction() {
 
   revalidatePath("/");
   revalidatePath("/profile");
-  await checkAndUnlockAchievements(userId); // добавлено
+  await checkAndUnlockAchievements(userId);
   redirect(`/challenge/${challenge.id}`);
 }
 
@@ -57,7 +58,7 @@ export async function joinChallengeAction(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath(`/challenge/${challenge.id}`);
-  await checkAndUnlockAchievements(userId); // добавлено
+  await checkAndUnlockAchievements(userId);
   redirect(`/challenge/${challenge.id}`);
 }
 
@@ -89,7 +90,7 @@ export async function addStepsAction(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/profile");
   revalidatePath(`/challenge/${targetChallengeId}`);
-  await checkAndUnlockAchievements(userId); // добавлено
+  await checkAndUnlockAchievements(userId);
 }
 
 export async function toggleLikeAction(formData: FormData) {
@@ -106,13 +107,12 @@ export async function toggleLikeAction(formData: FormData) {
   await toggleLike(userId, postId);
   revalidatePath("/profile");
 
-  // Получаем владельца поста и проверяем его достижения
   const postResult = await (await import("@/lib/db")).getPool().query<{ user_id: string }>(
     `SELECT user_id FROM posts WHERE id = $1`,
     [postId]
   );
   const postOwnerId = postResult.rows[0]?.user_id;
-  if (postOwnerId) await checkAndUnlockAchievements(postOwnerId); // добавлено
+  if (postOwnerId) await checkAndUnlockAchievements(postOwnerId);
 }
 
 export async function deletePostAction(formData: FormData) {
@@ -168,7 +168,7 @@ export async function addCommentAction(formData: FormData) {
   });
 
   revalidatePath("/profile");
-  await checkAndUnlockAchievements(userId); // добавлено
+  await checkAndUnlockAchievements(userId);
 }
 
 export async function toggleFollowAction(formData: FormData) {
@@ -187,7 +187,7 @@ export async function toggleFollowAction(formData: FormData) {
   revalidatePath("/profile");
   revalidatePath("/users");
   revalidatePath("/feed");
-  await checkAndUnlockAchievements(followingId); // добавлено
+  await checkAndUnlockAchievements(followingId);
 }
 
 export async function deleteCommentAction(formData: FormData) {
@@ -255,5 +255,46 @@ export async function setWeeklyGoalAction(formData: FormData) {
   }
 
   await setWeeklyGoal(userId, challengeId, target);
+  revalidatePath("/profile");
+}
+
+export async function createTeamAction(formData: FormData) {
+  const userId = await getSessionUserId();
+  if (!userId) redirect("/login");
+
+  const name = String(formData.get("name") ?? "").trim();
+  const emoji = String(formData.get("emoji") ?? "🏁").trim();
+  const description = String(formData.get("description") ?? "").trim();
+
+  if (!name) throw new Error("Введите название");
+
+  const team = await createTeam({ userId, name, emoji, description });
+
+  revalidatePath("/teams");
+  revalidatePath("/profile");
+  redirect(`/teams/${team.id}`);
+}
+
+export async function joinTeamAction(formData: FormData) {
+  const userId = await getSessionUserId();
+  if (!userId) redirect("/login");
+
+  const teamId = formData.get("teamId");
+  if (typeof teamId !== "string" || !teamId) {
+    throw new Error("Не указана команда");
+  }
+
+  await joinTeam(userId, teamId);
+  revalidatePath("/teams");
+  revalidatePath("/profile");
+  revalidatePath(`/teams/${teamId}`);
+}
+
+export async function leaveTeamAction() {
+  const userId = await getSessionUserId();
+  if (!userId) redirect("/login");
+
+  await leaveTeam(userId);
+  revalidatePath("/teams");
   revalidatePath("/profile");
 }

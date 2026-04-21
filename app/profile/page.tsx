@@ -16,6 +16,7 @@ import { AchievementsBadges } from "@/app/profile/achievements";
 import { getUserAchievements, checkAndUnlockAchievements } from "@/lib/achievements";
 import { WeeklyGoalsBlock } from "@/app/profile/weekly-goals";
 import { getMyWeeklyGoals } from "@/lib/goals";
+import { getMyTeam } from "@/lib/teams";
 
 export const dynamic = "force-dynamic";
 
@@ -81,6 +82,7 @@ export default async function ProfilePage() {
   await checkAndUnlockAchievements(userId);
   const achievements = await getUserAchievements(userId);
   const weeklyGoals = await getMyWeeklyGoals(userId);
+  const myTeam = await getMyTeam(userId);
   const availableChallenges = activeChallenges.map(c => ({
     id: c.challenge.id,
     title: c.challenge.title,
@@ -173,6 +175,39 @@ export default async function ProfilePage() {
           <div className="mt-3">
             <AchievementsBadges unlocked={achievements} />
           </div>
+        </div>
+
+        <div className="mb-6">
+          {myTeam ? (
+            <Link
+              href={`/teams/${myTeam.id}`}
+              className="flex items-center gap-3 bg-[#1E1F22] rounded-2xl p-3 hover:bg-[#2A2D33] transition"
+            >
+              <div className="w-12 h-12 rounded-xl bg-[#2A2D33] flex items-center justify-center text-2xl shrink-0">
+                {myTeam.emoji}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs text-[#9AA0A6] mb-0.5">Команда</div>
+                <div className="font-semibold text-sm truncate">{myTeam.name}</div>
+              </div>
+              <div className="text-xs text-[#9AA0A6] shrink-0">
+                {myTeam.memberCount} {myTeam.memberCount === 1 ? "чел." : "чел."}
+              </div>
+            </Link>
+          ) : (
+            <Link
+              href="/teams"
+              className="flex items-center gap-3 bg-[#1E1F22] border border-dashed border-[#444] rounded-2xl p-3 hover:bg-[#2A2D33] transition"
+            >
+              <div className="w-12 h-12 rounded-xl bg-[#2A2D33] flex items-center justify-center text-2xl text-[#9AA0A6] shrink-0">
+                +
+              </div>
+              <div className="flex-1">
+                <div className="text-xs text-[#9AA0A6] mb-0.5">Команда</div>
+                <div className="text-sm text-[#C4C7C5]">Выбрать или создать</div>
+              </div>
+            </Link>
+          )}
         </div>
 
         <div className="flex gap-2 mb-6">
