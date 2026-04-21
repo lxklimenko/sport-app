@@ -5,6 +5,7 @@ import { Search, Users as UsersIcon } from "lucide-react";
 import { getSessionUserId } from "@/lib/auth";
 import { searchUsers } from "@/lib/users";
 import { toggleFollowAction } from "@/app/actions";
+import { TopHeader } from "@/app/top-header";
 
 export const dynamic = "force-dynamic";
 
@@ -22,8 +23,9 @@ export default async function UsersPage({
 
   return (
     <main className="min-h-screen bg-[#0D0F12] text-[#F5F7FA] pb-20">
+      <TopHeader />
 
-      <div className="sticky top-0 z-10 bg-[#0D0F12]/95 backdrop-blur border-b border-white/5 px-4 py-3">
+      <div className="px-4 py-3 border-b border-white/5">
         <h1 className="font-semibold text-lg mb-3">Участники</h1>
 
         <form className="relative">
@@ -39,7 +41,6 @@ export default async function UsersPage({
       </div>
 
       <div className="mx-auto max-w-2xl">
-
         {users.length === 0 ? (
           <div className="text-center py-20 px-6">
             <div className="w-20 h-20 rounded-full bg-[#1E1F22] flex items-center justify-center mx-auto mb-5">

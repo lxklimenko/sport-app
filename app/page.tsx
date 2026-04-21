@@ -5,6 +5,7 @@ import {
   ArrowRight,
   Sun,
 } from "lucide-react";
+import { TopHeader } from "@/app/top-header";
 
 import { getSessionUserId } from "@/lib/auth";
 import {
@@ -48,32 +49,26 @@ export default async function Home() {
   return (
     <div className="min-h-screen bg-[#131314] text-[#E3E3E3] font-sans pb-20">
 
-      <nav className="fixed top-4 inset-x-0 mx-auto w-[calc(100%-2rem)] max-w-7xl bg-[#1E1F22] rounded-full px-4 py-3 flex items-center justify-between z-50 shadow-lg">
-        <div className="flex items-center gap-3 pl-2">
-          <div className="w-8 h-8 rounded-full bg-[#A8C7FA] flex items-center justify-center">
-            <Zap className="w-4 h-4 text-[#062E6F]" fill="currentColor" />
+      {userId ? (
+        <TopHeader />
+      ) : (
+        <nav className="fixed top-4 inset-x-0 mx-auto w-[calc(100%-2rem)] max-w-7xl bg-[#1E1F22] rounded-full px-4 py-3 flex items-center justify-between z-50 shadow-lg">
+          <div className="flex items-center gap-3 pl-2">
+            <div className="w-8 h-8 rounded-full bg-[#A8C7FA] flex items-center justify-center">
+              <Zap className="w-4 h-4 text-[#062E6F]" fill="currentColor" />
+            </div>
+            <span className="font-medium text-lg">Discipline</span>
           </div>
-          <span className="font-medium text-lg">Discipline</span>
-        </div>
-
-        {userId ? (
-          <Link
-            href="/profile"
-            className="px-6 py-2 rounded-full bg-[#333537] hover:bg-[#444746] transition"
-          >
-            Профиль
-          </Link>
-        ) : (
           <Link
             href="/login"
             className="px-6 py-2 rounded-full bg-[#333537] hover:bg-[#444746] transition"
           >
             Войти
           </Link>
-        )}
-      </nav>
+        </nav>
+      )}
 
-      <section className="pt-32 pb-20 px-6 max-w-4xl mx-auto">
+      <section className="pt-8 pb-20 px-6 max-w-4xl mx-auto">
 
         <div className="flex items-center gap-3 mb-10 text-[#C4C7C5] text-lg">
           <Sun className="w-6 h-6 text-[#FDE293]" fill="currentColor" />

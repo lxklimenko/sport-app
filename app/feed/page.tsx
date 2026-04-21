@@ -7,6 +7,7 @@ import { getFollowingPosts } from "@/lib/posts";
 import { getCommentsCountByPostIds } from "@/lib/comments";
 import { getFollowCounts } from "@/lib/follows";
 import { toggleLikeAction } from "@/app/actions";
+import { TopHeader } from "@/app/top-header";
 
 export const dynamic = "force-dynamic";
 
@@ -31,8 +32,9 @@ export default async function FeedPage() {
 
   return (
     <main className="min-h-screen bg-[#0D0F12] text-[#F5F7FA] pb-20">
+      <TopHeader />
 
-      <div className="sticky top-0 z-10 bg-[#0D0F12]/95 backdrop-blur border-b border-white/5 px-4 py-3 flex items-center justify-between">
+      <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
         <span className="font-semibold text-lg">Лента</span>
         <span className="text-xs text-[#9AA0A6]">
           {followCounts.following} {followCounts.following === 1 ? "подписка" : "подписок"}
@@ -40,7 +42,6 @@ export default async function FeedPage() {
       </div>
 
       <div className="mx-auto max-w-2xl px-4">
-
         {followCounts.following === 0 ? (
           <div className="text-center py-20 px-6">
             <div className="w-20 h-20 rounded-full bg-[#1E1F22] flex items-center justify-center mx-auto mb-5">
