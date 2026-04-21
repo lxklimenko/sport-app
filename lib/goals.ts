@@ -95,7 +95,7 @@ export async function getMyWeeklyGoals(userId: string): Promise<WeeklyGoal[]> {
        AND se.entry_date >= g.week_start 
        AND se.entry_date < g.week_start + INTERVAL '7 days'
      WHERE g.user_id = $1 AND g.week_start = $2
-     GROUP BY g.challenge_id, c.title, c.emoji, c.unit_label, g.target_value, g.week_start
+     GROUP BY g.challenge_id, c.title, c.emoji, c.unit_label, g.target_value, g.week_start, g.created_at
      ORDER BY g.created_at DESC`,
     [userId, weekStart]
   );
