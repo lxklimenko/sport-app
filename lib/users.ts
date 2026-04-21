@@ -277,3 +277,50 @@ export async function getUsersCount() {
   const users = await readUsers();
   return users.length;
 }
+
+export type UserListItem = {
+  id: string;
+  name: string;
+  favoriteFormat: string;
+  goal: string;
+  postsCount: number;
+  isFollowing: boolean;
+};
+
+export async function searchUsers(currentUserId: string, query: string = ""): Promise<UserListItem[]> {
+  if (!hasDatabase()) return [];
+  await ensureUsersTable();
+
+  const searchPattern = `%${query.trim().toLowerCase()}%`;
+
+  const result = await getPool().query<{
+    id: string;
+    name: string;
+    favorite_format: string;
+    goal: string;
+    posts_count: string;
+    is_following: boolean;
+  }>(
+    `SELECT 
+       u.id, u.name, u.favorite_format, u.goal,
+       COALESCE(p.cnt, 0)::text AS posts_count,
+       CASE WHEN f.follower_id IS NOT NULL THEN true ELSE false END AS is_following
+     FROM users u
+     LEFT JOIN (SELECT user_id, COUNT(*) AS cnt FROM posts GROUP BY user_id) p ON p.user_id = u.id
+     LEFT JOIN follows f ON f.following_id = u.id AND f.follower_id = $1
+     WHERE u.id <> $1
+       AND ($2 = '' OR LOWER(u.name) LIKE $3)
+     ORDER BY u.created_at DESC
+     LIMIT 50`,
+    [currentUserId, query.trim().toLowerCase(), searchPattern]
+  );
+
+  return result.rows.map(row => ({
+    id: row.id,
+    name: row.name,
+    favoriteFormat: row.favorite_format,
+    goal: row.goal,
+    postsCount: Number(row.posts_count),
+    isFollowing: row.is_following,
+  }));
+}

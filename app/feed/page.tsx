@@ -51,7 +51,7 @@ export default async function FeedPage() {
               Подпишись на других участников чтобы видеть их тренировки в ленте
             </p>
             <Link
-              href="/"
+              href="/users"
               className="inline-flex items-center gap-2 rounded-full bg-[#A8C7FA] px-6 py-3 font-semibold text-[#062E6F] hover:bg-[#BBD6FE] transition text-sm"
             >
               Найти участников

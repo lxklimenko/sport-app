@@ -170,6 +170,8 @@ export async function toggleFollowAction(formData: FormData) {
   await toggleFollow(userId, followingId);
   revalidatePath(`/user/${followingId}`);
   revalidatePath("/profile");
+  revalidatePath("/users");
+  revalidatePath("/feed");
 }
 
 export async function deleteCommentAction(formData: FormData) {
