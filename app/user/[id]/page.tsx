@@ -3,12 +3,13 @@ import Link from "next/link";
 import { ArrowLeft, Grid3x3, List } from "lucide-react";
 
 import { getSessionUserId } from "@/lib/auth";
-import { getUserById, getUserStreak } from "@/lib/users";
+import { getUserById, getUserStreak, getActivityHeatmap } from "@/lib/users";
 import { getMyChallenges } from "@/lib/challenges";
 import { getPool, hasDatabase } from "@/lib/db";
 import { isFollowing, getFollowCounts } from "@/lib/follows";
 import { toggleFollowAction } from "@/app/actions";
 import { StreakBadge } from "@/app/profile/streak-badge";
+import { ActivityHeatmap } from "@/app/profile/heatmap";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +66,7 @@ export default async function UserPage({
   const following = currentUserId ? await isFollowing(currentUserId, id) : false;
   const followCounts = await getFollowCounts(id);
   const streak = await getUserStreak(id);
+  const heatmap = await getActivityHeatmap(id);
 
   const totalSteps = allChallenges.reduce((sum, c) => sum + c.totalSteps, 0);
   const bestRank = activeChallenges.length > 0
@@ -122,6 +124,9 @@ export default async function UserPage({
             best={streak.best}
             weekDays={streak.weekDays}
           />
+          <div className="mt-3">
+            <ActivityHeatmap data={heatmap} />
+          </div>
         </div>
 
         <div className="flex gap-2 mb-6">

@@ -440,3 +440,26 @@ export async function getUserStreak(userId: string): Promise<{
 
   return { current, best, weekDays };
 }
+
+export async function getActivityHeatmap(userId: string): Promise<Record<string, number>> {
+  if (!hasDatabase()) return {};
+
+  const result = await getPool().query<{ entry_date: Date; total: string }>(
+    `SELECT entry_date, SUM(steps)::text AS total
+     FROM step_entries
+     WHERE user_id = $1 
+       AND entry_date >= CURRENT_DATE - INTERVAL '365 days'
+     GROUP BY entry_date
+     ORDER BY entry_date ASC`,
+    [userId]
+  );
+
+  const heatmap: Record<string, number> = {};
+  for (const row of result.rows) {
+    const date = new Date(row.entry_date);
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    heatmap[key] = Number(row.total);
+  }
+
+  return heatmap;
+}
