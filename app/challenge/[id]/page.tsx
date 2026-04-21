@@ -47,7 +47,7 @@ export default async function ChallengePage({
   const unit = challenge.unitLabel;
 
   return (
-    <main className="min-h-screen bg-[#0D0F12] px-6 py-6 text-[#F5F7FA]">
+    <main className="min-h-screen bg-[#0D0F12] px-6 py-6 pb-24 text-[#F5F7FA]">
       <div className="mx-auto max-w-5xl">
 
         <Link

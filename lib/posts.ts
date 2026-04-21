@@ -202,3 +202,44 @@ export async function deletePost(userId: string, postId: string) {
     }
   }
 }
+
+export async function getFollowingPosts(userId: string, limit = 20) {
+  if (!hasDatabase()) return [];
+  await ensurePostsTable();
+  await ensureLikesTable();
+
+  const result = await getPool().query<{
+    id: string;
+    user_id: string;
+    author_name: string;
+    workout: string;
+    stats: string;
+    image_url: string | null;
+    created_at: Date;
+    likes_count: string;
+    liked_by_me: boolean;
+  }>(
+    `SELECT p.id, p.user_id, p.author_name, p.workout, p.stats, p.image_url, p.created_at,
+            COALESCE(l.cnt, 0)::text AS likes_count,
+            CASE WHEN ml.user_id IS NOT NULL THEN true ELSE false END AS liked_by_me
+     FROM posts p
+     JOIN follows f ON f.following_id = p.user_id AND f.follower_id = $1
+     LEFT JOIN (SELECT post_id, COUNT(*) AS cnt FROM likes GROUP BY post_id) l ON l.post_id = p.id
+     LEFT JOIN likes ml ON ml.post_id = p.id AND ml.user_id = $1
+     ORDER BY p.created_at DESC
+     LIMIT $2`,
+    [userId, limit]
+  );
+
+  return result.rows.map((row) => ({
+    id: row.id,
+    userId: row.user_id,
+    authorName: row.author_name,
+    workout: row.workout,
+    stats: row.stats,
+    imageUrl: row.image_url,
+    createdAt: row.created_at.toISOString(),
+    likesCount: Number(row.likes_count),
+    likedByMe: row.liked_by_me,
+  }));
+}
