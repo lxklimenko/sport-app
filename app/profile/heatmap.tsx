@@ -1,13 +1,13 @@
 const MONTHS = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"];
 
-// Оттенки строго выведены из акцентного цвета #B4A5FF. 
-// Пустые дни прозрачные с тонкой рамкой.
+// Оттенки строго выведены из акцентного Apple Fitness Green. 
+// Пустые дни сливаются с фоном и имеют только тонкую рамку.
 function getIntensityClass(value: number): string {
   if (value === 0) return "bg-bg-muted border border-border-thin";
-  if (value < 3000) return "bg-[#2E284D]"; // ~25% акцента на темном фоне
-  if (value < 7000) return "bg-[#4E4380]"; // ~50%
-  if (value < 15000) return "bg-[#7D6EB3]"; // ~75%
-  return "bg-accent"; // 100% акцент
+  if (value < 3000) return "bg-[#0A2E11]"; // ~20% зелёного
+  if (value < 7000) return "bg-[#115820]"; // ~40% зелёного
+  if (value < 15000) return "bg-[#1B8B33]"; // ~60% зелёного
+  return "bg-accent"; // 100% акцент (Apple Fitness Green)
 }
 
 export function ActivityHeatmap({ data }: { data: Record<string, number> }) {
@@ -65,11 +65,11 @@ export function ActivityHeatmap({ data }: { data: Record<string, number> }) {
     <div className="card-base p-5">
       <div className="flex items-start justify-between mb-8">
         <div>
-          <div className="text-[10px] uppercase tracking-widest text-text-muted mb-1">
+          <div className="text-[11px] uppercase tracking-widest text-text-muted mb-1 font-medium">
             Активность за полгода
           </div>
           <div className="text-4xl font-bold tracking-[-0.5px] text-text-primary">
-            {totalActiveDays} <span className="text-text-muted text-lg font-normal ml-1">дней</span>
+            {totalActiveDays} <span className="text-text-muted text-xl font-medium ml-1">дней</span>
           </div>
         </div>
       </div>
@@ -77,7 +77,7 @@ export function ActivityHeatmap({ data }: { data: Record<string, number> }) {
       {totalActiveDays > 0 && (
         <div className="flex gap-3 mb-6">
           <div className="flex-1 bg-bg-nested rounded-[1.25rem] p-4 border border-border-thin">
-            <div className="text-[10px] uppercase tracking-widest text-text-muted mb-1">
+            <div className="text-[11px] uppercase tracking-widest text-text-muted mb-1 font-medium">
               В среднем
             </div>
             <div className="text-2xl font-bold tracking-[-0.5px] text-text-primary">
@@ -85,7 +85,7 @@ export function ActivityHeatmap({ data }: { data: Record<string, number> }) {
             </div>
           </div>
           <div className="flex-1 bg-bg-nested rounded-[1.25rem] p-4 border border-border-thin">
-            <div className="text-[10px] uppercase tracking-widest text-text-muted mb-1">
+            <div className="text-[11px] uppercase tracking-widest text-text-muted mb-1 font-medium">
               Рекорд за день
             </div>
             {/* Единственный акцент применяется к рекорду */}
@@ -98,7 +98,7 @@ export function ActivityHeatmap({ data }: { data: Record<string, number> }) {
 
       <div className="overflow-x-auto scrollbar-hide -mx-1 px-1 pb-2">
         <div className="inline-block min-w-full">
-          <div className="flex gap-[4px] mb-2 ml-[20px] text-[10px] uppercase tracking-widest text-text-muted">
+          <div className="flex gap-[4px] mb-2 ml-[20px] text-[10px] uppercase tracking-widest text-text-muted font-medium">
             {monthLabels.map((m, i) => {
               const prevWeekIndex = i > 0 ? monthLabels[i - 1].weekIndex : 0;
               const weeksGap = m.weekIndex - prevWeekIndex;
@@ -118,7 +118,7 @@ export function ActivityHeatmap({ data }: { data: Record<string, number> }) {
           </div>
 
           <div className="flex gap-[4px]">
-            <div className="flex flex-col gap-[4px] text-[9px] uppercase tracking-widest text-text-muted w-[16px] justify-around py-[1px]">
+            <div className="flex flex-col gap-[4px] text-[9px] uppercase tracking-widest text-text-muted font-medium w-[16px] justify-around py-[1px]">
               <span>пн</span>
               <span></span>
               <span>ср</span>
@@ -138,7 +138,7 @@ export function ActivityHeatmap({ data }: { data: Record<string, number> }) {
                         ? "bg-transparent" 
                         : getIntensityClass(day.value)
                     } ${
-                      // Индикатор сегодняшнего дня переделан под чистый премиальный ring
+                      // Индикатор сегодняшнего дня переделан под премиальный ring цвета Apple Green
                       day.isToday 
                         ? "ring-1 ring-accent ring-offset-2 ring-offset-bg-card" 
                         : ""
@@ -152,13 +152,13 @@ export function ActivityHeatmap({ data }: { data: Record<string, number> }) {
         </div>
       </div>
 
-      <div className="flex items-center justify-between mt-5 pt-4 border-t border-border-thin text-[10px] uppercase tracking-widest text-text-muted">
+      <div className="flex items-center justify-between mt-5 pt-4 border-t border-border-thin text-[10px] uppercase tracking-widest text-text-muted font-medium">
         <span>Меньше</span>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-[2px] bg-bg-muted border border-border-thin" />
-          <div className="w-3 h-3 rounded-[2px] bg-[#2E284D]" />
-          <div className="w-3 h-3 rounded-[2px] bg-[#4E4380]" />
-          <div className="w-3 h-3 rounded-[2px] bg-[#7D6EB3]" />
+          <div className="w-3 h-3 rounded-[2px] bg-[#0A2E11]" />
+          <div className="w-3 h-3 rounded-[2px] bg-[#115820]" />
+          <div className="w-3 h-3 rounded-[2px] bg-[#1B8B33]" />
           <div className="w-3 h-3 rounded-[2px] bg-accent" />
         </div>
         <span>Больше</span>

@@ -90,7 +90,7 @@ export default async function ProfilePage() {
     unitLabel: c.challenge.unitLabel,
   }));
 
-  // Для аватара оставляем заглушку, но фон делаем строгим
+  // Строгий аватар
   const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.name)}`;
 
   return (
@@ -103,11 +103,11 @@ export default async function ProfilePage() {
           <span className="font-bold tracking-tight">{user.name}</span>
         </div>
         <div className="flex items-center gap-5 text-text-primary">
-          <Link href="/" className="hover:text-accent transition-colors">
+          <Link href="/" className="hover:text-accent transition-colors active-scale">
             <Plus className="w-6 h-6" />
           </Link>
           <form action={logout}>
-            <button className="hover:text-accent transition-colors">
+            <button className="hover:text-accent transition-colors active-scale">
               <Settings className="w-5 h-5" />
             </button>
           </form>
@@ -121,21 +121,21 @@ export default async function ProfilePage() {
           <img
             src={avatarUrl}
             alt={user.name}
-            className="w-24 h-24 rounded-full bg-bg-nested border border-border-thin p-1"
+            className="w-24 h-24 rounded-full bg-bg-nested border-2 border-border-thin p-1"
           />
 
           <div className="flex-1 grid grid-cols-3 gap-2 text-center">
             <div>
               <div className="text-2xl font-bold tracking-[-0.5px]">{myPosts.length}</div>
-              <div className="text-[9px] uppercase tracking-widest text-text-muted mt-1">постов</div>
+              <div className="text-[10px] uppercase tracking-widest text-text-muted mt-1 font-medium">постов</div>
             </div>
             <div>
               <div className="text-2xl font-bold tracking-[-0.5px]">{followCounts.followers}</div>
-              <div className="text-[9px] uppercase tracking-widest text-text-muted mt-1">подписчиков</div>
+              <div className="text-[10px] uppercase tracking-widest text-text-muted mt-1 font-medium">подписчиков</div>
             </div>
             <div>
               <div className="text-2xl font-bold tracking-[-0.5px]">{followCounts.following}</div>
-              <div className="text-[9px] uppercase tracking-widest text-text-muted mt-1">подписок</div>
+              <div className="text-[10px] uppercase tracking-widest text-text-muted mt-1 font-medium">подписок</div>
             </div>
           </div>
         </div>
@@ -143,14 +143,14 @@ export default async function ProfilePage() {
         {/* Информация пользователя */}
         <div className="mb-6">
           <div className="text-xl font-bold tracking-[-0.5px] mb-1">{user.name}</div>
-          <div className="text-sm text-text-secondary">
+          <div className="text-sm text-text-secondary font-medium">
             {user.favoriteFormat}
             {user.goal && ` · 🎯 ${user.goal}`}
           </div>
 
           {todaySteps > 0 && (
             <div className="inline-block mt-3 px-3 py-1.5 rounded-lg bg-bg-nested border border-border-thin">
-              <span className="text-[10px] uppercase tracking-widest text-text-muted mr-2">Сегодня:</span>
+              <span className="text-[11px] uppercase tracking-widest text-text-muted mr-2 font-medium">Сегодня:</span>
               <span className="text-sm font-bold text-accent">+{todaySteps.toLocaleString("ru-RU")}</span>
             </div>
           )}
@@ -183,23 +183,23 @@ export default async function ProfilePage() {
                 {myTeam.emoji}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[10px] uppercase tracking-widest text-text-muted mb-1">Команда</div>
+                <div className="text-[11px] uppercase tracking-widest text-text-muted mb-1 font-medium">Команда</div>
                 <div className="font-bold text-base truncate">{myTeam.name}</div>
               </div>
-              <div className="text-[10px] uppercase tracking-widest text-text-secondary shrink-0 font-mono">
+              <div className="text-[11px] uppercase tracking-widest text-text-secondary shrink-0 font-mono font-medium">
                 {myTeam.memberCount} чел.
               </div>
             </Link>
           ) : (
             <Link
               href="/teams"
-              className="card-base border-dashed flex items-center gap-4 p-4 opacity-70 hover:opacity-100"
+              className="card-base border-dashed flex items-center gap-4 p-4 opacity-70 hover:opacity-100 transition-opacity active-scale"
             >
               <div className="w-12 h-12 rounded-[1rem] bg-bg-nested flex items-center justify-center text-2xl text-text-muted shrink-0">
                 +
               </div>
               <div className="flex-1">
-                <div className="text-[10px] uppercase tracking-widest text-text-muted mb-1">Команда</div>
+                <div className="text-[11px] uppercase tracking-widest text-text-muted mb-1 font-medium">Команда</div>
                 <div className="font-bold text-base text-text-secondary">Выбрать или создать</div>
               </div>
             </Link>
@@ -224,7 +224,7 @@ export default async function ProfilePage() {
           <div className="mb-8">
             {activeChallenges.length > 0 && (
               <>
-                <div className="text-[10px] uppercase tracking-widest text-text-muted mb-4 px-1">
+                <div className="text-[11px] uppercase tracking-widest text-text-muted mb-4 px-1 font-medium">
                   Активные челленджи
                 </div>
                 <div className="grid grid-cols-2 gap-3 mb-6">
@@ -249,25 +249,25 @@ export default async function ProfilePage() {
                           #{my.rank}
                         </div>
 
-                        <div className="w-10 h-10 rounded-[1rem] bg-bg-main border border-border-thin flex items-center justify-center mb-3">
+                        <div className="w-10 h-10 rounded-[1rem] bg-bg-main border border-border-thin flex items-center justify-center mb-3 shadow-sm">
                           <span className="text-xl">{my.challenge.emoji}</span>
                         </div>
 
-                        <div className="text-sm font-bold leading-tight pr-6 mb-1">
+                        <div className="text-sm font-bold leading-tight pr-6 mb-1 text-text-primary">
                           {my.challenge.title}
                         </div>
-                        <div className="text-[10px] uppercase tracking-widest text-text-muted truncate">
+                        <div className="text-[10px] uppercase tracking-widest text-text-muted truncate font-medium">
                           {my.totalSteps.toLocaleString("ru-RU")} {my.challenge.unitLabel}
                         </div>
 
-                        {/* Ультратонкий прогресс бар */}
-                        <div className="mt-4 h-1 bg-bg-muted rounded-full overflow-hidden border border-border-thin">
+                        {/* Ультратонкий прогресс бар iOS Style */}
+                        <div className="mt-4 h-1.5 bg-bg-muted rounded-full overflow-hidden border border-border-thin">
                           <div
                             className="h-full rounded-full bg-accent transition-all duration-500 ease-out"
                             style={{ width: `${progress}%` }}
                           />
                         </div>
-                        <div className="mt-2 flex justify-between text-[10px] font-bold">
+                        <div className="mt-2 flex justify-between text-[11px] font-bold">
                           <span className="text-accent">{progress}%</span>
                           <span className="text-text-secondary">{daysLeft} дн</span>
                         </div>
@@ -280,7 +280,7 @@ export default async function ProfilePage() {
 
             {pastChallenges.length > 0 && (
               <>
-                <div className="text-[10px] uppercase tracking-widest text-text-muted mb-4 px-1">
+                <div className="text-[11px] uppercase tracking-widest text-text-muted mb-4 px-1 font-medium">
                   История
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -288,7 +288,7 @@ export default async function ProfilePage() {
                     <Link
                       key={my.challenge.id}
                       href={`/challenge/${my.challenge.id}`}
-                      className="bg-bg-muted border border-border-thin rounded-[1.75rem] p-4 relative opacity-60 hover:opacity-100 transition-opacity active-scale"
+                      className="bg-bg-muted border border-border-thin rounded-[1.5rem] p-4 relative opacity-60 hover:opacity-100 transition-opacity active-scale"
                     >
                       <div className="absolute top-3 right-3 bg-bg-main border border-border-thin text-[10px] font-bold text-text-muted px-2 py-0.5 rounded-full">
                         #{my.rank}
@@ -301,7 +301,7 @@ export default async function ProfilePage() {
                       <div className="text-sm font-bold leading-tight pr-6 text-text-secondary mb-1">
                         {my.challenge.title}
                       </div>
-                      <div className="text-[9px] uppercase tracking-widest text-text-muted">
+                      <div className="text-[10px] uppercase tracking-widest text-text-muted font-medium">
                         Завершён
                       </div>
                     </Link>
@@ -315,10 +315,10 @@ export default async function ProfilePage() {
 
       {/* Табы постов */}
       <div className="flex border-t border-border-thin">
-        <button className="flex-1 py-4 flex items-center justify-center text-accent border-t-[3px] border-accent -mt-[2px]">
+        <button className="flex-1 py-4 flex items-center justify-center text-accent border-t-[3px] border-accent -mt-[2px] active-scale">
           <Grid3x3 className="w-5 h-5" />
         </button>
-        <button className="flex-1 py-4 flex items-center justify-center text-text-muted hover:text-text-primary transition-colors border-t-[3px] border-transparent -mt-[2px]">
+        <button className="flex-1 py-4 flex items-center justify-center text-text-muted hover:text-text-primary transition-colors border-t-[3px] border-transparent -mt-[2px] active-scale">
           <List className="w-5 h-5" />
         </button>
       </div>
@@ -328,7 +328,7 @@ export default async function ProfilePage() {
         <div className="text-center py-20 px-4 text-text-muted">
           <div className="text-5xl mb-4 grayscale opacity-50">📸</div>
           <p className="font-bold text-text-primary mb-1">Пока нет постов</p>
-          <p className="text-sm">Опубликуй первую тренировку</p>
+          <p className="text-sm font-medium">Опубликуй первую тренировку</p>
         </div>
       ) : (
         <div className="grid grid-cols-3 gap-[1px] bg-border-thin">
@@ -342,7 +342,7 @@ export default async function ProfilePage() {
                 <img
                   src={post.imageUrl}
                   alt=""
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center p-3">
@@ -352,7 +352,7 @@ export default async function ProfilePage() {
                 </div>
               )}
 
-              {/* Hover overlay стал более строгим */}
+              {/* Hover overlay */}
               <div className="absolute inset-0 bg-bg-main/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center gap-2 text-text-primary text-sm font-bold">
                 <div className="flex items-center gap-1.5">
                   <span className="text-accent">🔥</span> {post.likesCount}

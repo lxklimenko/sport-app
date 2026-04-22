@@ -2,52 +2,46 @@
 
 @theme {
   /* =========================================
-     ЦВЕТОВАЯ СИСТЕМА (Строгий монохром)
+     ЦВЕТОВАЯ СИСТЕМА (Apple iOS Dark Mode)
      ========================================= */
-  --color-bg-main: #0F0F14;
-  --color-bg-card: #1A1A22;
-  --color-bg-nested: #242430;
-  --color-bg-muted: #1F1F27;
-  --color-bg-hover: #2A2A34;
+  --color-bg-main: #000000; /* Pure OLED Black */
+  --color-bg-card: #1C1C1E; /* iOS System Gray 6 */
+  --color-bg-nested: #2C2C2E; /* iOS System Gray 5 */
+  --color-bg-muted: #242426; 
+  --color-bg-hover: #3A3A3C;
 
   /* =========================================
-     ТЕКСТ (Иерархия белого и серого)
+     ТЕКСТ (Иерархия белого и серого по гайдлайнам)
      ========================================= */
-  --color-text-primary: #F5F5FA;
-  --color-text-secondary: #C4C4CF;
-  --color-text-muted: #7A7A85;
-  --color-text-on-accent: #0F0F14;
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #EBEBF5; /* Secondary text with slight transparency feel */
+  --color-text-muted: #8E8E93; /* iOS System Gray */
+  --color-text-on-accent: #000000;
 
   /* =========================================
-     АКЦЕНТ И СЕМАНТИКА (Только Лаванда и Ошибка)
+     АКЦЕНТ И СЕМАНТИКА (Apple Fitness Green)
      ========================================= */
-  --color-accent: #B4A5FF;
-  --color-accent-hover: #C5B9FF;
-  --color-danger: #FFB4AB;
+  --color-accent: #32D74B; 
+  --color-accent-hover: #42E75B;
+  --color-danger: #FF453A; /* Apple System Red for errors/deletes */
 
   /* =========================================
      БОРДЕРЫ И СКРУГЛЕНИЯ
      ========================================= */
-  --color-border-thin: rgba(255, 255, 255, 0.06);
-  --radius-huge: 1.75rem;
-
-  /* Шрифты оставляем твои — Google Sans отлично подходит для минимализма */
-  --font-sans: "Google Sans", "Segoe UI", "Helvetica Neue", system-ui, sans-serif;
-  --font-mono: "SFMono-Regular", "Menlo", monospace;
+  --color-border-thin: rgba(255, 255, 255, 0.1);
+  --radius-huge: 1.5rem; /* Чуть сдержаннее, чем 1.75, ближе к стилю виджетов iOS */
 }
 
 @layer base {
   body {
     background-color: var(--color-bg-main);
     color: var(--color-text-primary);
-    font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 }
 
 @layer utilities {
-  /* Скрытие скроллбара для чистоты Apple-подобного UI */
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -56,14 +50,12 @@
     display: none;
   }
 
-  /* * Базовый класс карточки (замена .md-card).
-   * Вместо заливок — тонкая обводка, крупное скругление и резкий тактильный active state.
-   */
   .card-base {
     background-color: var(--color-bg-card);
     border-radius: var(--radius-huge);
+    /* В стиле Apple мы можем даже убрать бордер, оставив только контраст фонов, 
+       но оставим ультратонкий для четкости */
     border: 1px solid var(--color-border-thin);
-    /* Анимация transform сделана быстрее (100ms) для мгновенного тактильного отклика */
     transition: background-color 0.2s ease, transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
@@ -71,8 +63,11 @@
     background-color: var(--color-bg-hover);
   }
 
-  /* Active state: scale(0.98) */
   .card-base:active {
     transform: scale(0.98);
+  }
+  
+  .active-scale {
+    @apply active:scale-98 transition-transform duration-200 ease-out;
   }
 }

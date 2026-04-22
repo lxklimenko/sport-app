@@ -15,7 +15,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="inline-flex items-center gap-2 rounded-full bg-[#A8C7FA] px-5 py-3 font-semibold text-[#062E6F] transition hover:bg-[#BBD6FE] disabled:cursor-not-allowed disabled:opacity-70"
+      className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 font-bold text-text-on-accent transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50 active-scale"
     >
       {pending ? "Публикуем..." : "Опубликовать"}
       <Send className="h-4 w-4" />
@@ -49,33 +49,42 @@ export function PostComposer() {
   };
 
   return (
-    <section className="rounded-3xl bg-[#1E1F22] p-5">
-      <p className="text-xs uppercase tracking-widest text-[#9AA0A6] mb-2">
+    <section className="card-base p-6">
+      <p className="text-[11px] uppercase tracking-widest text-text-muted mb-2 font-medium">
         Новый пост
       </p>
-      <h2 className="text-xl font-semibold mb-4">
+      <h2 className="text-xl font-bold mb-5 tracking-[-0.5px]">
         Расскажи, что сделал сегодня
       </h2>
 
-      <form action={formAction} className="space-y-3">
-        <textarea
-          name="workout"
-          rows={3}
-          placeholder="Что было на тренировке? Например: 5 км бег, 4 подхода подтягиваний"
-          className="w-full resize-none rounded-2xl bg-black/30 px-4 py-3 text-base outline-none transition focus:ring-1 focus:ring-[#A8C7FA] placeholder-[#9AA0A6]"
-        />
-        {state.errors?.workout && (
-          <p className="text-sm text-[#FFB4AB]">{state.errors.workout}</p>
-        )}
+      <form action={formAction} className="space-y-4">
+        {/* Поле ввода: OLED Black с тонкой рамкой, переходящей в акцент */}
+        <div>
+          <textarea
+            name="workout"
+            rows={3}
+            placeholder="Что было на тренировке? Например: 5 км бег, 4 подхода подтягиваний"
+            className="w-full resize-none rounded-[1.25rem] bg-bg-main border border-border-thin px-4 py-3 text-sm font-medium text-text-primary outline-none transition-colors focus:border-accent placeholder:text-text-muted placeholder:font-normal"
+          />
+          {state.errors?.workout && (
+            <p className="text-[11px] font-medium text-danger mt-1.5 ml-2">
+              {state.errors.workout}
+            </p>
+          )}
+        </div>
 
-        <input
-          name="stats"
-          placeholder="Результат: 42 минуты · 540 ккал · рекорд"
-          className="w-full rounded-2xl bg-black/30 px-4 py-3 text-base outline-none transition focus:ring-1 focus:ring-[#A8C7FA] placeholder-[#9AA0A6]"
-        />
-        {state.errors?.stats && (
-          <p className="text-sm text-[#FFB4AB]">{state.errors.stats}</p>
-        )}
+        <div>
+          <input
+            name="stats"
+            placeholder="Результат: 42 минуты · 540 ккал · рекорд"
+            className="w-full rounded-[1.25rem] bg-bg-main border border-border-thin px-4 py-3 text-sm font-medium text-text-primary outline-none transition-colors focus:border-accent placeholder:text-text-muted placeholder:font-normal"
+          />
+          {state.errors?.stats && (
+            <p className="text-[11px] font-medium text-danger mt-1.5 ml-2">
+              {state.errors.stats}
+            </p>
+          )}
+        </div>
 
         <input
           ref={fileInputRef}
@@ -87,7 +96,7 @@ export function PostComposer() {
         />
 
         {preview ? (
-          <div className="relative rounded-2xl overflow-hidden bg-black/30">
+          <div className="relative rounded-[1.25rem] overflow-hidden bg-bg-main border border-border-thin group">
             <img
               src={preview}
               alt="Preview"
@@ -96,34 +105,40 @@ export function PostComposer() {
             <button
               type="button"
               onClick={clearPhoto}
-              className="absolute top-2 right-2 bg-black/60 backdrop-blur rounded-full p-2 hover:bg-black/80 transition"
+              className="absolute top-3 right-3 bg-bg-main/60 backdrop-blur-md rounded-full p-2 hover:bg-bg-hover transition-colors active-scale"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4 text-text-primary" />
             </button>
-            <p className="absolute bottom-2 left-3 text-xs text-white/90 bg-black/40 backdrop-blur rounded-full px-2 py-0.5">
-              {fileName}
-            </p>
+            <div className="absolute bottom-3 left-3 px-3 py-1 bg-bg-main/60 backdrop-blur-md rounded-full border border-border-thin">
+              <p className="text-[10px] font-medium text-text-primary truncate max-w-[200px]">
+                {fileName}
+              </p>
+            </div>
           </div>
         ) : (
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="w-full flex items-center gap-3 rounded-2xl bg-black/30 px-4 py-3 cursor-pointer hover:bg-black/50 transition text-left"
+            className="w-full flex items-center justify-center gap-3 rounded-[1.25rem] bg-bg-main border border-border-thin border-dashed px-4 py-4 cursor-pointer hover:border-text-muted transition-colors text-center active-scale group"
           >
-            <ImagePlus className="w-5 h-5 text-[#9AA0A6]" />
-            <span className="text-sm text-[#9AA0A6]">Добавить фото</span>
+            <ImagePlus className="w-5 h-5 text-text-muted group-hover:text-text-primary transition-colors" />
+            <span className="text-sm font-medium text-text-muted group-hover:text-text-primary transition-colors">
+              Добавить фото
+            </span>
           </button>
         )}
 
-        <div className="flex items-center justify-between gap-3 pt-1">
-          <p className="text-xs text-[#9AA0A6] flex-1">
-            Коротко и по делу
+        <div className="flex items-center justify-between gap-4 pt-2 border-t border-border-thin mt-2">
+          <p className="text-[11px] font-medium text-text-muted flex-1">
+            Коротко и по делу. Дисциплина любит факты.
           </p>
           <SubmitButton />
         </div>
 
         {state.message && (
-          <p className="text-sm text-[#C4C7C5]">{state.message}</p>
+          <p className="text-[11px] font-medium text-text-secondary text-center mt-2">
+            {state.message}
+          </p>
         )}
       </form>
     </section>

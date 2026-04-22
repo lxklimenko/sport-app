@@ -19,19 +19,19 @@ export function WeeklyChart({
     <div className="card-base p-5">
       <div className="flex items-start justify-between mb-8">
         <div>
-          <div className="text-[10px] uppercase tracking-widest text-text-muted mb-1">
+          <div className="text-[11px] uppercase tracking-widest text-text-muted mb-1 font-medium">
             Прогресс за 12 недель
           </div>
           <div className="text-4xl font-bold tracking-[-0.5px] text-text-primary">
             {avgPerWeek.toLocaleString("ru-RU")}
-            <span className="text-text-muted text-lg font-normal ml-2">/ нед</span>
+            <span className="text-text-muted text-xl font-medium ml-2">/ нед</span>
           </div>
         </div>
         
-        {/* Тренд: без зеленого/красного. Акцент для роста, приглушенный для спада */}
+        {/* Тренд: Акцент для роста, глухой для спада. Рамки в стиле iOS */}
         {trend !== 0 && totalLast12Weeks > 0 && (
-          <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full border border-border-thin text-[10px] font-bold uppercase tracking-widest ${
-            trend > 0 ? "bg-bg-nested text-accent" : "bg-bg-main text-text-muted"
+          <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full border text-[10px] font-bold uppercase tracking-widest ${
+            trend > 0 ? "bg-bg-nested border-border-thin text-accent" : "bg-bg-main border-transparent text-text-muted"
           }`}>
             <span>{trend > 0 ? "↗" : "↘"}</span>
             <span>{Math.abs(trend)}%</span>
@@ -50,7 +50,7 @@ export function WeeklyChart({
               <div
                 className={`w-full rounded-t-[4px] transition-all duration-300 ${
                   isCurrent
-                    ? "bg-accent" // Текущая неделя горит акцентом
+                    ? "bg-accent" // Текущая неделя горит Apple Green
                     : hasData
                     ? "bg-bg-nested border border-border-thin border-b-0 group-hover:bg-bg-hover" // Прошлые недели: строгие блоки
                     : "bg-transparent border-b border-border-thin" // Пустые недели: просто линия на дне
@@ -63,7 +63,7 @@ export function WeeklyChart({
         })}
       </div>
 
-      <div className="flex justify-between text-[9px] uppercase tracking-widest px-1">
+      <div className="flex justify-between text-[10px] uppercase tracking-widest px-1 font-medium">
         <span className="text-text-muted">{weeks[0]?.label}</span>
         <span className="text-text-muted">{weeks[Math.floor(weeks.length / 2)]?.label}</span>
         <span className="text-accent font-bold">Эта неделя</span>

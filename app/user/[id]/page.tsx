@@ -81,85 +81,94 @@ export default async function UserPage({
   const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.name)}`;
 
   return (
-    <main className="min-h-screen bg-[#0D0F12] text-[#F5F7FA] pb-20">
+    <main className="min-h-screen bg-bg-main text-text-primary pb-24">
 
-      <div className="sticky top-0 z-10 bg-[#0D0F12]/95 backdrop-blur border-b border-white/5 px-4 py-3 flex items-center gap-3">
+      {/* Верхняя шапка */}
+      <div className="sticky top-0 z-50 bg-bg-main/80 backdrop-blur-md border-b border-border-thin px-5 py-4 flex items-center gap-3">
         <Link
           href="/profile"
-          className="p-2 -ml-2 hover:bg-white/5 rounded-full transition"
+          className="p-2 -ml-2 hover:bg-bg-hover rounded-full transition-colors active-scale"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="w-6 h-6 text-text-primary" />
         </Link>
-        <span className="font-semibold">{user.name}</span>
+        <span className="font-bold text-lg tracking-tight">{user.name}</span>
       </div>
 
-      <div className="px-4 pt-5">
+      <div className="px-5 pt-6">
 
-        <div className="flex items-center gap-4 mb-4">
+        {/* Профиль и статистика */}
+        <div className="flex items-center gap-6 mb-8">
           <img
             src={avatarUrl}
             alt={user.name}
-            className="w-20 h-20 rounded-full bg-[#1E1F22]"
+            className="w-24 h-24 rounded-full bg-bg-nested border-2 border-border-thin p-1"
           />
 
           <div className="flex-1 grid grid-cols-3 gap-2 text-center">
             <div>
-              <div className="text-lg font-semibold">{posts.length}</div>
-              <div className="text-xs text-[#9AA0A6]">постов</div>
+              <div className="text-2xl font-bold tracking-[-0.5px]">{posts.length}</div>
+              <div className="text-[10px] uppercase tracking-widest text-text-muted mt-1 font-medium">постов</div>
             </div>
             <div>
-              <div className="text-lg font-semibold">{followCounts.followers}</div>
-              <div className="text-xs text-[#9AA0A6]">подписчиков</div>
+              <div className="text-2xl font-bold tracking-[-0.5px]">{followCounts.followers}</div>
+              <div className="text-[10px] uppercase tracking-widest text-text-muted mt-1 font-medium">подписчиков</div>
             </div>
             <div>
-              <div className="text-lg font-semibold">{followCounts.following}</div>
-              <div className="text-xs text-[#9AA0A6]">подписок</div>
+              <div className="text-2xl font-bold tracking-[-0.5px]">{followCounts.following}</div>
+              <div className="text-[10px] uppercase tracking-widest text-text-muted mt-1 font-medium">подписок</div>
             </div>
           </div>
         </div>
 
-        <div className="mb-4">
-          <div className="font-semibold text-sm mb-0.5">{user.name}</div>
-          <div className="text-sm text-[#C4C7C5]">
+        {/* Информация пользователя */}
+        <div className="mb-6">
+          <div className="text-xl font-bold tracking-[-0.5px] mb-1">{user.name}</div>
+          <div className="text-sm text-text-secondary font-medium">
             {user.favoriteFormat}
             {user.goal && ` · 🎯 ${user.goal}`}
           </div>
+        </div>
+
+        {/* Блоки статистики */}
+        <div className="flex flex-col gap-4 mb-6">
           <StreakBadge
             current={streak.current}
             best={streak.best}
             weekDays={streak.weekDays}
           />
-          <div className="mt-3">
-            <ActivityHeatmap data={heatmap} />
-          </div>
-          <div className="mt-3">
-            <WeeklyChart weeks={weeklyProgress.weeks} />
-          </div>
-          <div className="mt-3">
-            <AchievementsBadges unlocked={achievements} />
-          </div>
+          <ActivityHeatmap data={heatmap} />
+          <WeeklyChart weeks={weeklyProgress.weeks} />
+          <AchievementsBadges unlocked={achievements} />
         </div>
 
-        <div className="flex gap-2 mb-6">
-          <button className="flex-1 bg-[#A8C7FA] text-[#062E6F] py-2 px-4 rounded-xl text-sm font-semibold hover:bg-[#BBD6FE] transition">
-            Подписаться
+        {/* Кнопки действий */}
+        <div className="flex gap-3 mb-8">
+          <button 
+            className={`flex-1 py-3 px-4 rounded-[1.25rem] text-sm font-bold active-scale transition-colors ${
+              following 
+                ? "bg-bg-nested border border-border-thin text-text-primary hover:bg-bg-hover" 
+                : "bg-accent text-text-on-accent hover:bg-accent-hover"
+            }`}
+          >
+            {following ? "Отписаться" : "Подписаться"}
           </button>
           <Link
             href={`/chat/${user.id}`}
-            className="flex-1 bg-[#1E1F22] text-[#E3E3E3] py-2 px-4 rounded-xl text-sm font-medium hover:bg-[#2A2D33] transition text-center"
+            className="flex-1 bg-bg-nested border border-border-thin text-text-primary py-3 px-4 rounded-[1.25rem] text-sm font-bold active-scale hover:bg-bg-hover transition-colors text-center"
           >
             Сообщение
           </Link>
         </div>
 
+        {/* Челленджи */}
         {(activeChallenges.length > 0 || pastChallenges.length > 0) && (
-          <div className="mb-6">
+          <div className="mb-8">
             {activeChallenges.length > 0 && (
               <>
-                <div className="text-xs text-[#9AA0A6] uppercase tracking-widest mb-3 px-1">
+                <div className="text-[11px] uppercase tracking-widest text-text-muted mb-4 px-1 font-medium">
                   Сейчас
                 </div>
-                <div className="grid grid-cols-2 gap-2 mb-4">
+                <div className="grid grid-cols-2 gap-3 mb-6">
                   {activeChallenges.map(my => {
                     const daysLeft = Math.max(
                       0,
@@ -173,21 +182,26 @@ export default async function UserPage({
                       <Link
                         key={my.challenge.id}
                         href={`/challenge/${my.challenge.id}`}
-                        className="bg-[#1E1F22] rounded-2xl p-3 relative hover:bg-[#2A2D33] transition"
+                        className="card-base p-4 relative group"
                       >
-                        <div className="absolute top-2 right-2 bg-[#FDE293] text-[#3D2A00] text-[10px] font-bold px-2 py-0.5 rounded-md">
+                        <div className="absolute top-3 right-3 bg-bg-nested border border-border-thin text-text-primary text-[10px] font-bold px-2 py-0.5 rounded-full">
                           #{my.rank}
                         </div>
-                        <div className="text-xl mb-1">{my.challenge.emoji}</div>
-                        <div className="text-xs font-semibold truncate pr-8">
+                        
+                        <div className="w-10 h-10 rounded-[1rem] bg-bg-main border border-border-thin flex items-center justify-center mb-3 shadow-sm">
+                          <span className="text-xl">{my.challenge.emoji}</span>
+                        </div>
+                        
+                        <div className="text-sm font-bold leading-tight pr-6 mb-1 text-text-primary">
                           {my.challenge.title}
                         </div>
-                        <div className="text-[10px] text-[#9AA0A6] mt-0.5 truncate">
+                        <div className="text-[10px] uppercase tracking-widest text-text-muted truncate font-medium">
                           {my.totalSteps.toLocaleString("ru-RU")} {my.challenge.unitLabel}
                         </div>
-                        <div className="mt-2 h-[2px] bg-[#2A2D33] rounded-full overflow-hidden">
+                        
+                        <div className="mt-4 h-1.5 bg-bg-muted rounded-full overflow-hidden border border-border-thin">
                           <div
-                            className="h-full bg-[#A8C7FA]"
+                            className="h-full rounded-full bg-accent transition-all duration-500 ease-out"
                             style={{ width: `${progress}%` }}
                           />
                         </div>
@@ -200,24 +214,30 @@ export default async function UserPage({
 
             {pastChallenges.length > 0 && (
               <>
-                <div className="text-xs text-[#9AA0A6] uppercase tracking-widest mb-3 px-1">
+                <div className="text-[11px] uppercase tracking-widest text-text-muted mb-4 px-1 font-medium">
                   История
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   {pastChallenges.map(my => (
                     <Link
                       key={my.challenge.id}
                       href={`/challenge/${my.challenge.id}`}
-                      className="bg-[#1E1F22] rounded-2xl p-3 relative hover:bg-[#2A2D33] transition opacity-70"
+                      className="bg-bg-muted border border-border-thin rounded-[1.5rem] p-4 relative opacity-60 hover:opacity-100 transition-opacity active-scale"
                     >
-                      <div className="absolute top-2 right-2 bg-[#2A2D33] text-[#9AA0A6] text-[10px] font-bold px-2 py-0.5 rounded-md">
+                      <div className="absolute top-3 right-3 bg-bg-main border border-border-thin text-[10px] font-bold text-text-muted px-2 py-0.5 rounded-full">
                         #{my.rank}
                       </div>
-                      <div className="text-xl mb-1">{my.challenge.emoji}</div>
-                      <div className="text-xs font-semibold truncate pr-8">
+                      
+                      <div className="w-10 h-10 rounded-[1rem] bg-bg-main border border-border-thin flex items-center justify-center mb-3">
+                        <span className="text-xl grayscale">{my.challenge.emoji}</span>
+                      </div>
+                      
+                      <div className="text-sm font-bold leading-tight pr-6 text-text-secondary mb-1">
                         {my.challenge.title}
                       </div>
-                      <div className="text-[10px] text-[#9AA0A6] mt-0.5">завершён</div>
+                      <div className="text-[10px] uppercase tracking-widest text-text-muted font-medium">
+                        завершён
+                      </div>
                     </Link>
                   ))}
                 </div>
@@ -227,46 +247,52 @@ export default async function UserPage({
         )}
       </div>
 
-      <div className="flex border-t border-white/5">
-        <button className="flex-1 py-3 flex items-center justify-center text-[#E3E3E3] border-t-2 border-[#A8C7FA] -mt-px">
+      {/* Табы постов */}
+      <div className="flex border-t border-border-thin">
+        <button className="flex-1 py-4 flex items-center justify-center text-accent border-t-[3px] border-accent -mt-[2px] active-scale">
           <Grid3x3 className="w-5 h-5" />
         </button>
-        <button className="flex-1 py-3 flex items-center justify-center text-[#9AA0A6]">
+        <button className="flex-1 py-4 flex items-center justify-center text-text-muted hover:text-text-primary transition-colors border-t-[3px] border-transparent -mt-[2px] active-scale">
           <List className="w-5 h-5" />
         </button>
       </div>
 
+      {/* Сетка постов */}
       {posts.length === 0 ? (
-        <div className="text-center py-16 px-4 text-[#9AA0A6]">
-          <div className="text-5xl mb-3">📸</div>
-          <p className="font-semibold mb-1">Пока нет постов</p>
-          <p className="text-sm">Пользователь ещё не публиковал тренировки</p>
+        <div className="text-center py-20 px-4 text-text-muted">
+          <div className="text-5xl mb-4 grayscale opacity-50">📸</div>
+          <p className="font-bold text-text-primary mb-1">Пока нет постов</p>
+          <p className="text-sm font-medium">Пользователь ещё не публиковал тренировки</p>
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-0.5">
+        <div className="grid grid-cols-3 gap-[1px] bg-border-thin">
           {posts.map(post => (
             <Link
               key={post.id}
               href={`/post/${post.id}`}
-              className="relative aspect-square bg-[#1E1F22] overflow-hidden group"
+              className="relative aspect-square bg-bg-nested overflow-hidden group"
             >
               {post.imageUrl ? (
                 <img
                   src={post.imageUrl}
                   alt=""
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center p-2">
-                  <p className="text-xs text-[#C4C7C5] line-clamp-4 text-center">
+                <div className="w-full h-full flex items-center justify-center p-3">
+                  <p className="text-[10px] text-text-secondary line-clamp-4 text-center font-mono leading-relaxed">
                     {post.workout}
                   </p>
                 </div>
               )}
 
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-4 text-white text-sm font-semibold">
-                <span>🔥 {post.likesCount}</span>
-                <span>💬 {post.commentsCount}</span>
+              <div className="absolute inset-0 bg-bg-main/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center gap-2 text-text-primary text-sm font-bold">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-accent">🔥</span> {post.likesCount}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-text-secondary">💬</span> {post.commentsCount}
+                </div>
               </div>
             </Link>
           ))}

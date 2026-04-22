@@ -19,8 +19,9 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-40 bg-[#10121A]/95 backdrop-blur-xl border-t border-white/5">
-      <div className="mx-auto max-w-2xl flex items-center justify-around px-2 py-2">
+    // iOS стиль: OLED Black, размытие и ультратонкая рамка
+    <nav className="fixed bottom-0 inset-x-0 z-40 bg-bg-main/80 backdrop-blur-xl border-t border-border-thin pb-safe">
+      <div className="mx-auto max-w-2xl flex items-center justify-around px-2 py-1">
         {items.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href ||
@@ -30,27 +31,24 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className="relative flex-1 flex flex-col items-center py-1.5 group"
+              className="relative flex-1 flex flex-col items-center py-2 group active-scale"
             >
-              <div className={`relative flex items-center justify-center transition-all duration-200 ${
-                isActive
-                  ? "px-5 py-1.5 rounded-full bg-gradient-to-br from-[#B4A5FF]/20 to-[#8E7AE0]/20 border border-[#B4A5FF]/30"
-                  : "p-1.5"
-              }`}>
+              <div className="relative flex items-center justify-center transition-all duration-200">
                 <Icon
-                  className={`w-5 h-5 transition-all ${
+                  className={`w-6 h-6 transition-all ${
                     isActive
-                      ? "text-[#B4A5FF]"
-                      : "text-[#8F8D9C] group-hover:text-[#C8C6D4]"
+                      ? "text-accent" // Apple Fitness Green
+                      : "text-text-muted group-hover:text-text-primary"
                   }`}
+                  // В iOS активные иконки часто залиты, неактивные — аутлайн
                   fill={isActive ? "currentColor" : "none"}
-                  strokeWidth={isActive ? 2 : 1.75}
+                  strokeWidth={isActive ? 2 : 1.5}
                 />
               </div>
-              <span className={`text-[9px] mt-0.5 transition-all ${
+              <span className={`text-[10px] mt-1 tracking-wide transition-all ${
                 isActive
-                  ? "text-[#B4A5FF] font-semibold"
-                  : "text-[#8F8D9C]"
+                  ? "text-accent font-medium"
+                  : "text-text-muted font-medium"
               }`}>
                 {item.label}
               </span>

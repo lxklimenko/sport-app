@@ -39,16 +39,16 @@ export function WeeklyGoalsBlock({
     <div className="card-base p-5">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
-          {/* Иконка стала нейтрально-серой */}
+          {/* Иконка нейтрально-серая, чтобы не отвлекать от самих целей */}
           <Target className="w-4 h-4 text-text-muted" />
-          <div className="text-[10px] uppercase tracking-widest text-text-muted">
+          <div className="text-[11px] uppercase tracking-widest text-text-muted font-medium">
             Цели на неделю
           </div>
         </div>
         {!showForm && availableChallenges.length > 0 && (
           <button
             onClick={() => setShowForm(true)}
-            className="text-[10px] uppercase tracking-widest text-accent font-bold hover:text-accent-hover transition-colors"
+            className="text-[11px] uppercase tracking-widest text-accent font-bold hover:text-accent-hover transition-colors"
           >
             + Добавить
           </button>
@@ -56,9 +56,9 @@ export function WeeklyGoalsBlock({
       </div>
 
       {goals.length === 0 && !showForm && (
-        <div className="text-[11px] text-text-muted py-2">
+        <div className="text-[12px] text-text-muted py-2 font-medium">
           {availableChallenges.length === 0
-            ? "Вступи в челлендж чтобы ставить цели"
+            ? "Вступи в челлендж, чтобы ставить цели."
             : "Дисциплина требует конкретики. Задай планку на неделю."}
         </div>
       )}
@@ -72,7 +72,7 @@ export function WeeklyGoalsBlock({
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <span className="text-2xl">{goal.challengeEmoji}</span>
-                    <span className="text-sm font-medium text-text-primary truncate">
+                    <span className="text-sm font-bold text-text-primary truncate">
                       {goal.challengeTitle}
                     </span>
                   </div>
@@ -80,25 +80,23 @@ export function WeeklyGoalsBlock({
                   <div className="text-right shrink-0">
                     <div className="text-2xl font-bold tracking-[-0.5px] text-text-primary">
                       {goal.current.toLocaleString("ru-RU")}
-                      <span className="text-text-muted text-sm font-normal ml-1">
+                      <span className="text-text-muted text-sm font-medium ml-1">
                         / {goal.target.toLocaleString("ru-RU")}
                       </span>
                     </div>
                   </div>
                 </div>
                 
-                {/* Ультратонкий прогресс-бар: серый в процессе, лавандовый при выполнении */}
-                <div className="h-1 bg-bg-muted rounded-full overflow-hidden border border-border-thin">
+                {/* Ультратонкий прогресс-бар: фон глухой, заполнение всегда Apple Green */}
+                <div className="h-1.5 bg-bg-muted rounded-full overflow-hidden border border-border-thin">
                   <div
-                    className={`h-full rounded-full transition-all duration-500 ease-out ${
-                      isDone ? "bg-accent" : "bg-text-secondary"
-                    }`}
+                    className="h-full rounded-full bg-accent transition-all duration-500 ease-out"
                     style={{ width: `${Math.min(goal.progress, 100)}%` }}
                   />
                 </div>
                 
-                {/* Uppercase подписи */}
-                <div className="text-[9px] uppercase tracking-widest text-text-muted mt-2">
+                {/* Uppercase подписи статуса */}
+                <div className="text-[10px] uppercase tracking-widest text-text-muted mt-2 font-medium">
                   {isDone ? (
                     <span className="text-accent font-bold">✓ Выполнено</span>
                   ) : (
@@ -114,15 +112,15 @@ export function WeeklyGoalsBlock({
       {showForm && availableChallenges.length > 0 && (
         <form action={setWeeklyGoalAction} className="space-y-3 pt-5 mt-4 border-t border-border-thin">
           <div className="flex items-center justify-between mb-1">
-            <div className="text-[10px] uppercase tracking-widest text-text-secondary">
+            <div className="text-[11px] uppercase tracking-widest text-text-secondary font-medium">
               Новая цель
             </div>
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="text-text-muted hover:text-text-primary transition-colors p-1"
+              className="text-text-muted hover:text-text-primary transition-colors p-1 active-scale"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </button>
           </div>
 
@@ -130,7 +128,7 @@ export function WeeklyGoalsBlock({
             name="challengeId"
             value={selectedChallenge}
             onChange={(e) => setSelectedChallenge(e.target.value)}
-            className="w-full bg-bg-nested border border-border-thin rounded-[1rem] px-4 py-3 text-sm text-text-primary outline-none focus:border-accent transition-colors appearance-none"
+            className="w-full bg-bg-nested border border-border-thin rounded-[1rem] px-4 py-3 text-sm font-medium text-text-primary outline-none focus:border-accent transition-colors appearance-none"
           >
             {availableChallenges.map(c => (
               <option key={c.id} value={c.id} className="bg-bg-card">
@@ -146,7 +144,7 @@ export function WeeklyGoalsBlock({
               min="1"
               required
               placeholder={`Цель в ${selectedChallengeData?.unitLabel ?? "ед."}`}
-              className="flex-1 bg-bg-nested border border-border-thin rounded-[1rem] px-4 py-3 text-sm text-text-primary outline-none focus:border-accent placeholder:text-text-muted transition-colors"
+              className="flex-1 bg-bg-nested border border-border-thin rounded-[1rem] px-4 py-3 text-sm font-medium text-text-primary outline-none focus:border-accent placeholder:text-text-muted transition-colors"
             />
             {/* Кнопка с тактильным откликом active-scale */}
             <button

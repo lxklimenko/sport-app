@@ -1,6 +1,6 @@
 import { ACHIEVEMENTS, type AchievementCategory } from "@/lib/achievements";
 
-// Цветовые категории полностью удалены, оставляем только текстовые лейблы
+// Оставляем только строгие текстовые лейблы
 const CATEGORY_LABELS: Record<AchievementCategory, string> = {
   strength: "Сила",
   discipline: "Дисциплина",
@@ -22,10 +22,10 @@ function AchievementBadge({
     <div className="flex flex-col items-center gap-1.5 group">
       <div className="relative">
         <div
-          className={`${sizeClass} rounded-full flex items-center justify-center transition-all border ${
+          className={`${sizeClass} rounded-full flex items-center justify-center transition-all ${
             unlocked
-              ? "bg-bg-nested border-accent text-text-primary"
-              : "bg-bg-muted border-border-thin opacity-40 grayscale"
+              ? "bg-bg-nested border border-border-thin shadow-sm"
+              : "bg-bg-muted opacity-40 grayscale"
           }`}
         >
           <span className={emojiSize}>
@@ -33,20 +33,20 @@ function AchievementBadge({
           </span>
           {!unlocked && (
             <div className="absolute inset-0 rounded-full flex items-center justify-center">
-              <span className="text-base text-text-primary">🔒</span>
+              <span className="text-base opacity-60">🔒</span>
             </div>
           )}
         </div>
         
-        {/* Бейдж RARE: теперь использует единственный акцентный цвет с контрастным черным текстом */}
+        {/* Бейдж RARE: Apple Fitness Green с черным контрастным текстом */}
         {achievement.rare && unlocked && (
-          <div className="absolute -top-1 -right-1 bg-accent text-text-on-accent text-[8px] uppercase tracking-widest font-bold px-1.5 py-0.5 rounded-full border border-bg-card">
+          <div className="absolute -top-1 -right-1 bg-accent text-text-on-accent text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-full border-2 border-bg-card">
             Rare
           </div>
         )}
       </div>
       
-      <div className={`text-[9px] text-center leading-tight max-w-[70px] ${
+      <div className={`text-[10px] text-center leading-tight max-w-[70px] ${
         unlocked ? "text-text-secondary" : "text-text-muted"
       }`}>
         {achievement.title}
@@ -75,30 +75,32 @@ export function AchievementsBadges({
     <div className="card-base p-5">
       <div className="flex items-start justify-between mb-8">
         <div>
-          {/* Мелкие uppercase подписи */}
-          <div className="text-[10px] uppercase tracking-widest text-text-muted mb-1">
+          {/* Мелкие uppercase подписи в стиле iOS */}
+          <div className="text-[11px] uppercase tracking-widest text-text-muted mb-1">
             Достижения
           </div>
           {/* Крупные и жирные цифры */}
           <div className="text-4xl font-bold tracking-[-0.5px] text-text-primary">
             {unlockedCount}
-            <span className="text-text-muted text-lg font-normal ml-1">/ {total}</span>
+            <span className="text-text-muted text-xl font-medium ml-1">/ {total}</span>
           </div>
         </div>
         
-        {/* Кольцевой график: градиенты убраны, обводка сделана тоньше */}
+        {/* Кольцевой график: в стиле Activity Rings от Apple */}
         <div className="relative w-14 h-14 shrink-0">
           <svg className="w-14 h-14 -rotate-90">
+            {/* Фоновое кольцо */}
             <circle
               cx="28" cy="28" r="24"
               className="stroke-bg-nested"
-              strokeWidth="2"
+              strokeWidth="4.5"
               fill="none"
             />
+            {/* Кольцо прогресса (Зеленое) */}
             <circle
               cx="28" cy="28" r="24"
               className="stroke-accent transition-all duration-1000 ease-out"
-              strokeWidth="2"
+              strokeWidth="4.5"
               fill="none"
               strokeDasharray={strokeDasharray}
               strokeLinecap="round"
@@ -120,14 +122,14 @@ export function AchievementsBadges({
           return (
             <div key={cat}>
               <div className="flex items-center justify-between mb-3 px-1 border-b border-border-thin pb-2">
-                <div className="text-[10px] uppercase tracking-widest text-text-secondary">
+                <div className="text-[11px] uppercase tracking-widest text-text-secondary font-medium">
                   {CATEGORY_LABELS[cat]}
                 </div>
-                <div className="text-[10px] text-text-muted font-mono">
+                <div className="text-[11px] text-text-muted font-mono font-medium">
                   {catUnlocked}/{catAchievements.length}
                 </div>
               </div>
-              <div className="flex gap-3 flex-wrap">
+              <div className="flex gap-4 flex-wrap pt-1">
                 {catAchievements.map(a => (
                   <AchievementBadge
                     key={a.code}

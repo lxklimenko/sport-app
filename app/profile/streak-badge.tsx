@@ -1,6 +1,6 @@
 const DAY_LABELS = ["П", "В", "С", "Ч", "П", "С", "В"];
 
-// Цветовые градиенты и свечения удалены. Оставляем только смысловые подписи.
+// Оставляем только строгие смысловые подписи уровней.
 function getStreakSubtitle(current: number): string {
   if (current >= 30) return "Легендарная дисциплина";
   if (current >= 15) return "Редкая форма";
@@ -29,11 +29,10 @@ export function StreakBadge({
   const subtitle = getStreakSubtitle(current);
 
   return (
-    // Используем базовый класс карточки. Никаких glow-эффектов.
     <div className="card-base p-5">
       <div className="flex items-center gap-4 mb-6">
         
-        {/* Иконка огня: цветной только эмодзи. Обводка акцентная, если серия активна */}
+        {/* Иконка огня. Если серия активна, обводим зелёным акцентом */}
         <div className={`w-16 h-16 rounded-full flex items-center justify-center shrink-0 border ${
           current > 0 ? 'border-accent bg-bg-nested' : 'border-border-thin bg-bg-muted'
         }`}>
@@ -41,7 +40,7 @@ export function StreakBadge({
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="text-[10px] uppercase tracking-widest text-text-muted mb-1">
+          <div className="text-[11px] uppercase tracking-widest text-text-muted mb-1 font-medium">
             Серия дисциплины
           </div>
           
@@ -51,11 +50,11 @@ export function StreakBadge({
                 <span className="text-4xl font-bold tracking-[-0.5px] text-text-primary">
                   {current}
                 </span>
-                <span className="text-sm text-text-muted">
+                <span className="text-sm font-medium text-text-muted">
                   {current === 1 ? "день" : "дней подряд"}
                 </span>
               </div>
-              <div className="text-[11px] text-text-secondary mt-1">
+              <div className="text-[12px] font-medium text-text-secondary mt-1">
                 {subtitle}
               </div>
             </>
@@ -64,7 +63,7 @@ export function StreakBadge({
               <div className="text-xl font-bold tracking-[-0.5px] text-text-secondary">
                 Серия прервалась
               </div>
-              <div className="text-[11px] text-text-muted mt-1">
+              <div className="text-[11px] text-text-muted mt-1 leading-tight">
                 Правило ненулевого дня: сделай хотя бы 1% сегодня
               </div>
             </>
@@ -73,10 +72,9 @@ export function StreakBadge({
 
         {best > 0 && (
           <div className="text-right shrink-0">
-            <div className="text-[10px] uppercase tracking-widest text-text-muted mb-1">
+            <div className="text-[11px] uppercase tracking-widest text-text-muted mb-1 font-medium">
               Рекорд
             </div>
-            {/* Рекорд тоже делаем крупным, но чуть меньше текущей серии */}
             <div className="text-2xl font-bold tracking-[-0.5px] text-text-primary">
               {best}
             </div>
@@ -84,40 +82,41 @@ export function StreakBadge({
         )}
       </div>
 
-      {/* Блок дней недели: глухой фон, строгие рамки */}
+      {/* Блок дней недели: OLED-стиль с контрастными кружками */}
       <div className="bg-bg-nested rounded-[1.25rem] p-4 border border-border-thin">
         <div className="flex justify-between items-center">
           {weekDays.map((done, i) => {
             const isToday = i === todayIndex;
             return (
-              <div key={i} className="flex flex-col items-center gap-1.5 flex-1">
+              <div key={i} className="flex flex-col items-center gap-2 flex-1">
                 <div
                   className={`relative w-7 h-7 rounded-full flex items-center justify-center transition-all border ${
                     done
-                      ? "border-accent bg-bg-main" // Выполненные обводим лавандовым
+                      ? "border-accent bg-accent" // Выполненные заливаем плотным Apple Green
                       : isToday
-                      ? "border-accent bg-bg-main" // Сегодняшний ждет выполнения
-                      : "border-border-thin bg-bg-muted opacity-50" // Пропущенные или будущие глушим
+                      ? "border-accent bg-bg-main" // Сегодняшний контур
+                      : "border-border-thin bg-bg-muted opacity-50" // Пропущенные/будущие глушим
                   }`}
                 >
                   {done && (
-                    <svg className="w-4 h-4 text-accent" viewBox="0 0 12 12" fill="none">
+                    // Галочка черного цвета для максимального контраста на зеленом
+                    <svg className="w-4 h-4 text-black" viewBox="0 0 12 12" fill="none">
                       <path
                         d="M2 6L5 9L10 3"
                         stroke="currentColor"
-                        strokeWidth="2"
+                        strokeWidth="2.5"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                       />
                     </svg>
                   )}
                   {isToday && !done && (
-                    // Пульсирующая точка акцентного цвета для привлечения внимания
-                    <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                    // Пульсирующая точка
+                    <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
                   )}
                 </div>
-                <span className={`text-[9px] uppercase tracking-widest ${
-                  isToday ? "text-accent font-bold" : "text-text-muted"
+                <span className={`text-[10px] uppercase tracking-widest ${
+                  isToday ? "text-accent font-bold" : "text-text-muted font-medium"
                 }`}>
                   {DAY_LABELS[i]}
                 </span>

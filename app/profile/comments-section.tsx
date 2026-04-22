@@ -11,9 +11,10 @@ export function CommentsSection({
   return (
     <Link
       href={`/post/${postId}`}
-      className="flex items-center gap-1.5 text-sm text-[#9AA0A6] hover:text-white transition"
+      className="inline-flex items-center gap-1.5 p-1 -ml-1 rounded-lg text-sm font-medium text-text-muted hover:text-text-primary transition-colors active-scale group"
     >
-      <MessageCircle className="w-4 h-4" />
+      {/* Иконка чуть крупнее для удобного тапа, цвет меняется при наведении */}
+      <MessageCircle className="w-5 h-5 transition-colors" />
       <span>{count}</span>
     </Link>
   );
