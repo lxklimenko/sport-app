@@ -16,38 +16,44 @@ export function WeeklyChart({
     : 0;
 
   return (
-    <div className="bg-[#1E1F22] rounded-2xl p-4">
-      <div className="flex items-center justify-between mb-3">
+    <div className="card-base p-5">
+      <div className="flex items-start justify-between mb-8">
         <div>
-          <div className="text-sm font-semibold">Прогресс за 12 недель</div>
-          <div className="text-xs text-[#9AA0A6] mt-0.5">
-            В среднем: {avgPerWeek.toLocaleString("ru-RU")} /нед
+          <div className="text-[10px] uppercase tracking-widest text-text-muted mb-1">
+            Прогресс за 12 недель
+          </div>
+          <div className="text-4xl font-bold tracking-[-0.5px] text-text-primary">
+            {avgPerWeek.toLocaleString("ru-RU")}
+            <span className="text-text-muted text-lg font-normal ml-2">/ нед</span>
           </div>
         </div>
+        
+        {/* Тренд: без зеленого/красного. Акцент для роста, приглушенный для спада */}
         {trend !== 0 && totalLast12Weeks > 0 && (
-          <div className={`text-xs font-semibold px-2 py-1 rounded-lg ${
-            trend > 0 
-              ? "bg-[#1E3A2E] text-[#7FDBAA]" 
-              : "bg-[#3A1E1E] text-[#FFB4AB]"
+          <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full border border-border-thin text-[10px] font-bold uppercase tracking-widest ${
+            trend > 0 ? "bg-bg-nested text-accent" : "bg-bg-main text-text-muted"
           }`}>
-            {trend > 0 ? "↑" : "↓"} {Math.abs(trend)}%
+            <span>{trend > 0 ? "↗" : "↘"}</span>
+            <span>{Math.abs(trend)}%</span>
           </div>
         )}
       </div>
 
-      <div className="flex items-end gap-1.5 h-32 mb-2">
+      <div className="flex items-end gap-2 h-32 mb-4">
         {weeks.map((week, i) => {
           const heightPercent = maxValue > 0 ? (week.total / maxValue) * 100 : 0;
           const isCurrent = i === currentWeekIndex;
+          const hasData = week.total > 0;
+          
           return (
-            <div key={i} className="flex-1 flex flex-col items-center justify-end group">
+            <div key={i} className="flex-1 flex flex-col items-center justify-end group h-full">
               <div
-                className={`w-full rounded-t-md transition-all ${
+                className={`w-full rounded-t-[4px] transition-all duration-300 ${
                   isCurrent
-                    ? "bg-[#A8C7FA]"
-                    : week.total > 0
-                    ? "bg-[#4BAE7F]"
-                    : "bg-[#2A2D33]"
+                    ? "bg-accent" // Текущая неделя горит акцентом
+                    : hasData
+                    ? "bg-bg-nested border border-border-thin border-b-0 group-hover:bg-bg-hover" // Прошлые недели: строгие блоки
+                    : "bg-transparent border-b border-border-thin" // Пустые недели: просто линия на дне
                 }`}
                 style={{ height: `${Math.max(heightPercent, 2)}%` }}
                 title={`${week.label}: ${week.total.toLocaleString("ru-RU")}`}
@@ -57,10 +63,10 @@ export function WeeklyChart({
         })}
       </div>
 
-      <div className="flex justify-between text-[9px] text-[#9AA0A6] px-0.5">
-        <span>{weeks[0]?.label}</span>
-        <span>{weeks[Math.floor(weeks.length / 2)]?.label}</span>
-        <span className="text-[#A8C7FA] font-semibold">эта неделя</span>
+      <div className="flex justify-between text-[9px] uppercase tracking-widest px-1">
+        <span className="text-text-muted">{weeks[0]?.label}</span>
+        <span className="text-text-muted">{weeks[Math.floor(weeks.length / 2)]?.label}</span>
+        <span className="text-accent font-bold">Эта неделя</span>
       </div>
     </div>
   );

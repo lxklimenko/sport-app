@@ -90,146 +90,144 @@ export default async function ProfilePage() {
     unitLabel: c.challenge.unitLabel,
   }));
 
-  const totalSteps = allChallenges.reduce((sum, c) => sum + c.totalSteps, 0);
-  const bestRank = activeChallenges.length > 0
-    ? Math.min(...activeChallenges.map(c => c.rank))
-    : null;
-
+  // Для аватара оставляем заглушку, но фон делаем строгим
   const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.name)}`;
 
   return (
-    <main className="min-h-screen bg-[#0D0F12] text-[#F5F7FA] pb-20">
+    <main className="min-h-screen bg-bg-main text-text-primary pb-24">
 
-      <div className="sticky top-0 z-10 bg-[#0D0F12]/95 backdrop-blur border-b border-white/5 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-[#1E1F22]" />
-          <span className="font-semibold">{user.name}</span>
+      {/* Верхняя шапка */}
+      <div className="sticky top-0 z-50 bg-bg-main/80 backdrop-blur-md border-b border-border-thin px-5 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+          <span className="font-bold tracking-tight">{user.name}</span>
         </div>
-        <div className="flex items-center gap-4 text-[#9AA0A6]">
-          <Link href="/" className="hover:text-white transition">
+        <div className="flex items-center gap-5 text-text-primary">
+          <Link href="/" className="hover:text-accent transition-colors">
             <Plus className="w-6 h-6" />
           </Link>
           <form action={logout}>
-            <button className="hover:text-white transition">
+            <button className="hover:text-accent transition-colors">
               <Settings className="w-5 h-5" />
             </button>
           </form>
         </div>
       </div>
 
-      <div className="px-4 pt-5">
+      <div className="px-5 pt-6">
 
-        <div className="flex items-center gap-4 mb-4">
+        {/* Профиль и статистика */}
+        <div className="flex items-center gap-6 mb-8">
           <img
             src={avatarUrl}
             alt={user.name}
-            className="w-20 h-20 rounded-full bg-[#1E1F22]"
+            className="w-24 h-24 rounded-full bg-bg-nested border border-border-thin p-1"
           />
 
           <div className="flex-1 grid grid-cols-3 gap-2 text-center">
             <div>
-              <div className="text-lg font-semibold">{myPosts.length}</div>
-              <div className="text-xs text-[#9AA0A6]">постов</div>
+              <div className="text-2xl font-bold tracking-[-0.5px]">{myPosts.length}</div>
+              <div className="text-[9px] uppercase tracking-widest text-text-muted mt-1">постов</div>
             </div>
             <div>
-              <div className="text-lg font-semibold">{followCounts.followers}</div>
-              <div className="text-xs text-[#9AA0A6]">подписчиков</div>
+              <div className="text-2xl font-bold tracking-[-0.5px]">{followCounts.followers}</div>
+              <div className="text-[9px] uppercase tracking-widest text-text-muted mt-1">подписчиков</div>
             </div>
             <div>
-              <div className="text-lg font-semibold">{followCounts.following}</div>
-              <div className="text-xs text-[#9AA0A6]">подписок</div>
+              <div className="text-2xl font-bold tracking-[-0.5px]">{followCounts.following}</div>
+              <div className="text-[9px] uppercase tracking-widest text-text-muted mt-1">подписок</div>
             </div>
           </div>
         </div>
 
-        <div className="mb-4">
-          <div className="font-semibold text-sm mb-0.5">{user.name}</div>
-          <div className="text-sm text-[#C4C7C5]">
+        {/* Информация пользователя */}
+        <div className="mb-6">
+          <div className="text-xl font-bold tracking-[-0.5px] mb-1">{user.name}</div>
+          <div className="text-sm text-text-secondary">
             {user.favoriteFormat}
             {user.goal && ` · 🎯 ${user.goal}`}
           </div>
 
           {todaySteps > 0 && (
-            <div className="text-xs text-[#9AA0A6] mt-1">
-              Сегодня: +{todaySteps.toLocaleString("ru-RU")}
+            <div className="inline-block mt-3 px-3 py-1.5 rounded-lg bg-bg-nested border border-border-thin">
+              <span className="text-[10px] uppercase tracking-widest text-text-muted mr-2">Сегодня:</span>
+              <span className="text-sm font-bold text-accent">+{todaySteps.toLocaleString("ru-RU")}</span>
             </div>
           )}
+        </div>
 
+        {/* Блоки статистики */}
+        <div className="flex flex-col gap-4 mb-6">
           <StreakBadge
             current={streak.current}
             best={streak.best}
             weekDays={streak.weekDays}
           />
-          <div className="mt-3">
-            <ActivityHeatmap data={heatmap} />
-          </div>
-          <div className="mt-3">
-            <WeeklyChart weeks={weeklyProgress.weeks} />
-          </div>
-          <div className="mt-3">
-            <WeeklyGoalsBlock 
-              goals={weeklyGoals} 
-              availableChallenges={availableChallenges} 
-            />
-          </div>
-          <div className="mt-3">
-            <AchievementsBadges unlocked={achievements} />
-          </div>
+          <ActivityHeatmap data={heatmap} />
+          <WeeklyChart weeks={weeklyProgress.weeks} />
+          <WeeklyGoalsBlock 
+            goals={weeklyGoals} 
+            availableChallenges={availableChallenges} 
+          />
+          <AchievementsBadges unlocked={achievements} />
         </div>
 
+        {/* Команда */}
         <div className="mb-6">
           {myTeam ? (
             <Link
               href={`/teams/${myTeam.id}`}
-              className="flex items-center gap-3 bg-[#1E1F22] rounded-2xl p-3 hover:bg-[#2A2D33] transition"
+              className="card-base flex items-center gap-4 p-4"
             >
-              <div className="w-12 h-12 rounded-xl bg-[#2A2D33] flex items-center justify-center text-2xl shrink-0">
+              <div className="w-12 h-12 rounded-[1rem] bg-bg-nested border border-border-thin flex items-center justify-center text-2xl shrink-0">
                 {myTeam.emoji}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-[#9AA0A6] mb-0.5">Команда</div>
-                <div className="font-semibold text-sm truncate">{myTeam.name}</div>
+                <div className="text-[10px] uppercase tracking-widest text-text-muted mb-1">Команда</div>
+                <div className="font-bold text-base truncate">{myTeam.name}</div>
               </div>
-              <div className="text-xs text-[#9AA0A6] shrink-0">
-                {myTeam.memberCount} {myTeam.memberCount === 1 ? "чел." : "чел."}
+              <div className="text-[10px] uppercase tracking-widest text-text-secondary shrink-0 font-mono">
+                {myTeam.memberCount} чел.
               </div>
             </Link>
           ) : (
             <Link
               href="/teams"
-              className="flex items-center gap-3 bg-[#1E1F22] border border-dashed border-[#444] rounded-2xl p-3 hover:bg-[#2A2D33] transition"
+              className="card-base border-dashed flex items-center gap-4 p-4 opacity-70 hover:opacity-100"
             >
-              <div className="w-12 h-12 rounded-xl bg-[#2A2D33] flex items-center justify-center text-2xl text-[#9AA0A6] shrink-0">
+              <div className="w-12 h-12 rounded-[1rem] bg-bg-nested flex items-center justify-center text-2xl text-text-muted shrink-0">
                 +
               </div>
               <div className="flex-1">
-                <div className="text-xs text-[#9AA0A6] mb-0.5">Команда</div>
-                <div className="text-sm text-[#C4C7C5]">Выбрать или создать</div>
+                <div className="text-[10px] uppercase tracking-widest text-text-muted mb-1">Команда</div>
+                <div className="font-bold text-base text-text-secondary">Выбрать или создать</div>
               </div>
             </Link>
           )}
         </div>
 
-        <div className="flex gap-2 mb-6">
+        {/* Кнопки действий */}
+        <div className="flex gap-3 mb-8">
           <Link
             href="/profile/edit"
-            className="flex-1 bg-[#1E1F22] text-[#E3E3E3] py-2 px-4 rounded-xl text-sm font-medium hover:bg-[#2A2D33] transition text-center"
+            className="flex-1 bg-bg-nested border border-border-thin text-text-primary py-3 px-4 rounded-[1.25rem] text-sm font-bold active-scale hover:bg-bg-hover transition-colors text-center"
           >
             Редактировать
           </Link>
-          <button className="flex-1 bg-[#1E1F22] text-[#E3E3E3] py-2 px-4 rounded-xl text-sm font-medium hover:bg-[#2A2D33] transition">
+          <button className="flex-1 bg-bg-nested border border-border-thin text-text-primary py-3 px-4 rounded-[1.25rem] text-sm font-bold active-scale hover:bg-bg-hover transition-colors">
             Поделиться
           </button>
         </div>
 
+        {/* Челленджи */}
         {(activeChallenges.length > 0 || pastChallenges.length > 0) && (
-          <div className="mb-6">
+          <div className="mb-8">
             {activeChallenges.length > 0 && (
               <>
-                <div className="text-[10px] uppercase tracking-widest text-[#8F8D9C] mb-3 px-1">
-                  Сейчас
+                <div className="text-[10px] uppercase tracking-widest text-text-muted mb-4 px-1">
+                  Активные челленджи
                 </div>
-                <div className="grid grid-cols-2 gap-3 mb-5">
+                <div className="grid grid-cols-2 gap-3 mb-6">
                   {activeChallenges.map(my => {
                     const daysLeft = Math.max(
                       0,
@@ -240,45 +238,38 @@ export default async function ProfilePage() {
                       Math.round(((my.challenge.days - daysLeft) / my.challenge.days) * 100)
                     );
 
-                    const metric = my.challenge.metric;
-                    const colors = metric === "pushups"
-                      ? { gradient: "from-[#FFB4D4] to-[#E074A8]", glow: "shadow-[0_0_24px_-6px_rgba(224,116,168,0.4)]", bar: "#FFB4D4", text: "text-[#4A1B33]" }
-                      : metric === "km"
-                      ? { gradient: "from-[#B4F5D8] to-[#6ED4A8]", glow: "shadow-[0_0_24px_-6px_rgba(110,212,168,0.4)]", bar: "#B4F5D8", text: "text-[#0F3D2C]" }
-                      : { gradient: "from-[#B4A5FF] to-[#8E7AE0]", glow: "shadow-[0_0_24px_-6px_rgba(180,165,255,0.4)]", bar: "#B4A5FF", text: "text-[#322654]" };
-
                     return (
                       <Link
                         key={my.challenge.id}
                         href={`/challenge/${my.challenge.id}`}
-                        className={`relative bg-[#1D1B26] rounded-[1.25rem] p-4 transition-all hover:bg-[#2B2839] active:scale-[0.98] ${colors.glow}`}
+                        className="card-base p-4 relative group"
                       >
-                        <div className={`absolute top-3 right-3 w-8 h-8 rounded-full bg-gradient-to-br ${colors.gradient} flex items-center justify-center`}>
-                          <span className={`text-[10px] font-bold ${colors.text}`}>
-                            #{my.rank}
-                          </span>
+                        {/* Ранг вынесен в строгую плашку */}
+                        <div className="absolute top-3 right-3 bg-bg-nested border border-border-thin text-text-primary text-[10px] font-bold px-2 py-0.5 rounded-full">
+                          #{my.rank}
                         </div>
 
-                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${colors.gradient} flex items-center justify-center mb-2`}>
+                        <div className="w-10 h-10 rounded-[1rem] bg-bg-main border border-border-thin flex items-center justify-center mb-3">
                           <span className="text-xl">{my.challenge.emoji}</span>
                         </div>
 
-                        <div className="text-sm font-semibold truncate pr-6">
+                        <div className="text-sm font-bold leading-tight pr-6 mb-1">
                           {my.challenge.title}
                         </div>
-                        <div className="text-[10px] text-[#8F8D9C] mt-0.5 truncate">
+                        <div className="text-[10px] uppercase tracking-widest text-text-muted truncate">
                           {my.totalSteps.toLocaleString("ru-RU")} {my.challenge.unitLabel}
                         </div>
 
-                        <div className="mt-3 h-[3px] bg-[#2B2839] rounded-full overflow-hidden">
+                        {/* Ультратонкий прогресс бар */}
+                        <div className="mt-4 h-1 bg-bg-muted rounded-full overflow-hidden border border-border-thin">
                           <div
-                            className="h-full rounded-full transition-all"
-                            style={{ width: `${progress}%`, backgroundColor: colors.bar }}
+                            className="h-full rounded-full bg-accent transition-all duration-500 ease-out"
+                            style={{ width: `${progress}%` }}
                           />
                         </div>
-                        <div className="mt-1.5 flex justify-between text-[9px] text-[#8F8D9C]">
-                          <span>{progress}%</span>
-                          <span>{daysLeft} дн</span>
+                        <div className="mt-2 flex justify-between text-[10px] font-bold">
+                          <span className="text-accent">{progress}%</span>
+                          <span className="text-text-secondary">{daysLeft} дн</span>
                         </div>
                       </Link>
                     );
@@ -289,7 +280,7 @@ export default async function ProfilePage() {
 
             {pastChallenges.length > 0 && (
               <>
-                <div className="text-[10px] uppercase tracking-widest text-[#8F8D9C] mb-3 px-1">
+                <div className="text-[10px] uppercase tracking-widest text-text-muted mb-4 px-1">
                   История
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -297,23 +288,21 @@ export default async function ProfilePage() {
                     <Link
                       key={my.challenge.id}
                       href={`/challenge/${my.challenge.id}`}
-                      className="relative bg-[#14131D] rounded-[1.25rem] p-4 hover:bg-[#1D1B26] transition-all active:scale-[0.98]"
+                      className="bg-bg-muted border border-border-thin rounded-[1.75rem] p-4 relative opacity-60 hover:opacity-100 transition-opacity active-scale"
                     >
-                      <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-[#2B2839] flex items-center justify-center">
-                        <span className="text-[10px] font-bold text-[#8F8D9C]">
-                          #{my.rank}
-                        </span>
+                      <div className="absolute top-3 right-3 bg-bg-main border border-border-thin text-[10px] font-bold text-text-muted px-2 py-0.5 rounded-full">
+                        #{my.rank}
                       </div>
 
-                      <div className="w-10 h-10 rounded-xl bg-[#2B2839] flex items-center justify-center mb-2 opacity-70">
+                      <div className="w-10 h-10 rounded-[1rem] bg-bg-main border border-border-thin flex items-center justify-center mb-3">
                         <span className="text-xl grayscale">{my.challenge.emoji}</span>
                       </div>
 
-                      <div className="text-sm font-semibold truncate pr-6 text-[#C8C6D4]">
+                      <div className="text-sm font-bold leading-tight pr-6 text-text-secondary mb-1">
                         {my.challenge.title}
                       </div>
-                      <div className="text-[10px] text-[#8F8D9C] mt-0.5">
-                        завершён · #{my.rank}
+                      <div className="text-[9px] uppercase tracking-widest text-text-muted">
+                        Завершён
                       </div>
                     </Link>
                   ))}
@@ -324,28 +313,30 @@ export default async function ProfilePage() {
         )}
       </div>
 
-      <div className="flex border-t border-white/5">
-        <button className="flex-1 py-3 flex items-center justify-center text-[#E3E3E3] border-t-2 border-[#A8C7FA] -mt-px">
+      {/* Табы постов */}
+      <div className="flex border-t border-border-thin">
+        <button className="flex-1 py-4 flex items-center justify-center text-accent border-t-[3px] border-accent -mt-[2px]">
           <Grid3x3 className="w-5 h-5" />
         </button>
-        <button className="flex-1 py-3 flex items-center justify-center text-[#9AA0A6]">
+        <button className="flex-1 py-4 flex items-center justify-center text-text-muted hover:text-text-primary transition-colors border-t-[3px] border-transparent -mt-[2px]">
           <List className="w-5 h-5" />
         </button>
       </div>
 
+      {/* Сетка постов */}
       {myPosts.length === 0 ? (
-        <div className="text-center py-16 px-4 text-[#9AA0A6]">
-          <div className="text-5xl mb-3">📸</div>
-          <p className="font-semibold mb-1">Пока нет постов</p>
+        <div className="text-center py-20 px-4 text-text-muted">
+          <div className="text-5xl mb-4 grayscale opacity-50">📸</div>
+          <p className="font-bold text-text-primary mb-1">Пока нет постов</p>
           <p className="text-sm">Опубликуй первую тренировку</p>
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-0.5">
+        <div className="grid grid-cols-3 gap-[1px] bg-border-thin">
           {myPosts.map(post => (
             <Link
               key={post.id}
               href={`/post/${post.id}`}
-              className="relative aspect-square bg-[#1E1F22] overflow-hidden group"
+              className="relative aspect-square bg-bg-nested overflow-hidden group"
             >
               {post.imageUrl ? (
                 <img
@@ -354,16 +345,21 @@ export default async function ProfilePage() {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center p-2">
-                  <p className="text-xs text-[#C4C7C5] line-clamp-4 text-center">
+                <div className="w-full h-full flex items-center justify-center p-3">
+                  <p className="text-[10px] text-text-secondary line-clamp-4 text-center font-mono leading-relaxed">
                     {post.workout}
                   </p>
                 </div>
               )}
 
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-4 text-white text-sm font-semibold">
-                <span>🔥 {post.likesCount}</span>
-                <span>💬 {post.commentsCount}</span>
+              {/* Hover overlay стал более строгим */}
+              <div className="absolute inset-0 bg-bg-main/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center gap-2 text-text-primary text-sm font-bold">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-accent">🔥</span> {post.likesCount}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-text-secondary">💬</span> {post.commentsCount}
+                </div>
               </div>
             </Link>
           ))}

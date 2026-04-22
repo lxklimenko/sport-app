@@ -1,40 +1,11 @@
 import { ACHIEVEMENTS, type AchievementCategory } from "@/lib/achievements";
 
-const CATEGORY_STYLES: Record<AchievementCategory, {
-  bg: string;
-  bgUnlocked: string;
-  text: string;
-  label: string;
-  glow: string;
-}> = {
-  strength: {
-    bg: "bg-gradient-to-br from-[#B4A5FF] to-[#8E7AE0]",
-    bgUnlocked: "from-[#B4A5FF] to-[#8E7AE0]",
-    text: "text-[#322654]",
-    label: "Сила",
-    glow: "shadow-[0_0_20px_-4px_rgba(180,165,255,0.5)]",
-  },
-  discipline: {
-    bg: "bg-gradient-to-br from-[#FFD8A8] to-[#E8A960]",
-    bgUnlocked: "from-[#FFD8A8] to-[#E8A960]",
-    text: "text-[#4A3521]",
-    label: "Дисциплина",
-    glow: "shadow-[0_0_20px_-4px_rgba(255,216,168,0.5)]",
-  },
-  social: {
-    bg: "bg-gradient-to-br from-[#FFB4D4] to-[#E074A8]",
-    bgUnlocked: "from-[#FFB4D4] to-[#E074A8]",
-    text: "text-[#4A1B33]",
-    label: "Общение",
-    glow: "shadow-[0_0_20px_-4px_rgba(255,180,212,0.5)]",
-  },
-  challenge: {
-    bg: "bg-gradient-to-br from-[#B4F5D8] to-[#6ED4A8]",
-    bgUnlocked: "from-[#B4F5D8] to-[#6ED4A8]",
-    text: "text-[#0F3D2C]",
-    label: "Челленджи",
-    glow: "shadow-[0_0_20px_-4px_rgba(180,245,216,0.5)]",
-  },
+// Цветовые категории полностью удалены, оставляем только текстовые лейблы
+const CATEGORY_LABELS: Record<AchievementCategory, string> = {
+  strength: "Сила",
+  discipline: "Дисциплина",
+  social: "Общение",
+  challenge: "Челленджи",
 };
 
 function AchievementBadge({
@@ -44,37 +15,39 @@ function AchievementBadge({
   achievement: typeof ACHIEVEMENTS[number];
   unlocked: boolean;
 }) {
-  const style = CATEGORY_STYLES[achievement.category];
   const sizeClass = achievement.rare ? "w-[68px] h-[68px]" : "w-[58px] h-[58px]";
   const emojiSize = achievement.rare ? "text-3xl" : "text-2xl";
 
   return (
-    <div className="flex flex-col items-center gap-1.5">
+    <div className="flex flex-col items-center gap-1.5 group">
       <div className="relative">
         <div
-          className={`${sizeClass} rounded-full flex items-center justify-center transition-all ${
+          className={`${sizeClass} rounded-full flex items-center justify-center transition-all border ${
             unlocked
-              ? `bg-gradient-to-br ${style.bgUnlocked} ${style.glow}`
-              : "bg-[#2B2839]"
+              ? "bg-bg-nested border-accent text-text-primary"
+              : "bg-bg-muted border-border-thin opacity-40 grayscale"
           }`}
         >
-          <span className={`${emojiSize} ${unlocked ? "" : "grayscale opacity-40"}`}>
+          <span className={emojiSize}>
             {achievement.emoji}
           </span>
           {!unlocked && (
             <div className="absolute inset-0 rounded-full flex items-center justify-center">
-              <span className="text-base opacity-60">🔒</span>
+              <span className="text-base text-text-primary">🔒</span>
             </div>
           )}
         </div>
+        
+        {/* Бейдж RARE: теперь использует единственный акцентный цвет с контрастным черным текстом */}
         {achievement.rare && unlocked && (
-          <div className="absolute -top-1 -right-1 bg-[#FFD8A8] text-[#4A3521] text-[8px] font-bold px-1.5 py-0.5 rounded-full">
-            RARE
+          <div className="absolute -top-1 -right-1 bg-accent text-text-on-accent text-[8px] uppercase tracking-widest font-bold px-1.5 py-0.5 rounded-full border border-bg-card">
+            Rare
           </div>
         )}
       </div>
+      
       <div className={`text-[9px] text-center leading-tight max-w-[70px] ${
-        unlocked ? "text-[#C8C6D4]" : "text-[#8F8D9C]"
+        unlocked ? "text-text-secondary" : "text-text-muted"
       }`}>
         {achievement.title}
       </div>
@@ -94,72 +67,79 @@ export function AchievementsBadges({
 
   const categories: AchievementCategory[] = ["strength", "discipline", "social", "challenge"];
 
+  // Вычисляем длину окружности для SVG (2 * PI * r), где r = 24
+  const circumference = 2 * Math.PI * 24;
+  const strokeDasharray = `${(percent / 100) * circumference} ${circumference}`;
+
   return (
-    <div className="bg-[#1D1B26] rounded-[1.75rem] p-5">
-      <div className="flex items-center justify-between mb-4">
+    <div className="card-base p-5">
+      <div className="flex items-start justify-between mb-8">
         <div>
-          <div className="text-[10px] uppercase tracking-widest text-[#8F8D9C] mb-1">
+          {/* Мелкие uppercase подписи */}
+          <div className="text-[10px] uppercase tracking-widest text-text-muted mb-1">
             Достижения
           </div>
-          <div className="text-lg font-semibold">
-            {unlockedCount} <span className="text-[#8F8D9C] text-sm font-normal">из {total}</span>
+          {/* Крупные и жирные цифры */}
+          <div className="text-4xl font-bold tracking-[-0.5px] text-text-primary">
+            {unlockedCount}
+            <span className="text-text-muted text-lg font-normal ml-1">/ {total}</span>
           </div>
         </div>
-        <div className="relative w-14 h-14">
+        
+        {/* Кольцевой график: градиенты убраны, обводка сделана тоньше */}
+        <div className="relative w-14 h-14 shrink-0">
           <svg className="w-14 h-14 -rotate-90">
             <circle
               cx="28" cy="28" r="24"
-              stroke="#2B2839"
-              strokeWidth="4"
+              className="stroke-bg-nested"
+              strokeWidth="2"
               fill="none"
             />
             <circle
               cx="28" cy="28" r="24"
-              stroke="url(#achieveGrad)"
-              strokeWidth="4"
+              className="stroke-accent transition-all duration-1000 ease-out"
+              strokeWidth="2"
               fill="none"
-              strokeDasharray={`${(percent / 100) * 150.8} 150.8`}
+              strokeDasharray={strokeDasharray}
               strokeLinecap="round"
             />
-            <defs>
-              <linearGradient id="achieveGrad" x1="0" x2="1" y1="0" y2="1">
-                <stop offset="0%" stopColor="#B4A5FF" />
-                <stop offset="100%" stopColor="#FFD8A8" />
-              </linearGradient>
-            </defs>
           </svg>
-          <div className="absolute inset-0 flex items-center justify-center text-xs font-bold">
+          <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-text-primary">
             {percent}%
           </div>
         </div>
       </div>
 
-      {categories.map(cat => {
-        const catAchievements = ACHIEVEMENTS.filter(a => a.category === cat);
-        const catUnlocked = catAchievements.filter(a => unlockedCodes.has(a.code)).length;
-        const style = CATEGORY_STYLES[cat];
-        return (
-          <div key={cat} className="mb-4 last:mb-0">
-            <div className="flex items-center justify-between mb-2 px-1">
-              <div className="text-[11px] font-semibold text-[#C8C6D4]">
-                {style.label}
+      <div className="flex flex-col gap-6">
+        {categories.map(cat => {
+          const catAchievements = ACHIEVEMENTS.filter(a => a.category === cat);
+          const catUnlocked = catAchievements.filter(a => unlockedCodes.has(a.code)).length;
+          
+          if (catAchievements.length === 0) return null;
+
+          return (
+            <div key={cat}>
+              <div className="flex items-center justify-between mb-3 px-1 border-b border-border-thin pb-2">
+                <div className="text-[10px] uppercase tracking-widest text-text-secondary">
+                  {CATEGORY_LABELS[cat]}
+                </div>
+                <div className="text-[10px] text-text-muted font-mono">
+                  {catUnlocked}/{catAchievements.length}
+                </div>
               </div>
-              <div className="text-[10px] text-[#8F8D9C]">
-                {catUnlocked}/{catAchievements.length}
+              <div className="flex gap-3 flex-wrap">
+                {catAchievements.map(a => (
+                  <AchievementBadge
+                    key={a.code}
+                    achievement={a}
+                    unlocked={unlockedCodes.has(a.code)}
+                  />
+                ))}
               </div>
             </div>
-            <div className="flex gap-3 flex-wrap">
-              {catAchievements.map(a => (
-                <AchievementBadge
-                  key={a.code}
-                  achievement={a}
-                  unlocked={unlockedCodes.has(a.code)}
-                />
-              ))}
-            </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }

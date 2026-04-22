@@ -1,83 +1,78 @@
 @import "tailwindcss";
 
-:root {
-  --background: #10121a;
-  --foreground: #f5f5fa;
+@theme {
+  /* =========================================
+     ЦВЕТОВАЯ СИСТЕМА (Строгий монохром)
+     ========================================= */
+  --color-bg-main: #0F0F14;
+  --color-bg-card: #1A1A22;
+  --color-bg-nested: #242430;
+  --color-bg-muted: #1F1F27;
+  --color-bg-hover: #2A2A34;
 
-  --md-surface: #1d1b26;
-  --md-surface-hover: #2b2839;
-  --md-surface-dim: #14131d;
+  /* =========================================
+     ТЕКСТ (Иерархия белого и серого)
+     ========================================= */
+  --color-text-primary: #F5F5FA;
+  --color-text-secondary: #C4C4CF;
+  --color-text-muted: #7A7A85;
+  --color-text-on-accent: #0F0F14;
 
-  --md-primary: #b4a5ff;
-  --md-primary-hover: #c5b9ff;
-  --md-on-primary: #322654;
-  --md-primary-container: #4a3b7a;
+  /* =========================================
+     АКЦЕНТ И СЕМАНТИКА (Только Лаванда и Ошибка)
+     ========================================= */
+  --color-accent: #B4A5FF;
+  --color-accent-hover: #C5B9FF;
+  --color-danger: #FFB4AB;
 
-  --md-secondary: #c8bfff;
-  --md-tertiary: #ffd8a8;
-  --md-on-tertiary: #4a3521;
+  /* =========================================
+     БОРДЕРЫ И СКРУГЛЕНИЯ
+     ========================================= */
+  --color-border-thin: rgba(255, 255, 255, 0.06);
+  --radius-huge: 1.75rem;
 
-  --md-error: #ffb4ab;
-  --md-on-error: #4a1b0c;
-
-  --md-outline: rgba(255, 255, 255, 0.08);
-  --md-outline-strong: rgba(255, 255, 255, 0.15);
-
-  --md-text-primary: #f5f5fa;
-  --md-text-secondary: #c8c6d4;
-  --md-text-muted: #8f8d9c;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  /* Шрифты оставляем твои — Google Sans отлично подходит для минимализма */
   --font-sans: "Google Sans", "Segoe UI", "Helvetica Neue", system-ui, sans-serif;
   --font-mono: "SFMono-Regular", "Menlo", monospace;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@layer base {
+  body {
+    background-color: var(--color-bg-main);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 }
 
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
+@layer utilities {
+  /* Скрытие скроллбара для чистоты Apple-подобного UI */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 
-@keyframes md-ripple {
-  0% { transform: scale(0); opacity: 0.6; }
-  100% { transform: scale(2); opacity: 0; }
-}
+  /* * Базовый класс карточки (замена .md-card).
+   * Вместо заливок — тонкая обводка, крупное скругление и резкий тактильный active state.
+   */
+  .card-base {
+    background-color: var(--color-bg-card);
+    border-radius: var(--radius-huge);
+    border: 1px solid var(--color-border-thin);
+    /* Анимация transform сделана быстрее (100ms) для мгновенного тактильного отклика */
+    transition: background-color 0.2s ease, transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+  }
 
-.md-card {
-  background: var(--md-surface);
-  border-radius: 1.5rem;
-  transition: background 0.2s ease, transform 0.1s ease;
-}
+  .card-base:hover {
+    background-color: var(--color-bg-hover);
+  }
 
-.md-card:hover {
-  background: var(--md-surface-hover);
-}
-
-.md-card:active {
-  transform: scale(0.98);
-}
-
-.md-glow-purple {
-  box-shadow: 0 0 32px -8px rgba(180, 165, 255, 0.25);
-}
-
-.md-glow-amber {
-  box-shadow: 0 0 32px -8px rgba(255, 216, 168, 0.3);
-}
-
-.md-glow-coral {
-  box-shadow: 0 0 32px -8px rgba(255, 180, 171, 0.25);
+  /* Active state: scale(0.98) */
+  .card-base:active {
+    transform: scale(0.98);
+  }
 }
