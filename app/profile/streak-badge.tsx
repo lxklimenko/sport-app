@@ -29,14 +29,16 @@ export function StreakBadge({
   const subtitle = getStreakSubtitle(current);
 
   return (
-    <div className="card-base p-5">
+    <div className="card-base p-5 group/streak">
       <div className="flex items-center gap-4 mb-6">
         
-        {/* Иконка огня. Если серия активна, обводим зелёным акцентом */}
-        <div className={`w-16 h-16 rounded-full flex items-center justify-center shrink-0 border ${
-          current > 0 ? 'border-accent bg-bg-nested' : 'border-border-thin bg-bg-muted'
+        {/* Иконка огня: стеклянная кнопка при активе, вдавленная лунка при обрыве */}
+        <div className={`relative w-16 h-16 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 ${
+          current > 0 
+            ? 'bg-bg-nested border border-border-thin shadow-[0_4px_12px_-4px_rgba(0,0,0,0.5),inset_0_1px_0_0_rgba(255,255,255,0.08)] group-hover/streak:scale-105' 
+            : 'bg-bg-muted/50 border border-transparent shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] opacity-60 grayscale'
         }`}>
-          <span className="text-3xl">🔥</span>
+          <span className="text-3xl drop-shadow-md">🔥</span>
         </div>
 
         <div className="flex-1 min-w-0">
@@ -47,7 +49,8 @@ export function StreakBadge({
           {current > 0 ? (
             <>
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold tracking-[-0.5px] text-text-primary">
+                {/* Тень на цифре для лёгкого отрыва от фона */}
+                <span className="text-4xl font-bold tracking-[-0.5px] text-text-primary drop-shadow-sm">
                   {current}
                 </span>
                 <span className="text-sm font-medium text-text-muted">
@@ -75,32 +78,31 @@ export function StreakBadge({
             <div className="text-[11px] uppercase tracking-widest text-text-muted mb-1 font-medium">
               Рекорд
             </div>
-            <div className="text-2xl font-bold tracking-[-0.5px] text-text-primary">
+            <div className="text-2xl font-bold tracking-[-0.5px] text-text-primary drop-shadow-sm">
               {best}
             </div>
           </div>
         )}
       </div>
 
-      {/* Блок дней недели: OLED-стиль с контрастными кружками */}
-      <div className="bg-bg-nested rounded-[1.25rem] p-4 border border-border-thin">
+      {/* Блок дней недели: Эффект вдавленного лотка (recessed tray) */}
+      <div className="bg-[#141415] rounded-[1.25rem] p-4 border border-border-thin shadow-[inset_0_2px_8px_rgba(0,0,0,0.4)]">
         <div className="flex justify-between items-center">
           {weekDays.map((done, i) => {
             const isToday = i === todayIndex;
             return (
-              <div key={i} className="flex flex-col items-center gap-2 flex-1">
+              <div key={i} className="flex flex-col items-center gap-2 flex-1 group/day">
                 <div
-                  className={`relative w-7 h-7 rounded-full flex items-center justify-center transition-all border ${
+                  className={`relative w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300 ${
                     done
-                      ? "border-accent bg-accent" // Выполненные заливаем плотным Apple Green
+                      ? "bg-accent border border-transparent shadow-[0_2px_8px_-2px_rgba(50,215,75,0.4),inset_0_1px_0_0_rgba(255,255,255,0.4)] group-hover/day:scale-110" // Выпуклая светящаяся кнопка
                       : isToday
-                      ? "border-accent bg-bg-main" // Сегодняшний контур
-                      : "border-border-thin bg-bg-muted opacity-50" // Пропущенные/будущие глушим
+                      ? "border-[1.5px] border-accent bg-bg-main shadow-[inset_0_1px_4px_rgba(0,0,0,0.5)]" // Кольцо, ожидающее заполнения
+                      : "border border-transparent bg-bg-main shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)] opacity-40" // Пустая лунка
                   }`}
                 >
                   {done && (
-                    // Галочка черного цвета для максимального контраста на зеленом
-                    <svg className="w-4 h-4 text-black" viewBox="0 0 12 12" fill="none">
+                    <svg className="w-4 h-4 text-[#0A2E11] drop-shadow-sm" viewBox="0 0 12 12" fill="none">
                       <path
                         d="M2 6L5 9L10 3"
                         stroke="currentColor"
@@ -111,12 +113,11 @@ export function StreakBadge({
                     </svg>
                   )}
                   {isToday && !done && (
-                    // Пульсирующая точка
-                    <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+                    <div className="w-2 h-2 rounded-full bg-accent animate-pulse shadow-[0_0_8px_rgba(50,215,75,0.6)]" />
                   )}
                 </div>
                 <span className={`text-[10px] uppercase tracking-widest ${
-                  isToday ? "text-accent font-bold" : "text-text-muted font-medium"
+                  isToday ? "text-accent font-bold drop-shadow-[0_0_4px_rgba(50,215,75,0.3)]" : "text-text-muted font-medium"
                 }`}>
                   {DAY_LABELS[i]}
                 </span>

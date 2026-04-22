@@ -19,8 +19,8 @@ export function BottomNav() {
   ];
 
   return (
-    // iOS стиль: OLED Black, размытие и ультратонкая рамка
-    <nav className="fixed bottom-0 inset-x-0 z-40 bg-bg-main/80 backdrop-blur-xl border-t border-border-thin pb-safe">
+    // Применяем премиальный класс glass-panel из нашего обновленного globals.css
+    <nav className="fixed bottom-0 inset-x-0 z-50 glass-panel pb-safe">
       <div className="mx-auto max-w-2xl flex items-center justify-around px-2 py-1">
         {items.map((item) => {
           const Icon = item.icon;
@@ -33,21 +33,26 @@ export function BottomNav() {
               href={item.href}
               className="relative flex-1 flex flex-col items-center py-2 group active-scale"
             >
-              <div className="relative flex items-center justify-center transition-all duration-200">
+              <div className="relative flex items-center justify-center transition-all duration-300">
                 <Icon
-                  className={`w-6 h-6 transition-all ${
+                  className={`w-6 h-6 transition-colors duration-300 ${
                     isActive
-                      ? "text-accent" // Apple Fitness Green
-                      : "text-text-muted group-hover:text-text-primary"
+                      ? "text-accent" // Яркий Apple Fitness Green
+                      : "text-text-muted group-hover:text-text-secondary"
                   }`}
-                  // В iOS активные иконки часто залиты, неактивные — аутлайн
+                  // В iOS 17 активные иконки Tab Bar часто залиты цветом
                   fill={isActive ? "currentColor" : "none"}
                   strokeWidth={isActive ? 2 : 1.5}
                 />
+                
+                {/* Невидимая магия: крошечный блик под активной иконкой для глубины */}
+                {isActive && (
+                  <div className="absolute -bottom-4 w-1 h-1 rounded-full bg-accent opacity-50 blur-[2px]" />
+                )}
               </div>
-              <span className={`text-[10px] mt-1 tracking-wide transition-all ${
+              <span className={`text-[10px] mt-1 tracking-wide transition-colors duration-300 ${
                 isActive
-                  ? "text-accent font-medium"
+                  ? "text-accent font-semibold"
                   : "text-text-muted font-medium"
               }`}>
                 {item.label}

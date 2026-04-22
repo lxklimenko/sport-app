@@ -15,7 +15,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 font-bold text-text-on-accent transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50 active-scale"
+      className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 font-bold text-text-on-accent shadow-[0_2px_8px_-2px_rgba(50,215,75,0.5),inset_0_1px_0_0_rgba(255,255,255,0.4)] transition-all hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50 active-scale drop-shadow-sm"
     >
       {pending ? "Публикуем..." : "Опубликовать"}
       <Send className="h-4 w-4" />
@@ -53,21 +53,21 @@ export function PostComposer() {
       <p className="text-[11px] uppercase tracking-widest text-text-muted mb-2 font-medium">
         Новый пост
       </p>
-      <h2 className="text-xl font-bold mb-5 tracking-[-0.5px]">
+      <h2 className="text-xl font-bold mb-5 tracking-[-0.5px] drop-shadow-sm">
         Расскажи, что сделал сегодня
       </h2>
 
       <form action={formAction} className="space-y-4">
-        {/* Поле ввода: OLED Black с тонкой рамкой, переходящей в акцент */}
+        {/* Поле ввода: Вдавленный лоток с эффектом глубины */}
         <div>
           <textarea
             name="workout"
             rows={3}
             placeholder="Что было на тренировке? Например: 5 км бег, 4 подхода подтягиваний"
-            className="w-full resize-none rounded-[1.25rem] bg-bg-main border border-border-thin px-4 py-3 text-sm font-medium text-text-primary outline-none transition-colors focus:border-accent placeholder:text-text-muted placeholder:font-normal"
+            className="w-full resize-none rounded-[1.25rem] bg-[#141415] border border-border-thin shadow-[inset_0_2px_6px_rgba(0,0,0,0.6)] px-4 py-3 text-sm font-medium text-text-primary outline-none transition-all focus:border-accent focus:shadow-[0_0_8px_rgba(50,215,75,0.2),inset_0_2px_6px_rgba(0,0,0,0.6)] placeholder:text-text-muted placeholder:font-normal"
           />
           {state.errors?.workout && (
-            <p className="text-[11px] font-medium text-danger mt-1.5 ml-2">
+            <p className="text-[11px] font-medium text-danger mt-1.5 ml-2 drop-shadow-sm">
               {state.errors.workout}
             </p>
           )}
@@ -77,10 +77,10 @@ export function PostComposer() {
           <input
             name="stats"
             placeholder="Результат: 42 минуты · 540 ккал · рекорд"
-            className="w-full rounded-[1.25rem] bg-bg-main border border-border-thin px-4 py-3 text-sm font-medium text-text-primary outline-none transition-colors focus:border-accent placeholder:text-text-muted placeholder:font-normal"
+            className="w-full rounded-[1.25rem] bg-[#141415] border border-border-thin shadow-[inset_0_2px_6px_rgba(0,0,0,0.6)] px-4 py-3 text-sm font-medium text-text-primary outline-none transition-all focus:border-accent focus:shadow-[0_0_8px_rgba(50,215,75,0.2),inset_0_2px_6px_rgba(0,0,0,0.6)] placeholder:text-text-muted placeholder:font-normal"
           />
           {state.errors?.stats && (
-            <p className="text-[11px] font-medium text-danger mt-1.5 ml-2">
+            <p className="text-[11px] font-medium text-danger mt-1.5 ml-2 drop-shadow-sm">
               {state.errors.stats}
             </p>
           )}
@@ -96,20 +96,21 @@ export function PostComposer() {
         />
 
         {preview ? (
-          <div className="relative rounded-[1.25rem] overflow-hidden bg-bg-main border border-border-thin group">
+          <div className="relative rounded-[1.25rem] overflow-hidden bg-[#141415] border border-border-thin shadow-[inset_0_2px_8px_rgba(0,0,0,0.5)] group">
             <img
               src={preview}
               alt="Preview"
               className="w-full max-h-80 object-cover"
             />
+            {/* Кнопка удаления: стеклянная линза */}
             <button
               type="button"
               onClick={clearPhoto}
-              className="absolute top-3 right-3 bg-bg-main/60 backdrop-blur-md rounded-full p-2 hover:bg-bg-hover transition-colors active-scale"
+              className="absolute top-3 right-3 bg-bg-main/60 backdrop-blur-md rounded-full p-2 border border-border-thin shadow-[0_2px_8px_rgba(0,0,0,0.5)] hover:bg-bg-hover transition-colors active-scale"
             >
               <X className="w-4 h-4 text-text-primary" />
             </button>
-            <div className="absolute bottom-3 left-3 px-3 py-1 bg-bg-main/60 backdrop-blur-md rounded-full border border-border-thin">
+            <div className="absolute bottom-3 left-3 px-3 py-1 bg-bg-main/60 backdrop-blur-md rounded-full border border-border-thin shadow-[0_2px_8px_rgba(0,0,0,0.5)]">
               <p className="text-[10px] font-medium text-text-primary truncate max-w-[200px]">
                 {fileName}
               </p>
@@ -119,16 +120,16 @@ export function PostComposer() {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="w-full flex items-center justify-center gap-3 rounded-[1.25rem] bg-bg-main border border-border-thin border-dashed px-4 py-4 cursor-pointer hover:border-text-muted transition-colors text-center active-scale group"
+            className="w-full flex items-center justify-center gap-3 rounded-[1.25rem] bg-[#141415] border border-border-thin border-dashed shadow-[inset_0_2px_8px_rgba(0,0,0,0.4)] px-4 py-4 cursor-pointer hover:border-text-muted transition-colors text-center active-scale group"
           >
-            <ImagePlus className="w-5 h-5 text-text-muted group-hover:text-text-primary transition-colors" />
+            <ImagePlus className="w-5 h-5 text-text-muted group-hover:text-text-primary transition-colors drop-shadow-sm" />
             <span className="text-sm font-medium text-text-muted group-hover:text-text-primary transition-colors">
               Добавить фото
             </span>
           </button>
         )}
 
-        <div className="flex items-center justify-between gap-4 pt-2 border-t border-border-thin mt-2">
+        <div className="flex items-center justify-between gap-4 pt-4 border-t border-border-thin shadow-[inset_0_1px_0_0_rgba(255,255,255,0.02)] mt-2">
           <p className="text-[11px] font-medium text-text-muted flex-1">
             Коротко и по делу. Дисциплина любит факты.
           </p>

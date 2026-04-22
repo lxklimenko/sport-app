@@ -1,35 +1,27 @@
 @import "tailwindcss";
 
 @theme {
-  /* =========================================
-     ЦВЕТОВАЯ СИСТЕМА (Apple iOS Dark Mode)
-     ========================================= */
-  --color-bg-main: #000000; /* Pure OLED Black */
-  --color-bg-card: #1C1C1E; /* iOS System Gray 6 */
-  --color-bg-nested: #2C2C2E; /* iOS System Gray 5 */
-  --color-bg-muted: #242426; 
+  /* Цветовая система остается той же */
+  --color-bg-main: #000000;
+  --color-bg-card: #1C1C1E;
+  --color-bg-nested: #2C2C2E;
+  --color-bg-muted: #242426;
   --color-bg-hover: #3A3A3C;
 
-  /* =========================================
-     ТЕКСТ (Иерархия белого и серого по гайдлайнам)
-     ========================================= */
   --color-text-primary: #FFFFFF;
-  --color-text-secondary: #EBEBF5; /* Secondary text with slight transparency feel */
-  --color-text-muted: #8E8E93; /* iOS System Gray */
+  --color-text-secondary: #EBEBF5;
+  --color-text-muted: #8E8E93;
   --color-text-on-accent: #000000;
 
-  /* =========================================
-     АКЦЕНТ И СЕМАНТИКА (Apple Fitness Green)
-     ========================================= */
-  --color-accent: #32D74B; 
+  --color-accent: #32D74B;
   --color-accent-hover: #42E75B;
-  --color-danger: #FF453A; /* Apple System Red for errors/deletes */
+  --color-danger: #FF453A;
 
-  /* =========================================
-     БОРДЕРЫ И СКРУГЛЕНИЯ
-     ========================================= */
-  --color-border-thin: rgba(255, 255, 255, 0.1);
-  --radius-huge: 1.5rem; /* Чуть сдержаннее, чем 1.75, ближе к стилю виджетов iOS */
+  --color-border-thin: rgba(255, 255, 255, 0.08); /* Чуть-чуть плотнее для объема */
+  --radius-huge: 1.5rem;
+
+  --font-sans: "Google Sans", "Segoe UI", "Helvetica Neue", system-ui, sans-serif;
+  --font-mono: "SFMono-Regular", "Menlo", monospace;
 }
 
 @layer base {
@@ -38,6 +30,8 @@
     color: var(--color-text-primary);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Глобальный микро-шум поверх всего фона. Это убивает "пластик" и добавляет матовости */
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
   }
 }
 
@@ -50,13 +44,24 @@
     display: none;
   }
 
+  /* СЕКРЕТ ДОРОГОГО ДИЗАЙНА ЗДЕСЬ */
   .card-base {
     background-color: var(--color-bg-card);
     border-radius: var(--radius-huge);
-    /* В стиле Apple мы можем даже убрать бордер, оставив только контраст фонов, 
-       но оставим ультратонкий для четкости */
+    
+    /* 1. Базовая тонкая рамка */
     border: 1px solid var(--color-border-thin);
-    transition: background-color 0.2s ease, transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* 2. Комбинированная тень: 
+          - drop-shadow для отрыва от фона (невидимая магия)
+          - inset тень белого цвета сверху (создает эффект фаски/блика света сверху)
+    */
+    box-shadow: 
+      0 10px 40px -10px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+      
+    /* 3. Более плавная, "пружинистая" кривая Безье для анимации */
+    transition: background-color 0.2s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   .card-base:hover {
@@ -64,10 +69,17 @@
   }
 
   .card-base:active {
-    transform: scale(0.98);
+    /* Чуть меньше сжатие, чтобы ощущалось более увесисто */
+    transform: scale(0.985);
   }
   
   .active-scale {
-    @apply active:scale-98 transition-transform duration-200 ease-out;
+    @apply active:scale-[0.985] transition-transform duration-200 ease-out;
+  }
+  
+  /* Утилита для премиального размытия (Apple Glass) */
+  .glass-panel {
+    @apply bg-[#1C1C1E]/70 backdrop-blur-2xl border-t border-[rgba(255,255,255,0.1)];
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
   }
 }
