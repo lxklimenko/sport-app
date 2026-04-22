@@ -5,17 +5,10 @@ import { Settings, Plus, Grid3x3, List } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { getSessionUserId } from "@/lib/auth";
 import { getRecentPosts } from "@/lib/posts";
-import { getUserById, getUserStreak, getActivityHeatmap, getWeeklyProgress } from "@/lib/users";
+import { getUserById } from "@/lib/users";
 import { getMyChallenges } from "@/lib/challenges";
 import { getPool, hasDatabase } from "@/lib/db";
 import { getFollowCounts } from "@/lib/follows";
-import { StreakBadge } from "@/app/profile/streak-badge";
-import { ActivityHeatmap } from "@/app/profile/heatmap";
-import { WeeklyChart } from "@/app/profile/weekly-chart";
-import { AchievementsBadges } from "@/app/profile/achievements";
-import { getUserAchievements, checkAndUnlockAchievements } from "@/lib/achievements";
-import { WeeklyGoalsBlock } from "@/app/profile/weekly-goals";
-import { getMyWeeklyGoals } from "@/lib/goals";
 import { getMyTeam } from "@/lib/teams";
 
 export const dynamic = "force-dynamic";
@@ -75,20 +68,7 @@ export default async function ProfilePage() {
   const myPosts = await getMyPostsWithStats(userId);
   const todaySteps = await getTodaySteps(userId);
   const followCounts = await getFollowCounts(userId);
-  const streak = await getUserStreak(userId);
-  const heatmap = await getActivityHeatmap(userId);
-  const weeklyProgress = await getWeeklyProgress(userId);
-
-  await checkAndUnlockAchievements(userId);
-  const achievements = await getUserAchievements(userId);
-  const weeklyGoals = await getMyWeeklyGoals(userId);
   const myTeam = await getMyTeam(userId);
-  const availableChallenges = activeChallenges.map(c => ({
-    id: c.challenge.id,
-    title: c.challenge.title,
-    emoji: c.challenge.emoji,
-    unitLabel: c.challenge.unitLabel,
-  }));
 
   // Строгий аватар
   const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.name)}`;
@@ -157,22 +137,6 @@ export default async function ProfilePage() {
           )}
         </div>
 
-        {/* Блоки статистики */}
-        <div className="flex flex-col gap-4 mb-6">
-          <StreakBadge
-            current={streak.current}
-            best={streak.best}
-            weekDays={streak.weekDays}
-          />
-          <ActivityHeatmap data={heatmap} />
-          <WeeklyChart weeks={weeklyProgress.weeks} />
-          <WeeklyGoalsBlock 
-            goals={weeklyGoals} 
-            availableChallenges={availableChallenges} 
-          />
-          <AchievementsBadges unlocked={achievements} />
-        </div>
-
         {/* Команда */}
         <div className="mb-6">
           {myTeam ? (
@@ -207,15 +171,21 @@ export default async function ProfilePage() {
           )}
         </div>
 
-        {/* Кнопки действий: Физические выпуклые таблетки */}
-        <div className="flex gap-3 mb-8">
+        {/* Кнопки действий: Редактировать / Статистика / Поделиться */}
+        <div className="flex gap-2 mb-8">
           <Link
             href="/profile/edit"
-            className="flex-1 bg-bg-nested border border-border-thin shadow-[0_2px_6px_-2px_rgba(0,0,0,0.5),inset_0_1px_0_0_rgba(255,255,255,0.08)] text-text-primary py-3 px-4 rounded-[1.25rem] text-sm font-bold active-scale hover:bg-bg-hover transition-all text-center"
+            className="flex-1 bg-[#1E1F22] text-[#E3E3E3] py-2 px-4 rounded-xl text-sm font-medium hover:bg-[#2A2D33] transition text-center"
           >
             Редактировать
           </Link>
-          <button className="flex-1 bg-bg-nested border border-border-thin shadow-[0_2px_6px_-2px_rgba(0,0,0,0.5),inset_0_1px_0_0_rgba(255,255,255,0.08)] text-text-primary py-3 px-4 rounded-[1.25rem] text-sm font-bold active-scale hover:bg-bg-hover transition-all">
+          <Link
+            href="/profile/stats"
+            className="flex-1 bg-[#1E1F22] text-[#E3E3E3] py-2 px-4 rounded-xl text-sm font-medium hover:bg-[#2A2D33] transition text-center"
+          >
+            Статистика
+          </Link>
+          <button className="flex-1 bg-[#1E1F22] text-[#E3E3E3] py-2 px-4 rounded-xl text-sm font-medium hover:bg-[#2A2D33] transition">
             Поделиться
           </button>
         </div>
