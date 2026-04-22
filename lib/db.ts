@@ -73,6 +73,7 @@ export async function ensurePostsTable() {
           workout TEXT NOT NULL,
           stats TEXT NOT NULL,
           image_url TEXT,
+          is_micro_step BOOLEAN DEFAULT FALSE,
           created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
       `)

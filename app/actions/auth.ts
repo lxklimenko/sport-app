@@ -180,15 +180,21 @@ export async function publishPost(
   const workout = getString(formData, "workout");
   const stats = getString(formData, "stats");
   const photo = formData.get("photo");
+  const isMicroStep = formData.get("isMicroStep") === "true";
 
   const errors: CreatePostState["errors"] = {};
 
-  if (workout.length < 8) {
-    errors.workout = "Опиши тренировку чуть подробнее.";
-  }
-
-  if (stats.length < 4) {
-    errors.stats = "Добавь время, калории или другой результат.";
+  if (isMicroStep) {
+    if (workout.length < 3) {
+      errors.workout = "Опиши хотя бы в двух словах.";
+    }
+  } else {
+    if (workout.length < 8) {
+      errors.workout = "Опиши тренировку чуть подробнее.";
+    }
+    if (stats.length < 4) {
+      errors.stats = "Добавь время, калории или другой результат.";
+    }
   }
 
   if (errors.workout || errors.stats) {
@@ -240,6 +246,7 @@ export async function publishPost(
       workout,
       stats,
       imageUrl,
+      isMicroStep,
     });
   } catch {
     return {

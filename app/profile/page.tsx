@@ -20,10 +20,11 @@ async function getMyPostsWithStats(userId: string) {
     id: string;
     workout: string;
     image_url: string | null;
+    is_micro_step: boolean;
     likes_count: string;
     comments_count: string;
   }>(
-    `SELECT p.id, p.workout, p.image_url,
+    `SELECT p.id, p.workout, p.image_url, p.is_micro_step,
             COALESCE(l.cnt, 0)::text AS likes_count,
             COALESCE(c.cnt, 0)::text AS comments_count
      FROM posts p
@@ -38,6 +39,7 @@ async function getMyPostsWithStats(userId: string) {
     id: row.id,
     workout: row.workout,
     imageUrl: row.image_url,
+    isMicroStep: row.is_micro_step,
     likesCount: Number(row.likes_count),
     commentsCount: Number(row.comments_count),
   }));
@@ -83,7 +85,7 @@ export default async function ProfilePage() {
           <span className="font-bold tracking-tight">{user.name}</span>
         </div>
         <div className="flex items-center gap-5 text-text-primary">
-          <Link href="/" className="hover:text-accent transition-colors active-scale">
+          <Link href="/new-post" className="hover:text-accent transition-colors active-scale">
             <Plus className="w-6 h-6" />
           </Link>
           <form action={logout}>
@@ -314,6 +316,12 @@ export default async function ProfilePage() {
               href={`/post/${post.id}`}
               className="relative aspect-square bg-[#141415] overflow-hidden group"
             >
+              {post.isMicroStep && (
+                <div className="absolute top-2 left-2 z-10 bg-accent/20 border border-accent/40 backdrop-blur-sm rounded-full px-2 py-0.5 flex items-center gap-1 shadow-[0_0_8px_rgba(50,215,75,0.3)]">
+                  <span className="text-[10px]">⚡</span>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-accent">1%</span>
+                </div>
+              )}
               {post.imageUrl ? (
                 <img
                   src={post.imageUrl}

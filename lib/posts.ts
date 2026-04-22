@@ -13,6 +13,7 @@ export type PostRecord = {
   workout: string;
   stats: string;
   imageUrl: string | null;
+  isMicroStep: boolean;
   createdAt: string;
 };
 
@@ -31,7 +32,12 @@ async function ensurePostsFile() {
 async function readPosts() {
   await ensurePostsFile();
   const raw = await readFile(postsFile, "utf8");
-  return JSON.parse(raw) as PostRecord[];
+  const posts = JSON.parse(raw) as PostRecord[];
+  // Нормализация: для старых постов без поля isMicroStep устанавливаем false
+  return posts.map((post) => ({
+    ...post,
+    isMicroStep: post.isMicroStep ?? false,
+  }));
 }
 
 async function writePosts(posts: PostRecord[]) {
@@ -45,6 +51,7 @@ export async function createPost(input: {
   workout: string;
   stats: string;
   imageUrl?: string | null;
+  isMicroStep?: boolean;
 }) {
   const post: PostRecord = {
     id: randomUUID(),
@@ -53,14 +60,15 @@ export async function createPost(input: {
     workout: input.workout.trim(),
     stats: input.stats.trim(),
     imageUrl: input.imageUrl ?? null,
+    isMicroStep: input.isMicroStep ?? false,
     createdAt: new Date().toISOString(),
   };
 
   if (hasDatabase()) {
     await ensurePostsTable();
     await getPool().query(
-      `INSERT INTO posts (id, user_id, author_name, workout, stats, image_url, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      `INSERT INTO posts (id, user_id, author_name, workout, stats, image_url, is_micro_step, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
       [
         post.id,
         post.userId,
@@ -68,6 +76,7 @@ export async function createPost(input: {
         post.workout,
         post.stats,
         post.imageUrl,
+        post.isMicroStep,
         post.createdAt,
       ],
     );
@@ -92,11 +101,12 @@ export async function getRecentPosts(limit = 20, currentUserId?: string) {
       workout: string;
       stats: string;
       image_url: string | null;
+      is_micro_step: boolean;
       created_at: Date;
       likes_count: string;
       liked_by_me: boolean;
     }>(
-      `SELECT p.id, p.user_id, p.author_name, p.workout, p.stats, p.image_url, p.created_at,
+      `SELECT p.id, p.user_id, p.author_name, p.workout, p.stats, p.image_url, p.is_micro_step, p.created_at,
               COALESCE(l.cnt, 0)::text AS likes_count,
               CASE WHEN ml.user_id IS NOT NULL THEN true ELSE false END AS liked_by_me
        FROM posts p
@@ -114,6 +124,7 @@ export async function getRecentPosts(limit = 20, currentUserId?: string) {
       workout: row.workout,
       stats: row.stats,
       imageUrl: row.image_url,
+      isMicroStep: row.is_micro_step,
       createdAt: row.created_at.toISOString(),
       likesCount: Number(row.likes_count),
       likedByMe: row.liked_by_me,
@@ -121,7 +132,7 @@ export async function getRecentPosts(limit = 20, currentUserId?: string) {
   }
 
   const posts = await readPosts();
-  return posts.slice(0, limit).map(p => ({ ...p, likesCount: 0, likedByMe: false }));
+  return posts.slice(0, limit).map((p) => ({ ...p, likesCount: 0, likedByMe: false }));
 }
 
 export async function toggleLike(userId: string, postId: string) {
@@ -246,11 +257,12 @@ export async function getFollowingPosts(userId: string, limit = 20) {
     workout: string;
     stats: string;
     image_url: string | null;
+    is_micro_step: boolean;
     created_at: Date;
     likes_count: string;
     liked_by_me: boolean;
   }>(
-    `SELECT p.id, p.user_id, p.author_name, p.workout, p.stats, p.image_url, p.created_at,
+    `SELECT p.id, p.user_id, p.author_name, p.workout, p.stats, p.image_url, p.is_micro_step, p.created_at,
             COALESCE(l.cnt, 0)::text AS likes_count,
             CASE WHEN ml.user_id IS NOT NULL THEN true ELSE false END AS liked_by_me
      FROM posts p
@@ -269,6 +281,7 @@ export async function getFollowingPosts(userId: string, limit = 20) {
     workout: row.workout,
     stats: row.stats,
     imageUrl: row.image_url,
+    isMicroStep: row.is_micro_step,
     createdAt: row.created_at.toISOString(),
     likesCount: Number(row.likes_count),
     likedByMe: row.liked_by_me,
