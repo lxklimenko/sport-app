@@ -3,9 +3,18 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Flame, User, Users, Shield } from "lucide-react";
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
 export function BottomNav() {
   const pathname = usePathname();
+
+  const handleImpact = async () => {
+    try {
+      await Haptics.impact({ style: ImpactStyle.Light });
+    } catch (e) {
+      // Игнорируем в браузере
+    }
+  };
 
   const hideOn = ["/login", "/signup"];
   if (hideOn.includes(pathname)) return null;
@@ -31,6 +40,7 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={handleImpact}
               className="relative flex-1 flex flex-col items-center py-2 group active-scale"
             >
               <div className="relative flex items-center justify-center transition-all duration-300">

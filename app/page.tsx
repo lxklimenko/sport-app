@@ -6,6 +6,7 @@ import {
   Sun,
 } from "lucide-react";
 import { TopHeader } from "@/app/top-header";
+import { HapticLink } from "@/app/haptic-link";
 
 import { getSessionUserId } from "@/lib/auth";
 import {
@@ -86,13 +87,13 @@ export default async function Home() {
         </p>
 
         <div className="flex flex-wrap gap-4">
-          <Link
+          <HapticLink
             href={userId ? "#challenges" : "/signup"}
-            className="px-8 py-5 bg-[#A8C7FA] text-[#062E6F] rounded-full flex items-center gap-3 text-lg hover:bg-[#BBD6FE] transition"
+            className="px-8 py-5 bg-[#A8C7FA] text-[#062E6F] rounded-full flex items-center gap-3 text-lg hover:bg-[#BBD6FE] transition active:scale-95"
           >
             Выбрать челлендж
             <ArrowRight className="w-5 h-5" />
-          </Link>
+          </HapticLink>
 
           <div className="px-6 py-4 border border-[#444746] rounded-full">
             Сезон Q1
@@ -201,21 +202,21 @@ export default async function Home() {
 
       <section className="py-20 flex justify-center">
         {!userId ? (
-          <Link
+          <HapticLink
             href="/signup"
-            className="px-12 py-6 bg-[#C4EEDB] text-black rounded-full flex items-center gap-4 hover:bg-[#D5F5E4] transition"
+            className="px-12 py-6 bg-[#C4EEDB] text-black rounded-full flex items-center gap-4 hover:bg-[#D5F5E4] transition active:scale-95"
           >
             Начать
             <ArrowRight />
-          </Link>
+          </HapticLink>
         ) : (
-          <Link
+          <HapticLink
             href="#challenges"
-            className="px-12 py-6 bg-[#C4EEDB] text-black rounded-full flex items-center gap-4 hover:bg-[#D5F5E4] transition"
+            className="px-12 py-6 bg-[#C4EEDB] text-black rounded-full flex items-center gap-4 hover:bg-[#D5F5E4] transition active:scale-95"
           >
             Выбрать челлендж
             <ArrowRight />
-          </Link>
+          </HapticLink>
         )}
       </section>
 

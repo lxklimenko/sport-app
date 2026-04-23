@@ -10,6 +10,7 @@ import { getMyChallenges } from "@/lib/challenges";
 import { getPool, hasDatabase } from "@/lib/db";
 import { getFollowCounts } from "@/lib/follows";
 import { getMyTeam } from "@/lib/teams";
+import { ProfileHeader } from "./profile-header";
 
 export const dynamic = "force-dynamic";
 
@@ -78,23 +79,7 @@ export default async function ProfilePage() {
   return (
     <main className="min-h-screen bg-bg-main text-text-primary pb-24">
 
-      {/* Верхняя шапка с премиальным размытием */}
-      <div className="sticky top-0 z-50 glass-panel px-5 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-2 h-2 rounded-full bg-accent animate-pulse shadow-[0_0_8px_rgba(50,215,75,0.6)]" />
-          <span className="font-bold tracking-tight">{user.name}</span>
-        </div>
-        <div className="flex items-center gap-5 text-text-primary">
-          <Link href="/new-post" className="hover:text-accent transition-colors active-scale">
-            <Plus className="w-6 h-6" />
-          </Link>
-          <form action={logout}>
-            <button className="hover:text-accent transition-colors active-scale">
-              <Settings className="w-5 h-5" />
-            </button>
-          </form>
-        </div>
-      </div>
+      <ProfileHeader userName={user.name} />
 
       <div className="px-5 pt-6">
 

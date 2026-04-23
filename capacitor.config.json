@@ -1,0 +1,9 @@
+{
+  "appId": "com.discipline.app",
+  "appName": "Discipline",
+  "webDir": "public",
+  "server": {
+    "url": "https://alex-cosh.ru",
+    "cleartext": true
+  }
+}

@@ -1,8 +1,10 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useRef, useState, useEffect } from "react";
 import { useFormStatus } from "react-dom";
-import { ImagePlus, Send, X, Zap } from "lucide-react";
+import { ImagePlus, Send, X, Zap, Camera as CameraIcon } from "lucide-react";
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { Capacitor } from '@capacitor/core';
 
 import { publishPost, type CreatePostState } from "@/app/actions/auth";
 
@@ -30,27 +32,60 @@ function SubmitButton({ isMicroStep }: { isMicroStep: boolean }) {
 export function PostComposer() {
   const [state, formAction] = useActionState(publishPost, initialState);
   const [preview, setPreview] = useState<string | null>(null);
-  const [fileName, setFileName] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isMicroStep, setIsMicroStep] = useState(false);
+  const [isNative, setIsNative] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setIsNative(Capacitor.isNativePlatform());
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) {
       setPreview(null);
-      setFileName(null);
+      setPhotoFile(null);
       return;
     }
-    setFileName(file.name);
+    setPhotoFile(file);
     const reader = new FileReader();
     reader.onload = () => setPreview(reader.result as string);
     reader.readAsDataURL(file);
   };
 
+  const takePhoto = async (source: CameraSource) => {
+    try {
+      const image = await Camera.getPhoto({
+        quality: 90,
+        allowEditing: false,
+        resultType: CameraResultType.Uri,
+        source: source
+      });
+
+      if (image.webPath) {
+        setPreview(image.webPath);
+        const response = await fetch(image.webPath);
+        const blob = await response.blob();
+        const file = new File([blob], `photo.${image.format}`, { type: `image/${image.format}` });
+        setPhotoFile(file);
+      }
+    } catch (e) {
+      console.error('Camera error', e);
+    }
+  };
+
   const clearPhoto = () => {
     setPreview(null);
-    setFileName(null);
+    setPhotoFile(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleSubmit = async (formData: FormData) => {
+    if (photoFile) {
+      formData.set("photo", photoFile);
+    }
+    formAction(formData);
   };
 
   return (
@@ -89,7 +124,7 @@ export function PostComposer() {
         </button>
       </div>
 
-      <form action={formAction} className="space-y-3">
+      <form action={handleSubmit} className="space-y-3">
         <input type="hidden" name="isMicroStep" value={String(isMicroStep)} />
 
         <textarea
@@ -142,21 +177,28 @@ export function PostComposer() {
             >
               <X className="w-4 h-4 text-white" />
             </button>
-            {fileName && (
-              <p className="absolute bottom-2 left-3 text-xs text-white/90 bg-black/40 backdrop-blur rounded-full px-2 py-0.5">
-                {fileName}
-              </p>
-            )}
           </div>
         ) : !isMicroStep ? (
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="w-full flex items-center justify-center gap-3 rounded-2xl bg-black/30 border border-white/5 border-dashed px-4 py-4 hover:border-white/20 transition"
-          >
-            <ImagePlus className="w-5 h-5 text-[#8E8E93]" />
-            <span className="text-sm text-[#8E8E93]">Добавить фото</span>
-          </button>
+          <div className="flex gap-2">
+            {isNative && (
+              <button
+                type="button"
+                onClick={() => takePhoto(CameraSource.Camera)}
+                className="flex-1 flex flex-col items-center justify-center gap-2 rounded-2xl bg-black/30 border border-white/5 border-dashed px-4 py-6 hover:border-white/20 transition active:scale-[0.98]"
+              >
+                <CameraIcon className="w-6 h-6 text-[#8E8E93]" />
+                <span className="text-xs text-[#8E8E93]">Камера</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={isNative ? () => takePhoto(CameraSource.Photos) : () => fileInputRef.current?.click()}
+              className="flex-1 flex flex-col items-center justify-center gap-2 rounded-2xl bg-black/30 border border-white/5 border-dashed px-4 py-6 hover:border-white/20 transition active:scale-[0.98]"
+            >
+              <ImagePlus className="w-6 h-6 text-[#8E8E93]" />
+              <span className="text-xs text-[#8E8E93]">{isNative ? "Галерея" : "Добавить фото"}</span>
+            </button>
+          </div>
         ) : null}
 
         <div className="flex items-center justify-between gap-3 pt-3 border-t border-white/5">
@@ -168,8 +210,10 @@ export function PostComposer() {
           <SubmitButton isMicroStep={isMicroStep} />
         </div>
 
-        {state.message && !state.errors && (
-          <p className="text-center text-sm text-[#FF453A]">{state.message}</p>
+        {state.message && (
+          <p className={`text-center text-sm px-1 ${state.message.includes('опубликован') ? 'text-[#32D74B]' : 'text-[#FF453A]'}`}>
+            {state.message}
+          </p>
         )}
       </form>
     </section>
