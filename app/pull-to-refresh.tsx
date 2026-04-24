@@ -60,7 +60,7 @@ export function PullToRefresh({ children, onRefresh }: PullToRefreshProps) {
         setPullDistance(PULL_THRESHOLD);
 
         try {
-          await Haptics.notification({ type: ImpactStyle.Medium }).catch(() => {});
+          await Haptics.impact({ style: ImpactStyle.Medium }).catch(() => {});
           await onRefresh();
         } finally {
           setIsRefreshing(false);
