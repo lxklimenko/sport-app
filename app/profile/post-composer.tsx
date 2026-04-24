@@ -5,6 +5,7 @@ import { useFormStatus } from "react-dom";
 import { ImagePlus, Send, X, Zap, Camera as CameraIcon } from "lucide-react";
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
 import { publishPost, type CreatePostState } from "@/app/actions/auth";
 
