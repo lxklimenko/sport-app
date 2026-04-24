@@ -1,12 +1,11 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Flame, MessageCircle, Users } from "lucide-react";
+import { Users } from "lucide-react";
 
 import { getSessionUserId } from "@/lib/auth";
 import { getFollowingPosts } from "@/lib/posts";
 import { getCommentsCountByPostIds } from "@/lib/comments";
 import { getFollowCounts } from "@/lib/follows";
-import { toggleLikeAction } from "@/app/actions";
 import { TopHeader } from "@/app/top-header";
 import { FeedClient } from "./feed-client";
 import { FeedPost } from "./feed-post";
