@@ -71,18 +71,18 @@ export default async function Home() {
 
       <section className="pt-8 pb-20 px-6 max-w-4xl mx-auto">
 
-        <div className="flex items-center gap-3 mb-10 text-[#C4C7C5] text-lg">
+        <div className="flex items-center gap-3 mb-10 text-[#C4C7C5] text-lg font-medium tracking-tight">
           <Sun className="w-6 h-6 text-[#FDE293]" fill="currentColor" />
           <span>
             {challenges.length} {challenges.length === 1 ? "активный челлендж" : "активных челленджа"} · {totalParticipants} участников
           </span>
         </div>
 
-        <h1 className="text-6xl md:text-8xl leading-tight mb-8 text-[#F2F2F2]">
+        <h1 className="text-6xl md:text-8xl font-bold tracking-tighter leading-[1.05] mb-8 text-white">
           Стань первым.<br />Каждый день.
         </h1>
 
-        <p className="text-xl text-[#C4C7C5] mb-12 max-w-xl">
+        <p className="text-xl md:text-2xl text-[#C4C7C5] leading-relaxed mb-12 max-w-xl font-medium">
           Твоя дисциплина. Твой результат. Выбирай челлендж и докажи, что ты готов к победе.
         </p>
 

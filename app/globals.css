@@ -20,14 +20,15 @@
   --color-border-thin: rgba(255, 255, 255, 0.08); /* Чуть-чуть плотнее для объема */
   --radius-huge: 1.5rem;
 
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", system-ui, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: "SFMono-Regular", "Menlo", monospace;
+  --font-sans: "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Inter", system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: "SF Mono", "SFMono-Regular", "Menlo", "Monaco", "Consolas", monospace;
 }
 
 @layer base {
   * {
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
+    letter-spacing: -0.015em; /* Фирменное легкое сжатие Apple */
   }
 
   body {
