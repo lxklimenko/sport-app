@@ -85,8 +85,18 @@ export function PostComposer() {
     if (photoFile) {
       formData.set("photo", photoFile);
     }
-    formAction(formData);
+
+    try {
+      await Haptics.impact({ style: ImpactStyle.Medium });
+      formAction(formData);
+    } catch (e) {}
   };
+
+  useEffect(() => {
+    if (state.message && state.message.includes('опубликован')) {
+      Haptics.notification({ type: ImpactStyle.Light }).catch(() => {});
+    }
+  }, [state.message]);
 
   return (
     <section

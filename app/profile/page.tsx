@@ -11,6 +11,7 @@ import { getFollowCounts } from "@/lib/follows";
 import { getMyTeam } from "@/lib/teams";
 import { ProfileHeader } from "./profile-header";
 import { ProfileClient } from "./profile-client";
+import { ShareButton } from "./share-button";
 
 export const dynamic = "force-dynamic";
 
@@ -113,7 +114,7 @@ export default async function ProfilePage() {
           <div className="flex gap-2 mb-8">
             <Link href="/profile/edit" className="flex-1 bg-[#1E1F22] py-2 rounded-xl text-sm font-medium text-center">Редактировать</Link>
             <Link href="/profile/stats" className="flex-1 bg-[#1E1F22] py-2 rounded-xl text-sm font-medium text-center">Статистика</Link>
-            <button className="flex-1 bg-[#1E1F22] py-2 rounded-xl text-sm font-medium">Поделиться</button>
+            <ShareButton userName={user.name} />
           </div>
 
           {activeChallenges.length > 0 && (
