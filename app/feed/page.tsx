@@ -9,18 +9,9 @@ import { getFollowCounts } from "@/lib/follows";
 import { toggleLikeAction } from "@/app/actions";
 import { TopHeader } from "@/app/top-header";
 import { FeedClient } from "./feed-client";
+import { FeedPost } from "./feed-post";
 
 export const dynamic = "force-dynamic";
-
-function formatTime(iso: string) {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const minutes = Math.max(1, Math.floor(diffMs / 60000));
-  if (minutes < 60) return `${minutes} мин назад`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} ч назад`;
-  const days = Math.floor(hours / 24);
-  return `${days} дн назад`;
-}
 
 export default async function FeedPage() {
   const userId = await getSessionUserId();
@@ -36,7 +27,7 @@ export default async function FeedPage() {
       <main className="min-h-screen bg-[#0D0F12] text-[#F5F7FA] pb-20">
         <TopHeader />
 
-        <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
+        <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between sticky top-[60px] z-40 bg-[#0D0F12]/80 backdrop-blur-xl">
           <span className="font-semibold text-lg">Лента</span>
           <span className="text-xs text-[#9AA0A6]">
             {followCounts.following} {followCounts.following === 1 ? "подписка" : "подписок"}
@@ -72,60 +63,11 @@ export default async function FeedPage() {
           ) : (
             <div className="space-y-4 py-4">
               {posts.map((post) => (
-                <div key={post.id} className="bg-[#1E1F22] rounded-3xl overflow-hidden">
-                  <div className="p-5 pb-3">
-                    <div className="flex justify-between items-center text-sm">
-                      <Link
-                        href={`/user/${post.userId}`}
-                        className="font-semibold hover:text-[#A8C7FA] transition"
-                      >
-                        {post.authorName}
-                      </Link>
-                      <span className="text-[#9AA0A6] text-xs">
-                        {formatTime(post.createdAt)}
-                      </span>
-                    </div>
-
-                    <p className="mt-3 text-lg leading-relaxed">{post.workout}</p>
-                    <p className="mt-1 text-sm text-[#C4C7C5]">{post.stats}</p>
-                  </div>
-
-                  {post.imageUrl && (
-                    <Link href={`/post/${post.id}`}>
-                      <img
-                        src={post.imageUrl}
-                        alt=""
-                        className="w-full max-h-[500px] object-cover"
-                      />
-                    </Link>
-                  )}
-
-                  <div className="p-5 pt-3 flex gap-5 text-[#9AA0A6]">
-                    <form action={toggleLikeAction}>
-                      <input type="hidden" name="postId" value={post.id} />
-                      <button
-                        type="submit"
-                        className={`flex items-center gap-1.5 text-sm transition ${
-                          post.likedByMe ? "text-[#FFB4AB]" : "hover:text-white"
-                        }`}
-                      >
-                        <Flame
-                          className="w-4 h-4"
-                          fill={post.likedByMe ? "currentColor" : "none"}
-                        />
-                        <span>{post.likesCount}</span>
-                      </button>
-                    </form>
-
-                    <Link
-                      href={`/post/${post.id}`}
-                      className="flex items-center gap-1.5 text-sm hover:text-white transition"
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                      <span>{commentsCounts[post.id] ?? 0}</span>
-                    </Link>
-                  </div>
-                </div>
+                <FeedPost
+                  key={post.id}
+                  post={post}
+                  commentsCount={commentsCounts[post.id] ?? 0}
+                />
               ))}
             </div>
           )}
@@ -133,4 +75,5 @@ export default async function FeedPage() {
       </main>
     </FeedClient>
   );
+}
 }
