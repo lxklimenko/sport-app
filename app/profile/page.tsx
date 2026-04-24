@@ -10,6 +10,7 @@ import { getPool, hasDatabase } from "@/lib/db";
 import { getFollowCounts } from "@/lib/follows";
 import { getMyTeam } from "@/lib/teams";
 import { ProfileHeader } from "./profile-header";
+import { ProfileClient } from "./profile-client";
 
 export const dynamic = "force-dynamic";
 
@@ -73,69 +74,71 @@ export default async function ProfilePage() {
   const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.name)}`;
 
   return (
-    <main className="min-h-screen bg-bg-main text-text-primary pb-24">
+    <ProfileClient>
+      <main className="min-h-screen bg-bg-main text-text-primary pb-24">
 
-      {/* ИСПОЛЬЗУЕМ НОВУЮ ШАПКУ */}
-      <ProfileHeader userName={user.name} />
+        {/* ИСПОЛЬЗУЕМ НОВУЮ ШАПКУ */}
+        <ProfileHeader userName={user.name} />
 
-      <div className="px-5 pt-6">
-        <div className="flex items-center gap-6 mb-8">
-          <img
-            src={avatarUrl}
-            alt={user.name}
-            className="w-24 h-24 rounded-full bg-[#141415] border border-border-thin shadow-[inset_0_2px_8px_rgba(0,0,0,0.6)] p-1.5"
-          />
-          <div className="flex-1 grid grid-cols-3 gap-2 text-center">
-            <div>
-              <div className="text-2xl font-bold">{myPosts.length}</div>
-              <div className="text-[10px] uppercase text-text-muted mt-1">постов</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold">{followCounts.followers}</div>
-              <div className="text-[10px] uppercase text-text-muted mt-1">подписчиков</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold">{followCounts.following}</div>
-              <div className="text-[10px] uppercase text-text-muted mt-1">подписок</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mb-6">
-          <div className="text-xl font-bold mb-1">{user.name}</div>
-          <div className="text-sm text-text-secondary">
-            {user.favoriteFormat} {user.goal && ` · 🎯 ${user.goal}`}
-          </div>
-        </div>
-
-        <div className="flex gap-2 mb-8">
-          <Link href="/profile/edit" className="flex-1 bg-[#1E1F22] py-2 rounded-xl text-sm font-medium text-center">Редактировать</Link>
-          <Link href="/profile/stats" className="flex-1 bg-[#1E1F22] py-2 rounded-xl text-sm font-medium text-center">Статистика</Link>
-          <button className="flex-1 bg-[#1E1F22] py-2 rounded-xl text-sm font-medium">Поделиться</button>
-        </div>
-
-        {activeChallenges.length > 0 && (
-          <div className="mb-8">
-            <div className="text-[11px] uppercase text-text-muted mb-4 font-medium">Активные челленджи</div>
-            <div className="grid grid-cols-2 gap-3">
-              {activeChallenges.map(my => (
-                <Link key={my.challenge.id} href={`/challenge/${my.challenge.id}`} className="card-base p-4 relative">
-                  <div className="text-sm font-bold text-text-primary">{my.challenge.title}</div>
-                  <div className="text-[10px] text-text-muted mt-1">{my.totalSteps} {my.challenge.unitLabel}</div>
-                </Link>
-              ))}
+        <div className="px-5 pt-6">
+          <div className="flex items-center gap-6 mb-8">
+            <img
+              src={avatarUrl}
+              alt={user.name}
+              className="w-24 h-24 rounded-full bg-[#141415] border border-border-thin shadow-[inset_0_2px_8px_rgba(0,0,0,0.6)] p-1.5"
+            />
+            <div className="flex-1 grid grid-cols-3 gap-2 text-center">
+              <div>
+                <div className="text-2xl font-bold">{myPosts.length}</div>
+                <div className="text-[10px] uppercase text-text-muted mt-1">постов</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold">{followCounts.followers}</div>
+                <div className="text-[10px] uppercase text-text-muted mt-1">подписчиков</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold">{followCounts.following}</div>
+                <div className="text-[10px] uppercase text-text-muted mt-1">подписок</div>
+              </div>
             </div>
           </div>
-        )}
-      </div>
 
-      <div className="grid grid-cols-3 gap-[2px]">
-        {myPosts.map(post => (
-          <Link key={post.id} href={`/post/${post.id}`} className="aspect-square bg-[#141415] overflow-hidden">
-            {post.imageUrl && <img src={post.imageUrl} className="w-full h-full object-cover" />}
-          </Link>
-        ))}
-      </div>
-    </main>
+          <div className="mb-6">
+            <div className="text-xl font-bold mb-1">{user.name}</div>
+            <div className="text-sm text-text-secondary">
+              {user.favoriteFormat} {user.goal && ` · 🎯 ${user.goal}`}
+            </div>
+          </div>
+
+          <div className="flex gap-2 mb-8">
+            <Link href="/profile/edit" className="flex-1 bg-[#1E1F22] py-2 rounded-xl text-sm font-medium text-center">Редактировать</Link>
+            <Link href="/profile/stats" className="flex-1 bg-[#1E1F22] py-2 rounded-xl text-sm font-medium text-center">Статистика</Link>
+            <button className="flex-1 bg-[#1E1F22] py-2 rounded-xl text-sm font-medium">Поделиться</button>
+          </div>
+
+          {activeChallenges.length > 0 && (
+            <div className="mb-8">
+              <div className="text-[11px] uppercase text-text-muted mb-4 font-medium">Активные челленджи</div>
+              <div className="grid grid-cols-2 gap-3">
+                {activeChallenges.map(my => (
+                  <Link key={my.challenge.id} href={`/challenge/${my.challenge.id}`} className="card-base p-4 relative">
+                    <div className="text-sm font-bold text-text-primary">{my.challenge.title}</div>
+                    <div className="text-[10px] text-text-muted mt-1">{my.totalSteps} {my.challenge.unitLabel}</div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-3 gap-[2px]">
+          {myPosts.map(post => (
+            <Link key={post.id} href={`/post/${post.id}`} className="aspect-square bg-[#141415] overflow-hidden">
+              {post.imageUrl && <img src={post.imageUrl} className="w-full h-full object-cover" />}
+            </Link>
+          ))}
+        </div>
+      </main>
+    </ProfileClient>
   );
 }
