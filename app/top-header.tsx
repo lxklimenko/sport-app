@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Send, Heart, Zap } from "lucide-react";
+import { MessageCircle, Bell, Zap } from "lucide-react";
 
 import { getSessionUserId } from "@/lib/auth";
 import { getUnreadMessagesCount } from "@/lib/messages";
@@ -32,7 +32,7 @@ export async function TopHeader() {
           href="/notifications"
           className="relative w-10 h-10 rounded-full flex items-center justify-center hover:bg-bg-hover transition-colors active-scale"
         >
-          <Heart className="w-6 h-6 text-text-primary" />
+          <Bell className="w-6 h-6 text-text-primary" />
           {/* iOS-стиль системных бейджей */}
           {unreadNotifications > 0 && (
             <div className="absolute top-0 right-0 bg-danger text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 border-2 border-[#1C1C1E]">
@@ -45,7 +45,7 @@ export async function TopHeader() {
           href="/messages"
           className="relative w-10 h-10 rounded-full flex items-center justify-center hover:bg-bg-hover transition-colors active-scale"
         >
-          <Send className="w-6 h-6 text-text-primary" />
+          <MessageCircle className="w-6 h-6 text-text-primary" />
           {unreadMessages > 0 && (
             <div className="absolute top-0 right-0 bg-danger text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 border-2 border-[#1C1C1E]">
               {unreadMessages > 99 ? "99+" : unreadMessages}

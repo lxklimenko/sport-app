@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Flame, User, Users, Shield } from "lucide-react";
+import { Home, Rss, User, Users, Trophy } from "lucide-react";
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
 export function BottomNav() {
@@ -21,8 +21,8 @@ export function BottomNav() {
 
   const items = [
     { href: "/", icon: Home, label: "Главная" },
-    { href: "/feed", icon: Flame, label: "Лента" },
-    { href: "/teams", icon: Shield, label: "Команды" },
+    { href: "/feed", icon: Rss, label: "Лента" },
+    { href: "/teams", icon: Trophy, label: "Команды" },
     { href: "/users", icon: Users, label: "Люди" },
     { href: "/profile", icon: User, label: "Профиль" },
   ];
