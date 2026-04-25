@@ -16,6 +16,6 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   if (!body?.name) return err("name обязателен");
 
-  const team = await createTeam({ name: body.name, emoji: body.emoji ?? "🏆", description: body.description ?? "", createdBy: userId });
+  const team = await createTeam({ name: body.name, emoji: body.emoji ?? "🏆", description: body.description ?? "", userId });
   return ok(team, 201);
 }
