@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   const type = req.nextUrl.searchParams.get("type") ?? "following";
   const posts = type === "following"
     ? await getFollowingPosts(userId)
-    : await getRecentPosts(userId);
+    : await getRecentPosts(20, userId);
 
   const ids = posts.map(p => p.id);
   const commentCounts = ids.length ? await getCommentsCountByPostIds(ids) : {};
