@@ -3,6 +3,7 @@ import "./globals.css";
 
 import { BottomNav } from "@/app/bottom-nav";
 import { SplashScreen } from "@/app/splash-screen";
+import { GestureProvider } from "@/app/gesture-provider";
 
 export const metadata: Metadata = {
   title: "Discipline",
@@ -25,6 +26,7 @@ export default function RootLayout({
     <html lang="ru" className="h-full antialiased selection:bg-accent selection:text-black">
       <body className="min-h-full flex flex-col bg-bg-main text-text-primary overflow-x-hidden">
         <SplashScreen />
+        <GestureProvider />
         <div className="flex-1 flex flex-col pt-[env(safe-area-inset-top)]">
           {children}
         </div>
