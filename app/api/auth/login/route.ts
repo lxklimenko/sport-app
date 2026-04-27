@@ -3,6 +3,12 @@ import { getUserByEmail, verifyPassword } from "@/lib/users";
 import { signJwt } from "@/lib/jwt";
 import { ok, err } from "@/lib/api-auth";
 
+export const dynamic = "force-dynamic";
+
+export async function GET() {
+  return ok({ status: "API is working, use POST to login" });
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   if (!body) return err("Invalid JSON");
