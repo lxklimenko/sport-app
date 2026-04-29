@@ -17,30 +17,30 @@ export function ProfileHeader({ userName }: ProfileHeaderProps) {
   };
 
   return (
-    <div className="sticky top-0 z-50 glass-panel px-4 py-2 flex items-center justify-between min-h-[60px]">
+    <header className="sticky top-0 z-50 glass-panel px-4 py-1.5 flex items-center justify-between">
       <Link
         href="/new-post"
         onClick={handlePlusClick}
-        className="flex items-center justify-center w-11 h-11 text-text-primary hover:text-accent transition-all active:scale-75"
+        className="w-8 h-8 rounded-full flex items-center justify-center text-white hover:bg-white/10 transition active:scale-90"
         aria-label="Добавить пост"
       >
-        <Plus className="w-7 h-7" />
+        <Plus className="w-4 h-4" />
       </Link>
 
-      <div className="flex items-center gap-2">
-        <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse shadow-[0_0_8px_rgba(50,215,75,0.6)]" />
-        <span className="font-bold tracking-tight text-sm uppercase tracking-widest text-text-primary">{userName}</span>
+      <div className="flex items-center gap-1.5">
+        <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+        <span className="font-medium text-xs tracking-wide text-white/90">{userName}</span>
       </div>
 
       <form action={logout}>
         <button
           type="submit"
-          className="flex items-center justify-center w-11 h-11 text-text-primary hover:text-accent transition-all active:scale-75"
+          className="w-8 h-8 rounded-full flex items-center justify-center text-white hover:bg-white/10 transition active:scale-90"
           aria-label="Выход"
         >
-          <Settings className="w-6 h-6" />
+          <Settings className="w-4 h-4" />
         </button>
       </form>
-    </div>
+    </header>
   );
 }

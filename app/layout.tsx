@@ -24,15 +24,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru" className="h-full antialiased selection:bg-accent selection:text-black">
-      <body className="min-h-full flex flex-col bg-bg-main text-text-primary overflow-x-hidden">
+      <body className="min-h-full flex flex-col bg-[#f5f5f7] text-text-primary overflow-x-hidden">
         <SplashScreen />
         <GestureProvider />
-        <div className="flex-1 flex flex-col pt-[env(safe-area-inset-top)]">
+        <div className="flex-1 flex flex-col pt-[env(safe-area-inset-top)] pb-24">
           {children}
         </div>
-        <div className="pb-[env(safe-area-inset-bottom)] bg-bg-card border-t border-border-thin">
-          <BottomNav />
-        </div>
+        <BottomNav />
       </body>
     </html>
   );

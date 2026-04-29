@@ -75,108 +75,141 @@ export default async function ProfilePage() {
 
   return (
     <ProfileClient>
-      <main className="min-h-screen bg-bg-main text-text-primary pb-24">
+      {/* Фоновые размытые пятна для глубины */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-32 -left-32 w-96 h-96 bg-accent/10 rounded-full blur-[128px]" />
+        <div className="absolute top-1/3 -right-32 w-80 h-80 bg-purple-500/10 rounded-full blur-[128px]" />
+        <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-cyan-500/10 rounded-full blur-[128px]" />
+      </div>
+
+      <main className="relative min-h-screen bg-[#0D0F12] text-white pb-24">
         <ProfileHeader userName={user.name} />
 
-        {/* Avatar + Stats */}
         <div className="px-5 pt-6">
-          <div className="flex items-center gap-5 mb-5">
-
-            {/* Avatar */}
-            <div className="relative flex-shrink-0">
-              <div className={`w-[82px] h-[82px] rounded-full p-[2px] ${hasActiveChallenge ? "bg-gradient-to-br from-accent via-accent/60 to-transparent" : "bg-border-thin"}`}>
-                <div className="w-full h-full rounded-full bg-bg-nested overflow-hidden">
+          {/* Аватар + панель статистики с пересечением */}
+          <div className="relative flex items-start mb-8">
+            {/* Аватар (выходит за границы) */}
+            <div className="relative z-10 flex-shrink-0 -mr-6">
+              <div
+                className={`w-[90px] h-[90px] rounded-full p-[2px] ${
+                  hasActiveChallenge
+                    ? "bg-gradient-to-br from-accent via-accent/60 to-transparent"
+                    : "bg-white/10"
+                }`}
+              >
+                <div className="w-full h-full rounded-full bg-[#1C1C1E] overflow-hidden">
                   <img src={avatarUrl} alt={user.name} className="w-full h-full object-cover" />
                 </div>
               </div>
               {hasActiveChallenge && (
-                <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-accent border-2 border-bg-main flex items-center justify-center">
+                <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-accent border-2 border-[#0D0F12] flex items-center justify-center">
                   <Flame className="w-2.5 h-2.5 text-black" fill="currentColor" />
                 </div>
               )}
             </div>
 
-            {/* Stats */}
-            <div className="flex-1 grid grid-cols-3 text-center gap-1">
-              {[
-                { value: myPosts.length, label: "постов" },
-                { value: followCounts.followers, label: "подписчиков" },
-                { value: followCounts.following, label: "подписок" },
-              ].map(stat => (
-                <div key={stat.label} className="flex flex-col items-center">
-                  <span className="text-[22px] font-bold tracking-tight leading-none">{stat.value}</span>
-                  <span className="text-[10px] text-text-muted mt-1 leading-none">{stat.label}</span>
+            {/* Панель, наползающая на аватар */}
+            <div className="flex-1 bg-white/5 backdrop-blur-xl rounded-3xl p-4 pt-6 pl-8 shadow-2xl border border-white/10">
+              {/* Три «стеклянные» карточки с разным наклоном */}
+              <div className="flex gap-3 mb-3">
+                <div className="flex-1 bg-white/5 backdrop-blur-md rounded-2xl p-3 transform -rotate-2 shadow-lg">
+                  <span className="text-lg font-bold">{myPosts.length}</span>
+                  <span className="text-[9px] text-[#98989E] block">постов</span>
                 </div>
-              ))}
+                <div className="flex-1 bg-white/5 backdrop-blur-md rounded-2xl p-3 transform rotate-1 shadow-lg">
+                  <span className="text-lg font-bold">{followCounts.followers}</span>
+                  <span className="text-[9px] text-[#98989E] block">подписчиков</span>
+                </div>
+                <div className="flex-1 bg-white/5 backdrop-blur-md rounded-2xl p-3 transform -rotate-1 shadow-lg">
+                  <span className="text-lg font-bold">{followCounts.following}</span>
+                  <span className="text-[9px] text-[#98989E] block">подписок</span>
+                </div>
+              </div>
+
+              {/* Имя и био */}
+              <p className="font-semibold text-sm tracking-tight">{user.name}</p>
+              {(user.favoriteFormat || user.goal) && (
+                <p className="text-xs text-[#98989E] mt-0.5">
+                  {user.favoriteFormat}
+                  {user.goal ? ` · 🎯 ${user.goal}` : ""}
+                </p>
+              )}
+              {myTeam && (
+                <Link
+                  href={`/teams/${myTeam.id}`}
+                  className="inline-flex items-center gap-1 mt-1 text-xs text-accent font-medium"
+                >
+                  {myTeam.emoji} {myTeam.name}
+                  <ChevronRight className="w-3 h-3" />
+                </Link>
+              )}
             </div>
           </div>
 
-          {/* Name + Bio */}
-          <div className="mb-5">
-            <p className="font-semibold text-base tracking-tight leading-snug">{user.name}</p>
-            {(user.favoriteFormat || user.goal) && (
-              <p className="text-sm text-text-muted mt-0.5">
-                {user.favoriteFormat}{user.goal ? ` · 🎯 ${user.goal}` : ""}
-              </p>
-            )}
-            {myTeam && (
-              <Link href={`/teams/${myTeam.id}`} className="inline-flex items-center gap-1 mt-1.5 text-xs text-accent font-medium">
-                {myTeam.emoji} {myTeam.name}
-                <ChevronRight className="w-3 h-3" />
-              </Link>
-            )}
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-2 mb-7">
+          {/* Кнопки действий – лесенка */}
+          <div className="flex flex-col items-start gap-2 mb-8 pl-2">
+            {/* Основная кнопка */}
             <Link
               href="/profile/edit"
-              className="flex-1 bg-bg-nested py-2.5 rounded-xl text-sm font-semibold text-center active-scale"
+              className="bg-accent text-white text-xs font-semibold py-2.5 px-6 rounded-full shadow-lg shadow-accent/20 hover:shadow-accent/30 active:scale-95 transition-all"
             >
-              Редактировать
+              Редактировать профиль
             </Link>
-            <Link
-              href="/profile/stats"
-              className="flex-1 bg-bg-nested py-2.5 rounded-xl text-sm font-semibold text-center active-scale"
-            >
-              Статистика
-            </Link>
-            <ShareButton userName={user.name} />
+            {/* Вспомогательные ниже и правее */}
+            <div className="flex gap-2 ml-4">
+              <Link
+                href="/profile/stats"
+                className="bg-white/10 text-white text-xs font-semibold py-2.5 px-4 rounded-full hover:bg-white/20 active:scale-95 transition-all"
+              >
+                Статистика
+              </Link>
+              <ShareButton userName={user.name} />
+            </div>
           </div>
 
-          {/* Today's steps */}
+          {/* Шаги сегодня */}
           {todaySteps > 0 && (
-            <div className="card-base px-4 py-3.5 flex items-center justify-between mb-6">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center">
+            <div className="glass p-3 flex items-center justify-between mb-6 rounded-2xl">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-accent/20 flex items-center justify-center">
                   <Flame className="w-4 h-4 text-accent" />
                 </div>
                 <div>
-                  <p className="text-xs text-text-muted">Сегодня</p>
-                  <p className="text-sm font-semibold leading-tight">{todaySteps.toLocaleString()} шагов</p>
+                  <p className="text-[11px] text-[#98989E]">Сегодня</p>
+                  <p className="text-sm font-semibold leading-tight">
+                    {todaySteps.toLocaleString()} шагов
+                  </p>
                 </div>
               </div>
-              <div className="text-accent text-xs font-semibold">Активен</div>
+              <div className="text-accent text-[11px] font-semibold">Активен</div>
             </div>
           )}
 
-          {/* Active Challenges */}
+          {/* Челленджи */}
           {activeChallenges.length > 0 && (
             <div className="mb-6">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">Челленджи</span>
-                <span className="text-xs text-accent font-medium">{activeChallenges.length} активных</span>
+                <span className="text-[11px] font-semibold text-[#98989E] uppercase tracking-wider">
+                  Челленджи
+                </span>
+                <span className="text-[11px] text-accent font-medium">
+                  {activeChallenges.length} активных
+                </span>
               </div>
               <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-5 px-5 pb-1">
                 {activeChallenges.map(my => (
                   <Link
                     key={my.challenge.id}
                     href={`/challenge/${my.challenge.id}`}
-                    className="flex-shrink-0 card-base p-4 w-44 active-scale"
+                    className="flex-shrink-0 glass p-4 w-44 rounded-2xl active:scale-95 transition-transform"
                   >
                     <div className="text-2xl mb-2">{my.challenge.emoji}</div>
-                    <p className="text-sm font-semibold leading-snug mb-1 line-clamp-2">{my.challenge.title}</p>
-                    <p className="text-xs text-accent font-medium">{my.totalSteps} {my.challenge.unitLabel}</p>
+                    <p className="text-sm font-semibold leading-snug mb-1 line-clamp-2">
+                      {my.challenge.title}
+                    </p>
+                    <p className="text-xs text-accent font-medium">
+                      {my.totalSteps} {my.challenge.unitLabel}
+                    </p>
                   </Link>
                 ))}
               </div>
@@ -184,41 +217,44 @@ export default async function ProfilePage() {
           )}
         </div>
 
-        {/* Posts grid header */}
+        {/* Сетка постов с асимметрией */}
         <div className="flex items-center justify-between px-5 mb-3">
-          <div className="flex items-center gap-1.5 text-text-muted">
+          <div className="flex items-center gap-1.5 text-[#98989E]">
             <Grid3x3 className="w-4 h-4" />
-            <span className="text-xs font-semibold uppercase tracking-wider">Публикации</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wider">Публикации</span>
           </div>
-          <span className="text-xs text-text-muted">{myPosts.length}</span>
+          <span className="text-[11px] text-[#98989E]">{myPosts.length}</span>
         </div>
 
-        {/* Posts Grid */}
         {myPosts.length === 0 ? (
-          <div className="mx-5 card-base p-10 text-center">
-            <p className="text-text-muted text-sm">Ещё нет публикаций</p>
-            <Link href="/new-post" className="inline-flex items-center gap-1.5 mt-3 text-accent text-sm font-semibold">
+          <div className="mx-5 glass p-10 text-center rounded-2xl">
+            <p className="text-[#98989E] text-xs">Ещё нет публикаций</p>
+            <Link href="/new-post" className="inline-flex items-center gap-1.5 mt-3 text-accent text-xs font-semibold">
               <Plus className="w-4 h-4" />
               Добавить тренировку
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-[1.5px]">
-            {myPosts.map(post => (
-              <Link key={post.id} href={`/post/${post.id}`} className="aspect-square bg-bg-nested overflow-hidden active-scale">
-                {post.imageUrl
-                  ? <img src={post.imageUrl?.startsWith("/") ? `https://alex-cosh.ru${post.imageUrl}` : post.imageUrl} className="w-full h-full object-cover" />
-                  : (
-                    <div className="w-full h-full flex items-center justify-center p-3">
-                      <p className="text-[10px] text-text-muted text-center leading-relaxed line-clamp-4">{post.workout}</p>
-                    </div>
-                  )
-                }
+          <div className="grid grid-cols-3 gap-1 px-5">
+            {myPosts.map((post, index) => (
+              <Link
+                key={post.id}
+                href={`/post/${post.id}`}
+                className={`aspect-square bg-[#1C1C1E] rounded-xl overflow-hidden active:scale-95 transition-transform ${
+                  index % 3 === 1 ? '-mt-3' : index % 3 === 2 ? 'mt-2' : ''
+                }`}
+              >
+                {post.imageUrl ? (
+                  <img src={post.imageUrl?.startsWith("/") ? `https://alex-cosh.ru${post.imageUrl}` : post.imageUrl} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center p-3">
+                    <p className="text-[10px] text-[#98989E] text-center leading-relaxed line-clamp-4">{post.workout}</p>
+                  </div>
+                )}
               </Link>
             ))}
           </div>
         )}
-
       </main>
     </ProfileClient>
   );

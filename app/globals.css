@@ -1,125 +1,65 @@
 @import "tailwindcss";
 
-@theme {
-  /* Цветовая система остается той же */
-  --color-bg-main: #000000;
-  --color-bg-card: #1C1C1E;
-  --color-bg-nested: #2C2C2E;
-  --color-bg-muted: #242426;
-  --color-bg-hover: #3A3A3C;
-
-  --color-text-primary: #FFFFFF;
-  --color-text-secondary: #EBEBF5;
-  --color-text-muted: #8E8E93;
-  --color-text-on-accent: #000000;
-
-  --color-accent: #32D74B;
-  --color-accent-hover: #42E75B;
-  --color-danger: #FF453A;
-
-  --color-border-thin: rgba(255, 255, 255, 0.08); /* Чуть-чуть плотнее для объема */
-  --radius-huge: 1.5rem;
-
-  --font-sans: "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Inter", system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: "SF Mono", "SFMono-Regular", "Menlo", "Monaco", "Consolas", monospace;
+/* Тёмная тема Apple — спортивный зелёный */
+:root {
+  --bg-main: #0D0F12;
+  --bg-card: rgba(28, 28, 30, 0.8);
+  --border-thin: rgba(255, 255, 255, 0.06);
+  --text-primary: #FFFFFF;
+  --text-secondary: #F5F5F7;
+  --text-muted: #98989E;
+  --accent: #4CAF50;                /* ← зелёный */
 }
 
-@layer base {
-  * {
-    -webkit-tap-highlight-color: transparent;
-    -webkit-touch-callout: none;
-    letter-spacing: -0.015em; /* Фирменное легкое сжатие Apple */
-  }
-
-  body {
-    background-color: var(--color-bg-main);
-    color: var(--color-text-primary);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    font-feature-settings: "ss01", "cv01", "cv11";
-    letter-spacing: -0.011em;
-    font-synthesis: none;
-    user-select: none;
-    /* Глобальный микро-шум поверх всего фона */
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
-  }
+body {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-@layer utilities {
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
+/* Тёмное стекло */
+.glass {
+  background: rgba(28, 28, 30, 0.72);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
 
-  /* СЕКРЕТ ДОРОГОГО ДИЗАЙНА ЗДЕСЬ */
-  .card-base {
-    background-color: var(--color-bg-card);
-    border-radius: var(--radius-huge);
-    
-    /* 1. Базовая тонкая рамка */
-    border: 1px solid var(--color-border-thin);
-    
-    /* 2. Комбинированная тень: 
-          - drop-shadow для отрыва от фона (невидимая магия)
-          - inset тень белого цвета сверху (создает эффект фаски/блика света сверху)
-    */
-    box-shadow: 
-      0 10px 40px -10px rgba(0, 0, 0, 0.5),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
-      
-    /* 3. Более плавная, "пружинистая" кривая Безье для анимации */
-    transition: background-color 0.2s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
+/* Утилиты для совместимости */
+.bg-bg-main { background-color: var(--bg-main); }
+.bg-bg-card { background-color: var(--bg-card); }
+.text-text-primary { color: var(--text-primary); }
+.text-text-secondary { color: var(--text-secondary); }
+.text-text-muted { color: var(--text-muted); }
+.border-border-thin { border-color: var(--border-thin); }
+.text-accent { color: var(--accent); }
+.bg-accent { background-color: var(--accent); }
+.bg-accent\/10 { background-color: rgba(76, 175, 80, 0.1); }      /* ← зелёный */
+.border-accent\/20 { border-color: rgba(76, 175, 80, 0.2); }       /* ← зелёный */
+.bg-bg-nested { background-color: rgba(255, 255, 255, 0.05); }
+.card-base { background: var(--bg-card); border: 1px solid var(--border-thin); border-radius: 1.5rem; }
+.glass-panel { background: rgba(28, 28, 30, 0.72); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.06); }
+.active-scale { transition: transform 0.1s ease; }
+.active-scale:active { transform: scale(0.96); }
 
-  .card-base:hover {
-    background-color: var(--color-bg-hover);
-  }
+/* Apple typography scale */
+html {
+  font-size: 16px;
+}
+body {
+  font-size: 0.9375rem; /* ~15px */
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+}
 
-  .card-base:active {
-    /* Чуть меньше сжатие, чтобы ощущалось более увесисто */
-    transform: scale(0.985);
-  }
-  
-  .active-scale {
-    @apply active:scale-[0.985] transition-transform duration-200 ease-out;
-  }
-  
-  .shimmer {
-    position: relative;
-    overflow: hidden;
-    background-color: var(--color-bg-nested);
-  }
-
-  .shimmer::after {
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    transform: translateX(-100%);
-    background-image: linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0) 0,
-      rgba(255, 255, 255, 0.03) 20%,
-      rgba(255, 255, 255, 0.06) 60%,
-      rgba(255, 255, 255, 0)
-    );
-    animation: shimmer-anim 2s infinite;
-    content: '';
-  }
-
-  @keyframes shimmer-anim {
-    100% {
-      transform: translateX(100%);
-    }
-  }
-
-  /* Утилита для премиального размытия (Apple Glass) */
-  .glass-panel {
-    @apply bg-[#1C1C1E]/70 backdrop-blur-2xl border-t border-[rgba(255,255,255,0.1)];
-    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
-  }
+/* Пульсация теперь зелёная */
+@keyframes subtle-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.5); }
+  50% { box-shadow: 0 0 0 8px rgba(76, 175, 80, 0); }
+}
+.pulse-ring {
+  animation: subtle-pulse 2.5s infinite ease-in-out;
 }

@@ -31,15 +31,12 @@ export function FeedPost({ post, commentsCount }: PostProps) {
     const DOUBLE_TAP_DELAY = 300;
 
     if (now - lastTap.current < DOUBLE_TAP_DELAY) {
-      // Это двойной тап!
       if (!post.likedByMe) {
-        // Лайкаем только если еще не лайкнуто
         const formData = new FormData();
         formData.append("postId", post.id);
         await toggleLikeAction(formData);
       }
 
-      // Визуальный эффект
       setShowHeart(true);
 
       try {
@@ -52,31 +49,44 @@ export function FeedPost({ post, commentsCount }: PostProps) {
   };
 
   return (
-    <div className="bg-[#1E1F22] rounded-3xl overflow-hidden border border-white/5">
-      <div className="p-5 pb-3">
-        <div className="flex justify-between items-center text-sm">
-          <Link
-            href={`/user/${post.userId}`}
-            className="font-semibold hover:text-[#A8C7FA] transition active:opacity-60"
-          >
-            {post.authorName}
-          </Link>
-          <span className="text-[#9AA0A6] text-xs">
-            {formatTime(post.createdAt)}
-          </span>
-        </div>
-
-        <p className="mt-3 text-lg leading-relaxed">{post.workout}</p>
-        <p className="mt-1 text-sm text-[#C4C7C5]">{post.stats}</p>
+    <div className="glass p-5 space-y-4 transition-shadow hover:shadow-lg">
+      {/* Шапка */}
+      <div className="flex justify-between items-center text-sm">
+        <Link
+          href={`/user/${post.userId}`}
+          className="font-semibold text-white hover:text-accent transition"
+        >
+          {post.authorName}
+        </Link>
+        <span className="text-xs text-[#98989E]">
+          {formatTime(post.createdAt)}
+        </span>
       </div>
 
+      {/* Текст тренировки */}
+      <div className="space-y-1">
+        <p className="text-lg font-medium text-white leading-relaxed">
+          {post.workout}
+        </p>
+        {post.stats && (
+          <p className="text-sm text-[#98989E] leading-relaxed">
+            {post.stats}
+          </p>
+        )}
+      </div>
+
+      {/* Фото */}
       {post.imageUrl && (
         <div
-          className="relative overflow-hidden cursor-pointer select-none"
+          className="relative overflow-hidden rounded-2xl cursor-pointer select-none"
           onClick={handleDoubleTap}
         >
           <img
-            src={post.imageUrl?.startsWith("/") ? `https://alex-cosh.ru${post.imageUrl}` : post.imageUrl}
+            src={
+              post.imageUrl?.startsWith("/")
+                ? `https://alex-cosh.ru${post.imageUrl}`
+                : post.imageUrl
+            }
             alt=""
             className="w-full max-h-[500px] object-cover pointer-events-none"
           />
@@ -97,7 +107,8 @@ export function FeedPost({ post, commentsCount }: PostProps) {
         </div>
       )}
 
-      <div className="p-5 pt-3 flex gap-5 text-[#9AA0A6]">
+      {/* Действия */}
+      <div className="flex items-center gap-5 text-[#98989E]">
         <form action={toggleLikeAction}>
           <input type="hidden" name="postId" value={post.id} />
           <button
