@@ -207,7 +207,7 @@ export default async function ProfilePage() {
             {myPosts.map(post => (
               <Link key={post.id} href={`/post/${post.id}`} className="aspect-square bg-bg-nested overflow-hidden active-scale">
                 {post.imageUrl
-                  ? <img src={post.imageUrl} className="w-full h-full object-cover" />
+                  ? <img src={post.imageUrl?.startsWith("/") ? `https://alex-cosh.ru${post.imageUrl}` : post.imageUrl} className="w-full h-full object-cover" />
                   : (
                     <div className="w-full h-full flex items-center justify-center p-3">
                       <p className="text-[10px] text-text-muted text-center leading-relaxed line-clamp-4">{post.workout}</p>

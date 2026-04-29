@@ -76,7 +76,7 @@ export function FeedPost({ post, commentsCount }: PostProps) {
           onClick={handleDoubleTap}
         >
           <img
-            src={post.imageUrl}
+            src={post.imageUrl?.startsWith("/") ? `https://alex-cosh.ru${post.imageUrl}` : post.imageUrl}
             alt=""
             className="w-full max-h-[500px] object-cover pointer-events-none"
           />

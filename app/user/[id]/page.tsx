@@ -285,7 +285,7 @@ export default async function UserPage({
             >
               {post.imageUrl ? (
                 <img
-                  src={post.imageUrl}
+                  src={post.imageUrl?.startsWith("/") ? `https://alex-cosh.ru${post.imageUrl}` : post.imageUrl}
                   alt=""
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />

@@ -149,7 +149,7 @@ export default async function PostPage({
 
           {post.imageUrl && (
             <img
-              src={post.imageUrl}
+              src={post.imageUrl?.startsWith("/") ? `https://alex-cosh.ru${post.imageUrl}` : post.imageUrl}
               alt=""
               className="w-full max-h-[500px] object-cover"
             />
