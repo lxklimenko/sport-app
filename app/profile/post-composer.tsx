@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState, useRef, useState, useEffect } from "react";
+import { useActionState, useRef, useState, useEffect, useCallback } from "react";
 import { useFormStatus } from "react-dom";
-import { ImagePlus, Send, X, Zap, Camera as CameraIcon } from "lucide-react";
+import { ImagePlus, Send, X, Zap, Camera as CameraIcon, Check } from "lucide-react";
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
@@ -18,14 +18,23 @@ function SubmitButton({ isMicroStep }: { isMicroStep: boolean }) {
     <button
       type="submit"
       disabled={pending}
-      className={`inline-flex items-center gap-2 rounded-full px-6 py-3 font-bold transition-all active:scale-[0.98] ${
+      className={`relative inline-flex items-center gap-2 rounded-full px-6 py-3 font-bold transition-all active:scale-[0.98] overflow-hidden ${
         isMicroStep
           ? "bg-[#1C3523] border border-[#32D74B]/50 text-[#32D74B] shadow-[0_0_15px_-5px_rgba(50,215,75,0.4)]"
           : "bg-[#32D74B] text-black hover:bg-[#42E75B]"
       } disabled:cursor-not-allowed disabled:opacity-50`}
     >
-      {pending ? "Публикуем..." : isMicroStep ? "Сохранить прогресс" : "Опубликовать"}
-      <Send className="h-4 w-4" />
+      {pending ? (
+        <span className="flex items-center gap-2">
+          <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          Публикуем...
+        </span>
+      ) : isMicroStep ? (
+        "Сохранить прогресс"
+      ) : (
+        "Опубликовать"
+      )}
+      {!pending && <Send className="h-4 w-4" />}
     </button>
   );
 }
@@ -36,7 +45,10 @@ export function PostComposer() {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isMicroStep, setIsMicroStep] = useState(false);
   const [isNative, setIsNative] = useState(false);
+  const [showRipple, setShowRipple] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     setIsNative(Capacitor.isNativePlatform());
@@ -82,6 +94,12 @@ export function PostComposer() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  // Запуск волны при нажатии
+  const triggerRipple = useCallback(() => {
+    setShowRipple(true);
+    setTimeout(() => setShowRipple(false), 500);
+  }, []);
+
   const handleSubmit = async (formData: FormData) => {
     if (photoFile) {
       formData.set("photo", photoFile);
@@ -89,12 +107,24 @@ export function PostComposer() {
 
     try {
       await Haptics.impact({ style: ImpactStyle.Medium });
-      formAction(formData);
-    } catch (e) {}
+      triggerRipple();
+
+      // Небольшая задержка, чтобы волна проигралась, затем отправка
+      setTimeout(() => {
+        formAction(formData);
+      }, 150);
+    } catch (e) {
+      // даже если haptics не сработают, всё равно отправляем
+      triggerRipple();
+      setTimeout(() => formAction(formData), 150);
+    }
   };
 
+  // Показываем галочку при успешной публикации
   useEffect(() => {
     if (state.message && state.message.includes('опубликован')) {
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 1200);
       Haptics.notification({ type: NotificationType.Success }).catch(() => {});
     }
   }, [state.message]);
@@ -135,7 +165,7 @@ export function PostComposer() {
         </button>
       </div>
 
-      <form action={handleSubmit} className="space-y-3">
+      <form ref={formRef} action={handleSubmit} className="space-y-3 relative">
         <input type="hidden" name="isMicroStep" value={String(isMicroStep)} />
 
         <textarea
@@ -212,19 +242,29 @@ export function PostComposer() {
           </div>
         ) : null}
 
-        <div className="flex items-center justify-between gap-3 pt-3 border-t border-white/5">
+        <div className="flex items-center justify-between gap-3 pt-3 border-t border-white/5 relative">
           <p className="text-[11px] text-[#8E8E93] flex-1 leading-tight">
             {isMicroStep
               ? "Даже малый шаг лучше остановки. Серия сохранена."
               : "Дисциплина любит факты."}
           </p>
-          <SubmitButton isMicroStep={isMicroStep} />
+
+          {/* Обёртка для волны */}
+          <div className="relative inline-flex">
+            {showRipple && <div className="ripple-effect" />}
+            {showSuccess ? (
+              <span className="inline-flex items-center gap-2 rounded-full px-6 py-3 bg-green-600 text-white font-bold">
+                <Check className="w-4 h-4" />
+                Опубликовано
+              </span>
+            ) : (
+              <SubmitButton isMicroStep={isMicroStep} />
+            )}
+          </div>
         </div>
 
-        {state.message && (
-          <p className={`text-center text-sm px-1 ${state.message.includes('опубликован') ? 'text-[#32D74B]' : 'text-[#FF453A]'}`}>
-            {state.message}
-          </p>
+        {state.message && !state.message.includes('опубликован') && (
+          <p className="text-center text-sm text-[#FF453A] px-1">{state.message}</p>
         )}
       </form>
     </section>
