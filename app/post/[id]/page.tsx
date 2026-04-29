@@ -11,6 +11,7 @@ import {
   deletePostAction,
   toggleLikeAction,
 } from "@/app/actions";
+import { DeletePostButton } from "@/components/DeletePostButton";
 
 export const dynamic = "force-dynamic";
 
@@ -130,15 +131,7 @@ export default async function PostPage({
                   {formatTime(post.createdAt)}
                 </span>
                 {post.userId === userId && (
-                  <form action={deletePostAction}>
-                    <input type="hidden" name="postId" value={post.id} />
-                    <button
-                      type="submit"
-                      className="text-[#9AA0A6] hover:text-[#FFB4AB] transition text-xs"
-                    >
-                      Удалить
-                    </button>
-                  </form>
+                  <DeletePostButton postId={post.id} />
                 )}
               </div>
             </div>

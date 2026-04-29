@@ -136,6 +136,7 @@ export async function deletePostAction(formData: FormData) {
   }
 
   revalidatePath("/profile");
+  redirect("/profile");
 }
 
 export async function addCommentAction(formData: FormData) {
