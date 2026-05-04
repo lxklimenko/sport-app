@@ -2,7 +2,7 @@
 
 /* Тёмная тема Apple — спортивный зелёный */
 :root {
-  --bg-main: #0D0F12;
+  --bg-main: #000000;
   --bg-card: rgba(28, 28, 30, 0.8);
   --border-thin: rgba(255, 255, 255, 0.06);
   --text-primary: #FFFFFF;

@@ -75,25 +75,23 @@ export default async function ProfilePage() {
 
   return (
     <ProfileClient>
-      <main className="min-h-screen bg-[#0D0F12] text-white pb-24">
+      <main className="min-h-screen bg-black text-white pb-24">
         <ProfileHeader userName={user.name} />
 
         <div className="px-5 pt-6">
-          {/* Аватар + статистика – строго, без рамок */}
+          {/* Аватар + статистика */}
           <div className="flex items-center gap-5 mb-5">
-            {/* Аватар – простой круг */}
             <div className="relative flex-shrink-0">
               <div className="w-[82px] h-[82px] rounded-full bg-[#1C1C1E] overflow-hidden">
                 <img src={avatarUrl} alt={user.name} className="w-full h-full object-cover" />
               </div>
               {hasActiveChallenge && (
-                <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-accent border-2 border-[#0D0F12] flex items-center justify-center">
+                <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-accent border-2 border-black flex items-center justify-center">
                   <Flame className="w-2.5 h-2.5 text-black" fill="currentColor" />
                 </div>
               )}
             </div>
 
-            {/* Числа с подписями */}
             <div className="flex-1 grid grid-cols-3 text-center">
               {[
                 { value: myPosts.length, label: "постов" },
@@ -101,7 +99,7 @@ export default async function ProfilePage() {
                 { value: followCounts.following, label: "подписок" },
               ].map(stat => (
                 <div key={stat.label} className="flex flex-col items-center">
-                  <span className="text-lg font-bold">{stat.value}</span>
+                  <span className="text-lg font-bold text-white">{stat.value}</span>
                   <span className="text-[11px] text-[#98989E]">{stat.label}</span>
                 </div>
               ))}
@@ -110,7 +108,7 @@ export default async function ProfilePage() {
 
           {/* Имя и био */}
           <div className="mb-5">
-            <p className="font-semibold text-sm">{user.name}</p>
+            <p className="font-semibold text-sm text-white">{user.name}</p>
             {(user.favoriteFormat || user.goal) && (
               <p className="text-xs text-[#98989E] mt-0.5">
                 {user.favoriteFormat}
@@ -128,17 +126,17 @@ export default async function ProfilePage() {
             )}
           </div>
 
-          {/* Кнопки действий – простой ряд */}
+          {/* Кнопки действий – строгие, Apple-стиль */}
           <div className="flex gap-2 mb-7">
             <Link
               href="/profile/edit"
-              className="flex-1 py-2.5 rounded-xl text-xs font-semibold text-center bg-accent text-black active:scale-95 transition-transform"
+              className="flex-1 py-2.5 rounded-xl text-xs font-semibold text-center bg-white text-black active:scale-95 transition-transform"
             >
               Редактировать
             </Link>
             <Link
               href="/profile/stats"
-              className="flex-1 py-2.5 rounded-xl text-xs font-semibold text-center bg-white/10 text-white hover:bg-white/20 transition active:scale-95"
+              className="flex-1 py-2.5 rounded-xl text-xs font-semibold text-center bg-white/10 text-white border border-white/10 hover:bg-white/20 transition active:scale-95"
             >
               Статистика
             </Link>
@@ -147,7 +145,7 @@ export default async function ProfilePage() {
             </div>
           </div>
 
-          {/* Шаги сегодня (если есть) – компактно */}
+          {/* Шаги сегодня */}
           {todaySteps > 0 && (
             <div className="flex items-center gap-3 mb-6 px-4 py-3 rounded-2xl bg-white/5">
               <div className="w-9 h-9 rounded-full bg-accent/20 flex items-center justify-center">
@@ -155,14 +153,14 @@ export default async function ProfilePage() {
               </div>
               <div>
                 <p className="text-[11px] text-[#98989E]">Сегодня</p>
-                <p className="text-sm font-semibold">
+                <p className="text-sm font-semibold text-white">
                   {todaySteps.toLocaleString()} шагов
                 </p>
               </div>
             </div>
           )}
 
-          {/* Челленджи – строгий список вместо скролла */}
+          {/* Челленджи */}
           {activeChallenges.length > 0 && (
             <div className="mb-6">
               <p className="text-[11px] font-semibold text-[#98989E] uppercase tracking-wider mb-3">
@@ -178,7 +176,7 @@ export default async function ProfilePage() {
                     <div className="flex items-center gap-3">
                       <span className="text-lg">{my.challenge.emoji}</span>
                       <div>
-                        <p className="text-sm font-medium">{my.challenge.title}</p>
+                        <p className="text-sm font-medium text-white">{my.challenge.title}</p>
                         <p className="text-xs text-[#98989E]">
                           {my.totalSteps} {my.challenge.unitLabel}
                         </p>
@@ -192,7 +190,7 @@ export default async function ProfilePage() {
           )}
         </div>
 
-        {/* Публикации – сетка без сдвигов */}
+        {/* Заголовок публикаций */}
         <div className="flex items-center justify-between px-5 mb-3">
           <div className="flex items-center gap-1.5 text-[#98989E]">
             <Grid3x3 className="w-4 h-4" />
@@ -201,6 +199,7 @@ export default async function ProfilePage() {
           <span className="text-[11px] text-[#98989E]">{myPosts.length}</span>
         </div>
 
+        {/* Сетка постов */}
         {myPosts.length === 0 ? (
           <div className="mx-5 bg-white/5 rounded-2xl p-10 text-center">
             <p className="text-[#98989E] text-xs">Ещё нет публикаций</p>
