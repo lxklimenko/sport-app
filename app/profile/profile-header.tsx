@@ -17,7 +17,7 @@ export function ProfileHeader({ userName }: ProfileHeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-50 glass-panel px-4 py-1.5 flex items-center justify-between">
+    <header className="sticky top-0 z-50 bg-[#0D0F12]/90 backdrop-blur-xl border-b border-white/5 px-4 py-2 flex items-center justify-between">
       <Link
         href="/new-post"
         onClick={handlePlusClick}
@@ -28,8 +28,7 @@ export function ProfileHeader({ userName }: ProfileHeaderProps) {
       </Link>
 
       <div className="flex items-center gap-1.5">
-        <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-        <span className="font-medium text-xs tracking-wide text-white/90">{userName}</span>
+        <span className="font-medium text-xs text-white/90">{userName}</span>
       </div>
 
       <form action={logout}>
