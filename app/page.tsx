@@ -33,7 +33,7 @@ export default function HomePage() {
               <br />
               СДАЙСЯ
             </h1>
-            <p className="mt-5 text-[16px] leading-7 text-white/32 max-w-sm">
+            <p className="mt-5 text-[16px] leading-7 text-white/50 max-w-sm">
               Выбирай дисциплины.
               <br />
               Выживай каждый день.
@@ -48,7 +48,7 @@ export default function HomePage() {
               <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse shadow-[0_0_12px_rgba(74,222,128,0.7)]" />
               <p className="text-sm text-white/60">4 218 сейчас в сезоне</p>
             </div>
-            <p className="mt-1.5 text-xs text-white/25 ml-[10px]">
+            <p className="mt-1.5 text-xs text-white/50 ml-[10px]">
               День 12 продолжается
             </p>
           </div>
@@ -98,20 +98,20 @@ export default function HomePage() {
               Дисциплины сезона
             </p>
             <h2 className="mt-1 text-[22px] font-semibold tracking-tight text-white">
-              Что идёт сейчас
+              Игроки уже внутри
             </h2>
           </div>
 
           <div className="space-y-2.5">
             {/* STEPS */}
-            <div className="rounded-[22px] border border-white/[0.05] bg-white/[0.025] backdrop-blur-2xl p-3.5">
+            <div className="rounded-[22px] border border-white/[0.08] bg-white/[0.03] backdrop-blur-2xl p-3.5 shadow-[0_0_30px_rgba(255,255,255,0.03)]">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/[0.05] flex items-center justify-center text-[20px] shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-white/[0.06] flex items-center justify-center text-[20px] shrink-0">
                   👟
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[16px] font-semibold text-white leading-none">Шаги</p>
-                  <p className="mt-1 text-xs text-white/35">10 000 шагов каждый день</p>
+                  <p className="mt-1 text-xs text-white/50">10 000 шагов каждый день</p>
                 </div>
                 <div className="shrink-0 text-right">
                   <p className="text-[11px] font-medium text-[#FFB4AB]">2 184 под угрозой</p>
@@ -128,7 +128,7 @@ export default function HomePage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[16px] font-semibold text-white leading-none">Бег</p>
-                  <p className="mt-1 text-xs text-orange-200/60">Старт через 6 часов</p>
+                  <p className="mt-1 text-xs text-orange-200/75">Старт через 6 часов</p>
                 </div>
                 <div className="shrink-0 text-right">
                   <p className="text-[11px] font-medium text-orange-300">482 уже вошли</p>
@@ -145,7 +145,7 @@ export default function HomePage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[16px] font-semibold text-white leading-none">Бёрпи</p>
-                  <p className="mt-1 text-xs text-white/35">Скоро откроется</p>
+                  <p className="mt-1 text-xs text-white/50">Скоро откроется</p>
                 </div>
                 <div className="shrink-0 text-right">
                   <p className="text-[11px] font-medium text-white/40">Только для</p>
@@ -162,7 +162,7 @@ export default function HomePage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[16px] font-semibold text-white leading-none">Велосипед</p>
-                  <p className="mt-1 text-xs text-white/35">Сезонная дисциплина</p>
+                  <p className="mt-1 text-xs text-white/50">Сезонная дисциплина</p>
                 </div>
                 <div className="shrink-0 text-right">
                   <p className="text-[11px] font-medium text-white/30">Сезон</p>
