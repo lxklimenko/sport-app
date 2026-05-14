@@ -28,7 +28,7 @@ export default function HomePage() {
         {/* HERO */}
         <section className="pt-14">
           <div className="max-w-[420px]">
-            <h1 className="text-[64px] sm:text-[78px] leading-[0.9] tracking-[-0.08em] font-semibold text-[#F5F5F5]">
+            <h1 className="text-[58px] sm:text-[68px] leading-[0.92] tracking-[-0.07em] font-semibold text-[#F5F5F5]">
               НЕ
               <br />
               СДАЙСЯ
@@ -62,7 +62,7 @@ export default function HomePage() {
               ВОЙТИ В СЕЗОН
             </Link>
             <p className="mt-3 text-[11px] text-white/25 text-center leading-relaxed">
-              Войти можно только во время активного сезона
+              Ты можешь не успеть
             </p>
           </div>
 
@@ -103,50 +103,70 @@ export default function HomePage() {
           </div>
 
           <div className="space-y-2.5">
-            <div className="rounded-[24px] border border-white/[0.05] bg-white/[0.025] backdrop-blur-2xl p-4">
+            {/* STEPS */}
+            <div className="rounded-[22px] border border-white/[0.05] bg-white/[0.025] backdrop-blur-2xl p-3.5">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-white/[0.05] flex items-center justify-center text-[22px]">
+                <div className="w-10 h-10 rounded-xl bg-white/[0.05] flex items-center justify-center text-[20px] shrink-0">
                   👟
                 </div>
-                <div>
-                  <p className="text-[16px] font-semibold text-white">Шаги</p>
-                  <p className="text-xs text-white/35">10 000 шагов каждый день</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[16px] font-semibold text-white leading-none">Шаги</p>
+                  <p className="mt-1 text-xs text-white/35">10 000 шагов каждый день</p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-[11px] font-medium text-[#FFB4AB]">2 184 под угрозой</p>
+                  <p className="text-[10px] text-white/25 mt-0.5">вылета сегодня</p>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-[24px] border border-orange-500/10 bg-orange-500/[0.03] backdrop-blur-2xl p-4">
+            {/* RUNNING */}
+            <div className="rounded-[22px] border border-orange-500/10 bg-orange-500/[0.03] backdrop-blur-2xl p-3.5">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-orange-500/[0.08] flex items-center justify-center text-[22px]">
+                <div className="w-10 h-10 rounded-xl bg-orange-500/[0.08] flex items-center justify-center text-[20px] shrink-0">
                   🏃
                 </div>
-                <div>
-                  <p className="text-[16px] font-semibold text-white">Бег</p>
-                  <p className="text-xs text-orange-200/60">Старт через 6 часов</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[16px] font-semibold text-white leading-none">Бег</p>
+                  <p className="mt-1 text-xs text-orange-200/60">Старт через 6 часов</p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-[11px] font-medium text-orange-300">482 уже вошли</p>
+                  <p className="text-[10px] text-white/25 mt-0.5">мест осталось мало</p>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-[24px] border border-white/[0.04] bg-white/[0.018] backdrop-blur-2xl p-4">
+            {/* BURPEES */}
+            <div className="rounded-[22px] border border-white/[0.04] bg-white/[0.018] backdrop-blur-2xl p-3.5">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-white/[0.05] flex items-center justify-center text-[22px]">
+                <div className="w-10 h-10 rounded-xl bg-white/[0.05] flex items-center justify-center text-[20px] shrink-0">
                   💥
                 </div>
-                <div>
-                  <p className="text-[16px] font-semibold text-white">Бёрпи</p>
-                  <p className="text-xs text-white/35">Скоро откроется</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[16px] font-semibold text-white leading-none">Бёрпи</p>
+                  <p className="mt-1 text-xs text-white/35">Скоро откроется</p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-[11px] font-medium text-white/40">Только для</p>
+                  <p className="text-[11px] font-medium text-white/40">выживших</p>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-[24px] border border-white/[0.04] bg-white/[0.018] backdrop-blur-2xl p-4">
+            {/* CYCLING */}
+            <div className="rounded-[22px] border border-white/[0.04] bg-white/[0.018] backdrop-blur-2xl p-3.5">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-white/[0.05] flex items-center justify-center text-[22px]">
+                <div className="w-10 h-10 rounded-xl bg-white/[0.05] flex items-center justify-center text-[20px] shrink-0">
                   🚴
                 </div>
-                <div>
-                  <p className="text-[16px] font-semibold text-white">Велосипед</p>
-                  <p className="text-xs text-white/35">Сезонная дисциплина</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[16px] font-semibold text-white leading-none">Велосипед</p>
+                  <p className="mt-1 text-xs text-white/35">Сезонная дисциплина</p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-[11px] font-medium text-white/30">Сезон</p>
+                  <p className="text-[11px] font-medium text-white/30">1 · Активен</p>
                 </div>
               </div>
             </div>
@@ -188,7 +208,7 @@ export default function HomePage() {
                 <p className="text-sm text-white/80">Мария вошла в ТОП 10 по бегу</p>
                 <p className="mt-0.5 text-xs text-white/30">8 минут назад</p>
               </div>
-        </div>
+            </div>
           </div>
         </section>
       </div>
