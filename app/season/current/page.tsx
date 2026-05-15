@@ -1,115 +1,137 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { LogOut, TrendingDown, ChevronUp, ChevronDown, Minus, AlertTriangle, Shield } from "lucide-react";
+import { LogOut, AlertTriangle, Shield, ChevronUp, ChevronDown, Minus, Zap } from "lucide-react";
 import { getSession } from "@/lib/session";
 import { getPool, migrateDatabase } from "@/lib/db";
 import { logout } from "@/app/actions/auth";
+import { Pool } from "pg";
 
 // ─── config ──────────────────────────────────────────────────────────────────
 
-const SEASON = { number: 1, day: 12, total: 30, players: 4218 };
+const SEASON = { number: 1, day: 12, total: 30 };
 
 const DISCIPLINE_CONFIG = {
-  steps: {
-    emoji: "👟",
-    name: "Шаги",
-    unit: "шагов",
-    target: 10000,
-    format: (v: number) => v.toLocaleString("ru"),
-    heroUnit: "ШАГОВ",
-  },
-  running: {
-    emoji: "🏃",
-    name: "Бег",
-    unit: "км",
-    target: 5,
-    format: (v: number) => v.toFixed(1),
-    heroUnit: "КМ",
-  },
-  burpees: {
-    emoji: "💥",
-    name: "Бёрпи",
-    unit: "повт.",
-    target: 50,
-    format: (v: number) => String(Math.floor(v)),
-    heroUnit: "ПОВТ.",
-  },
+  steps:   { emoji: "👟", name: "Шаги",  unit: "шагов", heroUnit: "ШАГОВ",  target: 10000, format: (v: number) => v.toLocaleString("ru") },
+  running: { emoji: "🏃", name: "Бег",   unit: "км",    heroUnit: "КМ",     target: 5,     format: (v: number) => v.toFixed(1) },
+  burpees: { emoji: "💥", name: "Бёрпи", unit: "повт.", heroUnit: "ПОВТ.",  target: 50,    format: (v: number) => String(Math.floor(v)) },
 } as const;
 
 type DisciplineId = keyof typeof DISCIPLINE_CONFIG;
+type DangerLevel = "dead" | "danger" | "warning" | "safe";
 
-// ─── rivals simulation ───────────────────────────────────────────────────────
-
-const RIVAL_NAMES = [
-  "Алекс К.", "Мария С.", "Дима В.", "Катя П.",
-  "Игорь М.", "Анна Л.", "Сергей Н.", "Ольга Р.",
-];
-
-function buildRivals(disciplineId: DisciplineId, todayValue: number, userName: string) {
-  const cfg = DISCIPLINE_CONFIG[disciplineId];
-  const pct = Math.min(todayValue / cfg.target, 1.2);
-  // rank: 0% done → ~4000, 100% done → ~400
-  const userRank = Math.max(1, Math.round(4218 - pct * 3800));
-
-  const pick = (offset: number) => RIVAL_NAMES[(userRank + offset + RIVAL_NAMES.length * 4) % RIVAL_NAMES.length];
-
-  const aboveVal = (mult: number) => Math.round(todayValue + cfg.target * mult);
-  const belowVal = (mult: number) => Math.max(0, Math.round(todayValue - cfg.target * mult));
-
-  return {
-    userRank,
-    above: [
-      { name: pick(1), value: aboveVal(0.09), rank: userRank - 2 },
-      { name: pick(2), value: aboveVal(0.04), rank: userRank - 1 },
-    ],
-    below: [
-      { name: pick(3), value: belowVal(0.03), rank: userRank + 1 },
-      { name: pick(4), value: belowVal(0.08), rank: userRank + 2 },
-    ],
-    userName,
-    userValue: todayValue,
-  };
+function getDangerLevel(value: number, target: number): DangerLevel {
+  if (value === 0) return "dead";
+  if (value < target * 0.4) return "danger";
+  if (value < target) return "warning";
+  return "safe";
 }
 
-// ─── pressure messages ───────────────────────────────────────────────────────
+// ─── db helpers ──────────────────────────────────────────────────────────────
 
-function getPressure(disciplineId: DisciplineId, todayValue: number, userRank: number) {
-  const cfg = DISCIPLINE_CONFIG[disciplineId];
-  const pct = todayValue / cfg.target;
+async function getRealRivals(db: Pool, disciplineId: string, userId: string) {
+  const { rows } = await db.query<{
+    user_id: string; name: string; today_total: string; rank: string;
+  }>(
+    `WITH ranked AS (
+       SELECT
+         ud.user_id,
+         u.name,
+         COALESCE(SUM(a.value), 0) AS today_total,
+         ROW_NUMBER() OVER (
+           ORDER BY COALESCE(SUM(a.value), 0) DESC, ud.user_id
+         ) AS rank
+       FROM user_disciplines ud
+       JOIN users u ON u.id = ud.user_id
+       LEFT JOIN activities a
+         ON a.user_id = ud.user_id
+         AND a.discipline_id = ud.discipline_id
+         AND a.recorded_at::date = CURRENT_DATE
+       WHERE ud.discipline_id = $1
+       GROUP BY ud.user_id, u.name
+     ),
+     me AS (SELECT rank FROM ranked WHERE user_id = $2)
+     SELECT r.user_id, r.name, r.today_total::float, r.rank::int
+     FROM ranked r, me
+     WHERE r.rank BETWEEN me.rank - 2 AND me.rank + 2
+     ORDER BY r.rank`,
+    [disciplineId, userId]
+  );
+  return rows;
+}
 
-  if (pct === 0) {
-    return {
-      icon: "danger",
-      headline: `${(userRank - 1).toLocaleString("ru")} человек уже впереди`,
-      sub: "Ты ещё ничего не записал сегодня",
-    };
+type FeedItem = { text: string; sub: string; dot: "red" | "orange" | "green" | "white" };
+
+async function getLiveFeed(db: Pool, disciplineId: string): Promise<FeedItem[]> {
+  // Real recent activities (last 2 hours, other users)
+  const { rows: recentRows } = await db.query<{
+    name: string; discipline_id: string; value: string; minutes_ago: string;
+  }>(
+    `SELECT u.name,
+            a.discipline_id,
+            a.value::float AS value,
+            ROUND(EXTRACT(EPOCH FROM (NOW() - a.recorded_at)) / 60) AS minutes_ago
+     FROM activities a
+     JOIN users u ON u.id = a.user_id
+     WHERE a.recorded_at > NOW() - INTERVAL '2 hours'
+     ORDER BY a.recorded_at DESC
+     LIMIT 3`,
+    []
+  );
+
+  // Count of users at risk today (0 activity)
+  const { rows: riskRows } = await db.query<{ at_risk: string }>(
+    `SELECT COUNT(*) AS at_risk
+     FROM user_disciplines ud
+     WHERE ud.discipline_id = $1
+       AND NOT EXISTS (
+         SELECT 1 FROM activities a
+         WHERE a.user_id = ud.user_id
+           AND a.discipline_id = $1
+           AND a.recorded_at::date = CURRENT_DATE
+       )`,
+    [disciplineId]
+  );
+  const atRisk = parseInt(riskRows[0].at_risk, 10);
+
+  const feed: FeedItem[] = [];
+
+  // Real items
+  for (const row of recentRows) {
+    const cfg = DISCIPLINE_CONFIG[row.discipline_id as DisciplineId];
+    if (!cfg) continue;
+    const mins = parseInt(row.minutes_ago, 10);
+    const timeAgo = mins < 1 ? "только что" : `${mins} мин назад`;
+    const shortName = row.name.trim().split(/\s+/)[0]; // first name only
+    feed.push({
+      text: `${shortName} записал ${cfg.format(parseFloat(row.value))} ${cfg.unit}`,
+      sub: timeAgo,
+      dot: "green",
+    });
   }
-  if (pct < 0.5) {
-    return {
-      icon: "falling",
-      headline: "Ты падаешь в рейтинге",
-      sub: `Прямо сейчас тебя обгоняют — запиши результат`,
-    };
+
+  // Static atmospheric items
+  if (atRisk > 0) {
+    feed.push({
+      text: `${atRisk.toLocaleString("ru")} ${atRisk === 1 ? "участник" : "участников"} ещё ничего не записали`,
+      sub: "сегодня",
+      dot: "red",
+    });
   }
-  if (pct < 1) {
-    return {
-      icon: "close",
-      headline: `Осталось ${cfg.format(cfg.target - todayValue)} ${cfg.unit}`,
-      sub: "Почти у цели — не останавливайся",
-    };
-  }
-  return {
-    icon: "safe",
-    headline: "Ты выполнил норму",
-    sub: "Сегодня ты в безопасности",
-  };
+
+  feed.push({
+    text: `Сезон ${SEASON.number} · День ${SEASON.day} из ${SEASON.total}`,
+    sub: `${SEASON.total - SEASON.day} дней до конца`,
+    dot: "orange",
+  });
+
+  return feed.slice(0, 4);
 }
 
 // ─── sub-components ─────────────────────────────────────────────────────────
 
 function DisciplineTab({ id, cfg, active }: {
   id: string;
-  cfg: typeof DISCIPLINE_CONFIG[DisciplineId];
+  cfg: (typeof DISCIPLINE_CONFIG)[DisciplineId];
   active: boolean;
 }) {
   return (
@@ -117,14 +139,35 @@ function DisciplineTab({ id, cfg, active }: {
       href={`/season/current?d=${id}`}
       className={[
         "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-medium transition-all",
-        active
-          ? "bg-white/[0.1] text-white border border-white/[0.12]"
-          : "text-white/35 hover:text-white/60",
+        active ? "bg-white/[0.1] text-white border border-white/[0.12]" : "text-white/35 hover:text-white/60",
       ].join(" ")}
     >
-      <span>{cfg.emoji}</span>
-      <span>{cfg.name}</span>
+      {cfg.emoji} {cfg.name}
     </Link>
+  );
+}
+
+function LiveFeed({ items }: { items: FeedItem[] }) {
+  if (items.length === 0) return null;
+  const dotColor = { red: "bg-[#FFB4AB]", orange: "bg-orange-400", green: "bg-green-400", white: "bg-white/40" };
+  return (
+    <section className="mb-5">
+      <div className="flex items-center gap-2 mb-2">
+        <p className="text-[11px] uppercase tracking-[0.18em] text-white/30">Сейчас в сезоне</p>
+        <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+      </div>
+      <div className="rounded-[22px] border border-white/[0.06] bg-white/[0.018] overflow-hidden">
+        {items.map((item, i) => (
+          <div key={i} className="flex items-start gap-3 px-4 py-3 border-b border-white/[0.04] last:border-0">
+            <div className={`w-1.5 h-1.5 rounded-full ${dotColor[item.dot]} mt-[5px] shrink-0`} />
+            <div>
+              <p className="text-[13px] text-white/75 leading-tight">{item.text}</p>
+              <p className="mt-0.5 text-[11px] text-white/30">{item.sub}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -141,76 +184,90 @@ export default async function SeasonCurrentPage({
   await migrateDatabase();
   const db = getPool();
 
-  // Fetch user's disciplines
-  const disciplinesRes = await db.query(
+  const disciplinesRes = await db.query<{ discipline_id: string }>(
     "SELECT discipline_id FROM user_disciplines WHERE user_id = $1 ORDER BY joined_at",
     [session.userId]
   );
-  const joinedIds = disciplinesRes.rows.map((r: { discipline_id: string }) => r.discipline_id);
-
+  const joinedIds = disciplinesRes.rows.map((r) => r.discipline_id);
   if (joinedIds.length === 0) redirect("/onboarding");
 
-  // Active discipline from URL param or first joined
   const params = await searchParams;
-  const requestedId = params.d;
   const activeDisciplineId = (
-    requestedId && joinedIds.includes(requestedId) ? requestedId : joinedIds[0]
+    params.d && joinedIds.includes(params.d) ? params.d : joinedIds[0]
   ) as DisciplineId;
-
   const cfg = DISCIPLINE_CONFIG[activeDisciplineId] ?? DISCIPLINE_CONFIG.steps;
 
-  // Today's total for active discipline
-  const todayRes = await db.query(
-    `SELECT COALESCE(SUM(value), 0) AS total
-     FROM activities
-     WHERE user_id = $1
-       AND discipline_id = $2
-       AND recorded_at::date = CURRENT_DATE`,
-    [session.userId, activeDisciplineId]
-  );
+  // Parallel data fetch
+  const [todayRes, daysRes, rivalsRows, feedItems] = await Promise.all([
+    db.query<{ total: string }>(
+      `SELECT COALESCE(SUM(value), 0) AS total
+       FROM activities
+       WHERE user_id = $1 AND discipline_id = $2 AND recorded_at::date = CURRENT_DATE`,
+      [session.userId, activeDisciplineId]
+    ),
+    db.query<{ days: string }>(
+      `SELECT COUNT(DISTINCT recorded_at::date) AS days
+       FROM activities WHERE user_id = $1`,
+      [session.userId]
+    ),
+    getRealRivals(db, activeDisciplineId, session.userId),
+    getLiveFeed(db, activeDisciplineId),
+  ]);
+
   const todayValue = parseFloat(todayRes.rows[0].total);
-
-  // Days with any activity recorded
-  const daysRes = await db.query(
-    `SELECT COUNT(DISTINCT recorded_at::date) AS days
-     FROM activities
-     WHERE user_id = $1`,
-    [session.userId]
-  );
   const activeDays = parseInt(daysRes.rows[0].days, 10);
-
-  // Derived state
+  const danger = getDangerLevel(todayValue, cfg.target);
   const progress = Math.min(todayValue / cfg.target, 1);
   const pct = Math.round(progress * 100);
-  const survived = activeDays > 0;
-  const inDanger = todayValue < cfg.target * 0.5;
-  const rivals = buildRivals(activeDisciplineId, todayValue, session.name ?? "Ты");
-  const pressure = getPressure(activeDisciplineId, todayValue, rivals.userRank);
   const daysLeft = SEASON.total - SEASON.day;
 
+  // Find user row in rivals
+  const userRivalRow = rivalsRows.find((r) => r.user_id === session.userId);
+  const userRank = userRivalRow ? parseInt(userRivalRow.rank as unknown as string, 10) : null;
+  const above = rivalsRows.filter((r) => userRank && parseInt(r.rank as unknown as string, 10) < userRank);
+  const below = rivalsRows.filter((r) => userRank && parseInt(r.rank as unknown as string, 10) > userRank);
+
+  // Total participants
+  const totalRes = await db.query<{ count: string }>(
+    "SELECT COUNT(*) FROM user_disciplines WHERE discipline_id = $1",
+    [activeDisciplineId]
+  );
+  const totalPlayers = parseInt(totalRes.rows[0].count, 10);
+
+  // Pressure message
+  const pressureMsg =
+    danger === "dead"
+      ? { headline: `${((userRank ?? 2) - 1).toLocaleString("ru")} человек уже впереди тебя`, sub: "Ты ещё ничего не записал сегодня. Каждый час — это места в рейтинге." }
+      : danger === "danger"
+      ? { headline: "Ты падаешь в рейтинге прямо сейчас", sub: `Осталось ${cfg.format(cfg.target - todayValue)} ${cfg.unit} до нормы — запиши сейчас.` }
+      : danger === "warning"
+      ? { headline: `Осталось ${cfg.format(cfg.target - todayValue)} ${cfg.unit}`, sub: "Почти у цели — не останавливайся." }
+      : { headline: "Ты выполнил норму на сегодня", sub: "Ты в безопасности. Можно добавить ещё." };
+
+  // Visual theme by danger
+  const isDead = danger === "dead";
+  const isRed = danger === "dead" || danger === "danger";
+
   return (
-    <main className="min-h-screen bg-[#0B0B0C] text-white overflow-hidden relative">
+    <main className={`min-h-screen text-white flex flex-col transition-colors duration-700 ${isDead ? "bg-[#110808]" : "bg-[#0B0B0C]"}`}>
+
       {/* ambient glows */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-white/[0.015] rounded-full blur-3xl" />
-        {inDanger && (
-          <div className="absolute top-[80px] right-[-100px] w-[300px] h-[300px] bg-[#FFB4AB]/[0.06] rounded-full blur-3xl" />
-        )}
+        <div className={`absolute top-[-200px] left-1/2 -translate-x-1/2 w-[700px] h-[700px] rounded-full blur-3xl transition-all duration-1000 ${isRed ? "bg-[#FFB4AB]/[0.08]" : "bg-white/[0.015]"}`} />
+        {isRed && <div className="absolute top-[60px] right-[-80px] w-[300px] h-[300px] bg-red-900/20 rounded-full blur-3xl" />}
+        {danger === "safe" && <div className="absolute bottom-[-100px] left-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-green-900/[0.06] rounded-full blur-3xl" />}
       </div>
 
-      <div className="relative z-10 max-w-md mx-auto px-5 pt-6 pb-28">
+      <div className="relative z-10 max-w-md mx-auto w-full px-5 pt-6 pb-28">
 
         {/* TOP BAR */}
         <header className="flex items-center justify-between mb-6">
           <Link href="/profile" className="flex items-center gap-2 text-white/40 hover:text-white/70 transition-colors">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+            <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${isRed ? "bg-red-400" : "bg-green-400"}`} />
             <span className="text-[11px] uppercase tracking-[0.2em] font-medium">Сезон {SEASON.number}</span>
           </Link>
           <form action={logout}>
-            <button
-              type="submit"
-              className="w-9 h-9 rounded-xl border border-white/[0.06] bg-white/[0.03] flex items-center justify-center text-white/40 hover:text-white/70 transition-colors"
-            >
+            <button type="submit" className="w-9 h-9 rounded-xl border border-white/[0.06] bg-white/[0.03] flex items-center justify-center text-white/40 hover:text-white/70 transition-colors">
               <LogOut className="w-4 h-4" />
             </button>
           </form>
@@ -218,7 +275,7 @@ export default async function SeasonCurrentPage({
 
         {/* DISCIPLINE TABS */}
         {joinedIds.length > 1 && (
-          <div className="flex items-center gap-1.5 mb-8 overflow-x-auto pb-0.5">
+          <div className="flex items-center gap-1.5 mb-6 overflow-x-auto pb-0.5">
             {joinedIds.map((id) => {
               const tabCfg = DISCIPLINE_CONFIG[id as DisciplineId];
               if (!tabCfg) return null;
@@ -228,44 +285,50 @@ export default async function SeasonCurrentPage({
         )}
 
         {/* ── HERO ─────────────────────────────────────────────────── */}
-        <section className={`mb-8 ${joinedIds.length === 1 ? "mt-4" : ""}`}>
+        <section className={`mb-7 ${joinedIds.length === 1 ? "mt-4" : ""}`}>
           <p className="text-[11px] uppercase tracking-[0.22em] text-white/30 mb-3">
             {cfg.emoji} {cfg.name} · Сегодня
           </p>
-          <div className="flex items-end gap-3 leading-none">
+
+          {/* Big number */}
+          <div className="leading-none mb-1">
             <span className={[
-              "font-semibold tracking-[-0.06em] leading-none",
-              todayValue === 0
-                ? "text-[72px] text-white/20"
-                : "text-[72px] text-[#F5F5F5]",
+              "text-[80px] font-semibold tracking-[-0.06em] leading-none transition-colors duration-700",
+              isDead ? "text-white/15" : danger === "danger" ? "text-[#FFB4AB]/70" : "text-[#F5F5F5]",
             ].join(" ")}>
               {cfg.format(todayValue)}
             </span>
           </div>
+
           <p className={[
-            "mt-1 text-[13px] uppercase tracking-[0.2em] font-medium",
-            todayValue === 0 ? "text-white/20" : "text-white/50",
+            "text-[12px] uppercase tracking-[0.2em] font-medium transition-colors",
+            isDead ? "text-white/15" : danger === "danger" ? "text-[#FFB4AB]/50" : "text-white/40",
           ].join(" ")}>
             {cfg.heroUnit} · СЕГОДНЯ
           </p>
 
-          {/* STATUS */}
+          {/* STATUS BADGE */}
           <div className="mt-4">
-            {survived && activeDays > 0 ? (
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/[0.08] bg-white/[0.03]">
-                <Shield className="w-3.5 h-3.5 text-white/40" />
-                <span className="text-[12px] text-white/60 font-medium">
-                  {activeDays === 1 ? "Первый день выживания" : `Выжил ${activeDays} ${activeDays < 5 ? "дня" : "дней"}`}
-                </span>
+            {isDead ? (
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-[#FFB4AB]/30 bg-[#FFB4AB]/[0.08]">
+                <AlertTriangle className="w-3.5 h-3.5 text-[#FFB4AB]" />
+                <span className="text-[12px] text-[#FFB4AB] font-semibold uppercase tracking-[0.1em]">Мёртвая зона · День {SEASON.day}</span>
               </div>
-            ) : inDanger ? (
+            ) : danger === "danger" ? (
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-[#FFB4AB]/20 bg-[#FFB4AB]/[0.05]">
                 <AlertTriangle className="w-3.5 h-3.5 text-[#FFB4AB]" />
                 <span className="text-[12px] text-[#FFB4AB]/80 font-medium">Под угрозой · День {SEASON.day}</span>
               </div>
+            ) : danger === "safe" ? (
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/[0.08] bg-white/[0.03]">
+                <Shield className="w-3.5 h-3.5 text-white/40" />
+                <span className="text-[12px] text-white/60 font-medium">
+                  {activeDays > 0 ? `Выжил ${activeDays} ${activeDays < 5 ? "дня" : "дней"}` : "Норма выполнена"}
+                </span>
+              </div>
             ) : (
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/[0.06] bg-white/[0.02]">
-                <span className="text-[12px] text-white/35">День {SEASON.day} из {SEASON.total}</span>
+                <span className="text-[12px] text-white/35">День {SEASON.day} из {SEASON.total} · {daysLeft} осталось</span>
               </div>
             )}
           </div>
@@ -273,7 +336,10 @@ export default async function SeasonCurrentPage({
 
         {/* ── DAILY TARGET ─────────────────────────────────────────── */}
         <section className="mb-5">
-          <div className="rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-4">
+          <div className={[
+            "rounded-[22px] border p-4 transition-colors",
+            isRed ? "border-[#FFB4AB]/10 bg-[#FFB4AB]/[0.02]" : "border-white/[0.08] bg-white/[0.025]",
+          ].join(" ")}>
             <div className="flex items-center justify-between mb-3">
               <p className="text-[12px] text-white/40 uppercase tracking-[0.14em]">Дневная цель</p>
               <p className="text-[13px] font-semibold text-white/70">
@@ -285,17 +351,13 @@ export default async function SeasonCurrentPage({
               <div
                 className={[
                   "h-full rounded-full transition-all duration-700",
-                  pct >= 100 ? "bg-white/70" : pct >= 50 ? "bg-white/45" : "bg-[#FFB4AB]/60",
+                  pct >= 100 ? "bg-white/70" : pct >= 40 ? "bg-white/40" : "bg-[#FFB4AB]/50",
                 ].join(" ")}
                 style={{ width: `${Math.max(pct, pct > 0 ? 2 : 0)}%` }}
               />
             </div>
             <p className="mt-2 text-[11px] text-white/25">
-              {pct >= 100
-                ? "Цель выполнена"
-                : pct > 0
-                ? `${pct}% — осталось ${cfg.format(cfg.target - todayValue)} ${cfg.unit}`
-                : `Нужно ${cfg.format(cfg.target)} ${cfg.unit}`}
+              {pct >= 100 ? "Цель выполнена на сегодня" : pct > 0 ? `${pct}% — осталось ${cfg.format(cfg.target - todayValue)} ${cfg.unit}` : `Нужно ${cfg.format(cfg.target)} ${cfg.unit}`}
             </p>
           </div>
         </section>
@@ -303,97 +365,92 @@ export default async function SeasonCurrentPage({
         {/* ── PRESSURE ─────────────────────────────────────────────── */}
         <section className="mb-5">
           <div className={[
-            "rounded-[22px] border p-4",
-            pressure.icon === "safe"
-              ? "border-white/[0.08] bg-white/[0.025]"
-              : "border-[#FFB4AB]/15 bg-[#FFB4AB]/[0.04]",
+            "rounded-[22px] border p-4 transition-colors",
+            isRed ? "border-[#FFB4AB]/20 bg-[#FFB4AB]/[0.05]" : "border-white/[0.08] bg-white/[0.025]",
           ].join(" ")}>
             <div className="flex items-start gap-3">
               <div className={[
                 "w-9 h-9 rounded-xl border flex items-center justify-center shrink-0",
-                pressure.icon === "safe"
-                  ? "border-white/[0.08] bg-white/[0.04]"
-                  : "border-[#FFB4AB]/15 bg-[#FFB4AB]/[0.06]",
+                isRed ? "border-[#FFB4AB]/20 bg-[#FFB4AB]/[0.08]" : "border-white/[0.08] bg-white/[0.04]",
               ].join(" ")}>
-                {pressure.icon === "safe"
+                {danger === "safe"
                   ? <Shield className="w-4 h-4 text-white/50" />
-                  : <TrendingDown className="w-4 h-4 text-[#FFB4AB]" />}
+                  : <AlertTriangle className={`w-4 h-4 ${isRed ? "text-[#FFB4AB]" : "text-orange-300"}`} />}
               </div>
               <div>
-                <p className={[
-                  "text-[15px] font-semibold leading-tight",
-                  pressure.icon === "safe" ? "text-white/80" : "text-white",
-                ].join(" ")}>
-                  {pressure.headline}
+                <p className={`text-[15px] font-semibold leading-tight ${isRed ? "text-white" : "text-white/80"}`}>
+                  {pressureMsg.headline}
                 </p>
-                <p className="mt-1 text-[12px] text-white/35 leading-relaxed">
-                  {pressure.sub}
-                </p>
+                <p className="mt-1 text-[12px] text-white/35 leading-relaxed">{pressureMsg.sub}</p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* ── RIVALS ───────────────────────────────────────────────── */}
-        <section className="mb-6">
+        {/* ── REAL RIVALS ──────────────────────────────────────────── */}
+        <section className="mb-5">
           <div className="flex items-center justify-between mb-2">
             <p className="text-[11px] uppercase tracking-[0.18em] text-white/30">Рядом с тобой</p>
-            <p className="text-[11px] text-white/25">из {SEASON.players.toLocaleString("ru")}</p>
+            <p className="text-[11px] text-white/20">
+              {userRank ? `#${userRank} из ${totalPlayers}` : `${totalPlayers} участников`}
+            </p>
           </div>
 
           <div className="rounded-[22px] border border-white/[0.08] bg-white/[0.025] overflow-hidden">
-            {/* above */}
-            {rivals.above.map((r) => (
-              <div key={r.rank} className="flex items-center gap-3 px-4 py-2.5 border-b border-white/[0.04]">
-                <div className="w-5 flex items-center justify-center shrink-0">
-                  <ChevronUp className="w-3 h-3 text-white/25" />
-                </div>
-                <span className="text-[11px] text-white/30 w-10 shrink-0">#{r.rank}</span>
-                <span className="flex-1 text-[13px] text-white/50">{r.name}</span>
-                <span className="text-[13px] text-white/40 font-medium tabular-nums">
-                  {cfg.format(r.value)}
-                </span>
+            {above.map((r) => (
+              <div key={r.user_id} className="flex items-center gap-3 px-4 py-2.5 border-b border-white/[0.04]">
+                <ChevronUp className="w-3 h-3 text-white/20 shrink-0" />
+                <span className="text-[11px] text-white/25 w-10 shrink-0">#{r.rank}</span>
+                <span className="flex-1 text-[13px] text-white/45 truncate">{r.name.split(/\s+/)[0]}</span>
+                <span className="text-[13px] text-white/40 tabular-nums">{cfg.format(parseFloat(r.today_total as unknown as string))}</span>
               </div>
             ))}
 
-            {/* you */}
-            <div className="flex items-center gap-3 px-4 py-3 bg-white/[0.04] border-b border-white/[0.06]">
-              <div className="w-5 flex items-center justify-center shrink-0">
-                <Minus className="w-3 h-3 text-white/60" />
-              </div>
-              <span className="text-[11px] text-white/50 w-10 shrink-0 font-medium">#{rivals.userRank}</span>
-              <span className="flex-1 text-[13px] text-white font-semibold">
-                {rivals.userName}
+            {/* YOU */}
+            <div className={[
+              "flex items-center gap-3 px-4 py-3 border-b border-white/[0.06]",
+              isDead ? "bg-[#FFB4AB]/[0.06]" : "bg-white/[0.05]",
+            ].join(" ")}>
+              <Minus className="w-3 h-3 text-white/50 shrink-0" />
+              <span className="text-[11px] text-white/50 w-10 shrink-0 font-medium">
+                {userRank ? `#${userRank}` : "—"}
+              </span>
+              <span className="flex-1 text-[13px] text-white font-semibold truncate">
+                {session.name ?? "Ты"}
               </span>
               <span className={[
                 "text-[13px] font-semibold tabular-nums",
-                todayValue === 0 ? "text-[#FFB4AB]" : "text-white",
+                isDead ? "text-[#FFB4AB]/70" : "text-white",
               ].join(" ")}>
                 {cfg.format(todayValue)}
               </span>
             </div>
 
-            {/* below */}
-            {rivals.below.map((r) => (
-              <div key={r.rank} className="flex items-center gap-3 px-4 py-2.5 border-b border-white/[0.04] last:border-0">
-                <div className="w-5 flex items-center justify-center shrink-0">
-                  <ChevronDown className="w-3 h-3 text-white/20" />
-                </div>
-                <span className="text-[11px] text-white/25 w-10 shrink-0">#{r.rank}</span>
-                <span className="flex-1 text-[13px] text-white/35">{r.name}</span>
-                <span className="text-[13px] text-white/30 font-medium tabular-nums">
-                  {cfg.format(r.value)}
-                </span>
+            {below.map((r) => (
+              <div key={r.user_id} className="flex items-center gap-3 px-4 py-2.5 border-b border-white/[0.04] last:border-0">
+                <ChevronDown className="w-3 h-3 text-white/15 shrink-0" />
+                <span className="text-[11px] text-white/20 w-10 shrink-0">#{r.rank}</span>
+                <span className="flex-1 text-[13px] text-white/30 truncate">{r.name.split(/\s+/)[0]}</span>
+                <span className="text-[13px] text-white/25 tabular-nums">{cfg.format(parseFloat(r.today_total as unknown as string))}</span>
               </div>
             ))}
+
+            {above.length === 0 && below.length === 0 && (
+              <div className="px-4 py-4 text-center">
+                <p className="text-[12px] text-white/25">Ты единственный участник этой дисциплины</p>
+              </div>
+            )}
           </div>
 
-          <p className="mt-2 text-[11px] text-white/20 text-center">
-            {inDanger
-              ? `Запиши результат — поднимись выше`
-              : `Осталось ${daysLeft} дней в сезоне`}
-          </p>
+          {isRed && userRank && (
+            <p className="mt-2 text-[11px] text-[#FFB4AB]/50 text-center">
+              Запиши результат — поднимись выше
+            </p>
+          )}
         </section>
+
+        {/* ── LIVE FEED ────────────────────────────────────────────── */}
+        <LiveFeed items={feedItems} />
 
       </div>
 
@@ -401,10 +458,16 @@ export default async function SeasonCurrentPage({
       <div className="fixed bottom-0 left-0 right-0 px-5 pb-8 pt-4 bg-gradient-to-t from-[#0B0B0C] via-[#0B0B0C]/95 to-transparent">
         <Link
           href={`/record?d=${activeDisciplineId}`}
-          className="w-full max-w-md mx-auto h-14 rounded-[20px] bg-[#F3F3F3] text-black text-[14px] font-semibold flex items-center justify-center gap-2 active:scale-[0.985] transition-all shadow-[0_10px_40px_rgba(255,255,255,0.08)]"
+          className={[
+            "w-full max-w-md mx-auto h-14 rounded-[20px] text-[14px] font-semibold flex items-center justify-center gap-2 active:scale-[0.985] transition-all",
+            isDead
+              ? "bg-[#FFB4AB] text-[#1a0808] shadow-[0_10px_40px_rgba(255,180,171,0.25)]"
+              : "bg-[#F3F3F3] text-black shadow-[0_10px_40px_rgba(255,255,255,0.08)]",
+          ].join(" ")}
         >
+          {isDead ? <Zap className="w-4 h-4" /> : null}
           ЗАПИСАТЬ РЕЗУЛЬТАТ
-          <span className="text-black/35 text-[13px]">· {cfg.emoji}</span>
+          <span className={`text-[13px] ${isDead ? "text-black/40" : "text-black/35"}`}>· {cfg.emoji}</span>
         </Link>
       </div>
     </main>
