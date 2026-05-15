@@ -324,12 +324,12 @@ export default async function ProfilePage() {
                         <p className="text-[16px] font-semibold text-white leading-none">{meta.name}</p>
                         <p className="mt-1 text-[12px] text-white/40">{meta.goal}</p>
                       </div>
-                      <button
-                        type="button"
-                        className="h-8 px-3 rounded-xl border border-white/[0.08] bg-white/[0.04] text-[12px] text-white/55 shrink-0 active:scale-[0.97] transition-all"
+                      <Link
+                        href={`/record?d=${id}`}
+                        className="h-8 px-3 rounded-xl border border-white/[0.08] bg-white/[0.04] text-[12px] text-white/55 shrink-0 active:scale-[0.97] transition-all flex items-center"
                       >
                         Записать
-                      </button>
+                      </Link>
                     </div>
                   </div>
                 );
