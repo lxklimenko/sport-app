@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Shield, LogOut, ChevronRight, AlertTriangle, TrendingDown, TrendingUp } from "lucide-react";
+import { Shield, LogOut, ChevronRight, TrendingDown, TrendingUp } from "lucide-react";
 import { getSession } from "@/lib/session";
 import { getPool, migrateDatabase } from "@/lib/db";
 import { logout } from "@/app/actions/auth";
@@ -222,7 +222,7 @@ export default async function ProfilePage() {
         {/* HERO */}
         <section className="mb-7">
           {inSeason ? (
-            <div>
+            <Link href="/season/current" className="block active:opacity-80 transition-opacity">
               <p className="text-[11px] uppercase tracking-[0.2em] text-white/30 mb-2">
                 Ты в сезоне {SEASON.number}
               </p>
@@ -232,9 +232,9 @@ export default async function ProfilePage() {
               <p className="mt-3 text-[14px] text-white/35 leading-relaxed">
                 Осталось {daysLeft} — не останавливайся.
               </p>
-            </div>
+            </Link>
           ) : (
-            <div>
+            <Link href="/onboarding" className="block active:opacity-80 transition-opacity">
               <p className="text-[11px] uppercase tracking-[0.2em] text-white/30 mb-2">
                 Сезон {SEASON.number} идёт
               </p>
@@ -246,7 +246,7 @@ export default async function ProfilePage() {
                 <br />
                 Каждый день без тебя — их преимущество.
               </p>
-            </div>
+            </Link>
           )}
         </section>
 
@@ -271,12 +271,12 @@ export default async function ProfilePage() {
                     {joinedIds.length} {joinedIds.length === 1 ? "дисциплина" : "дисциплины"} активно
                   </p>
                 </div>
-                <div className="flex-1 rounded-xl border border-[#FFB4AB]/20 bg-[#FFB4AB]/[0.04] p-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <AlertTriangle className="w-3 h-3 text-[#FFB4AB] shrink-0" />
-                    <p className="text-[12px] text-[#FFB4AB]/80">Осталось {daysLeft} дней</p>
-                  </div>
-                </div>
+                <Link
+                  href="/season/current"
+                  className="flex-1 h-10 rounded-xl bg-[#F3F3F3] text-black text-[13px] font-semibold flex items-center justify-center gap-1 active:scale-[0.98] transition-all"
+                >
+                  В бой <ChevronRight className="w-3.5 h-3.5" />
+                </Link>
               </div>
             ) : (
               <Link
