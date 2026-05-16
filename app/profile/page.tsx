@@ -5,6 +5,7 @@ import { getSession } from "@/lib/session";
 import { getPool, migrateDatabase } from "@/lib/db";
 import { DisciplineCard } from "./discipline-card";
 import { logout } from "@/app/actions/auth";
+import { migrateEvents } from "@/lib/events";
 
 const SEASON = { number: 1, day: 12, total: 30, players: 4218 };
 
@@ -157,9 +158,10 @@ export default async function ProfilePage() {
   if (!session.userId) redirect("/login");
 
   await migrateDatabase();
+  await migrateEvents();
   const db = getPool();
 
-  const [disciplinesRes, activitiesRes] = await Promise.all([
+  const [disciplinesRes, activitiesRes, eventsRes] = await Promise.all([
     db.query("SELECT discipline_id FROM user_disciplines WHERE user_id = $1 ORDER BY joined_at", [session.userId]),
     db.query(
       `SELECT recorded_at::date::text AS day
@@ -168,12 +170,21 @@ export default async function ProfilePage() {
        GROUP BY day`,
       [session.userId]
     ),
+    db.query(
+      `SELECT e.id, e.title, e.emoji, e.discipline, e.starts_at, e.ends_at, e.is_active
+       FROM season_events e
+       JOIN event_participants ep ON ep.event_id = e.id
+       WHERE ep.user_id = $1 AND e.ends_at > NOW()
+       ORDER BY e.starts_at ASC`,
+      [session.userId]
+    ),
   ]);
 
   const joinedIds: string[] = disciplinesRes.rows.map((r) => r.discipline_id);
   const activeDays = new Set<string>(activitiesRes.rows.map((r: { day: string }) => r.day));
   const inSeason = joinedIds.length > 0;
   const heatmapColumns = buildHeatmapColumns(activeDays);
+  const myEvents = eventsRes.rows;
 
   const name = session.name ?? "Игрок";
   const initials = name.slice(0, 1).toUpperCase();
@@ -330,6 +341,44 @@ export default async function ProfilePage() {
             </div>
           )}
         </section>
+
+        {/* MY EVENTS */}
+        {myEvents.length > 0 && (
+          <section className="mb-5">
+            <div className="mb-3">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-white/30">Твои</p>
+              <h2 className="mt-0.5 text-[18px] font-semibold tracking-tight">События</h2>
+            </div>
+            <div className="rounded-[22px] border border-white/[0.06] bg-white/[0.018] overflow-hidden">
+              {myEvents.map((e: any) => {
+                const isLive = new Date(e.starts_at) <= new Date() && new Date(e.ends_at) > new Date();
+                const endsIn = Math.round((new Date(e.ends_at).getTime() - Date.now()) / 3600000);
+                return (
+                  <Link
+                    key={e.id}
+                    href="/season/current"
+                    className="flex items-center gap-3 px-4 py-3.5 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors"
+                  >
+                    <span className="text-lg">{e.emoji ?? "📅"}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[14px] text-white/80 font-medium truncate">{e.title}</p>
+                      <p className="text-[11px] text-white/30 mt-0.5">
+                        {isLive ? (
+                          <span className="text-green-400">🔴 LIVE · осталось {endsIn} ч</span>
+                        ) : (
+                          <span>Скоро</span>
+                        )}
+                      </p>
+                    </div>
+                    <div className="shrink-0">
+                      <span className="text-[11px] text-white/40">→</span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* ACTIVITY HEATMAP */}
         <Heatmap columns={heatmapColumns} />
