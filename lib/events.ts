@@ -182,6 +182,47 @@ export async function autoStartEvents() {
   return rows;
 }
 
+// ─── Event leaderboard ──────────────────────────────────────────────────────
+
+export interface EventLeaderboardEntry {
+  user_id: string;
+  name: string;
+  value: number;
+  rank: number;
+}
+
+export async function getEventLeaderboard(eventId: string, discipline: string, limit = 20): Promise<EventLeaderboardEntry[]> {
+  const db = getPool();
+  const { rows } = await db.query<EventLeaderboardEntry>(
+    `SELECT
+       ep.user_id,
+       u.name,
+       COALESCE(SUM(a.value), 0) AS value,
+       ROW_NUMBER() OVER (ORDER BY COALESCE(SUM(a.value), 0) DESC) AS rank
+     FROM event_participants ep
+     JOIN users u ON u.id = ep.user_id
+     LEFT JOIN activities a ON a.user_id = ep.user_id AND a.discipline_id = $2 AND a.recorded_at >= (SELECT starts_at FROM season_events WHERE id = $1)
+     WHERE ep.event_id = $1
+     GROUP BY ep.user_id, u.name
+     ORDER BY value DESC
+     LIMIT $3`,
+    [eventId, discipline, limit]
+  );
+  return rows;
+}
+
+// ─── Record activity for an event ────────────────────────────────────────────
+
+export async function recordEventActivity(eventId: string, userId: string, value: number) {
+  const db = getPool();
+  await db.query(
+    `UPDATE event_participants
+     SET value = value + $1
+     WHERE event_id = $2 AND user_id = $3`,
+    [value, eventId, userId]
+  );
+}
+
 // ─── Get events for a user (with participation status) ──────────────────────
 
 export async function getEventsWithParticipation(userId: string): Promise<(SeasonEvent & { joined: boolean })[]> {

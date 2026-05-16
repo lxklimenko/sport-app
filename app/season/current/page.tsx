@@ -7,6 +7,7 @@ import { logout } from "@/app/actions/auth";
 import { generateDangerNotification } from "@/lib/notifications";
 import { getDisciplineLabel } from "@/lib/disciplines";
 import { NotificationBell } from "@/components/notification-bell";
+import { EventCard } from "@/components/event-card";
 import { migrateSurvival, getSurvival } from "@/lib/survival";
 import { migrateEvents, getEventsWithParticipation, joinEvent } from "@/lib/events";
 import { Pool } from "pg";
@@ -437,20 +438,18 @@ export default async function SeasonCurrentPage({
             <div className="mb-5">
               <p className="text-[11px] uppercase tracking-[0.18em] text-white/30 mb-2">События</p>
               <div className="rounded-[22px] border border-white/[0.06] bg-white/[0.018] overflow-hidden">
-                {events.map((e, i) => {
-                  const isLive = new Date(e.starts_at) <= new Date() && new Date(e.ends_at) > new Date();
-                  const startsIn = Math.round((new Date(e.starts_at).getTime() - Date.now()) / 3600000);
-                  const timeLabel = isLive ? "Идёт сейчас" : startsIn > 0 ? `Старт через ${startsIn} ч` : "Скоро";
-                  return (
-                    <div key={e.id} className={`flex items-center gap-3 px-4 py-3 ${i < events.length - 1 ? "border-b border-white/[0.04]" : ""}`}>
-                      <span className="text-sm">{e.emoji ?? "📅"}</span>
-                      <div className="flex-1">
-                        <p className="text-[13px] text-white/70 font-medium">{e.title}</p>
-                        <p className="text-[11px] text-white/30">{timeLabel}{e.joined ? " · ✅ Ты участвуешь" : ""}</p>
-                      </div>
-                    </div>
-                  );
-                })}
+                {events.map((e) => (
+                  <EventCard
+                    key={e.id}
+                    id={e.id}
+                    title={e.title}
+                    emoji={e.emoji}
+                    discipline={e.discipline}
+                    starts_at={e.starts_at}
+                    ends_at={e.ends_at}
+                    joined={e.joined}
+                  />
+                ))}
               </div>
             </div>
           )}
@@ -798,20 +797,18 @@ export default async function SeasonCurrentPage({
           <section className="mb-5">
             <p className="text-[11px] uppercase tracking-[0.18em] text-white/30 mb-2">События</p>
             <div className="rounded-[22px] border border-white/[0.06] bg-white/[0.018] overflow-hidden">
-              {events.map((e, i) => {
-                const isLive = new Date(e.starts_at) <= new Date() && new Date(e.ends_at) > new Date();
-                const startsIn = Math.round((new Date(e.starts_at).getTime() - Date.now()) / 3600000);
-                const timeLabel = isLive ? "Идёт сейчас" : startsIn > 0 ? `Старт через ${startsIn} ч` : "Скоро";
-                return (
-                  <div key={e.id} className={`flex items-center gap-3 px-4 py-3 ${i < events.length - 1 ? "border-b border-white/[0.04]" : ""}`}>
-                    <span className="text-sm">{e.emoji ?? "📅"}</span>
-                    <div className="flex-1">
-                      <p className="text-[13px] text-white/70 font-medium">{e.title}</p>
-                      <p className="text-[11px] text-white/30">{timeLabel}{e.joined ? " · ✅ Ты участвуешь" : ""}</p>
-                    </div>
-                  </div>
-                );
-              })}
+              {events.map((e) => (
+                <EventCard
+                  key={e.id}
+                  id={e.id}
+                  title={e.title}
+                  emoji={e.emoji}
+                  discipline={e.discipline}
+                  starts_at={e.starts_at}
+                  ends_at={e.ends_at}
+                  joined={e.joined}
+                />
+              ))}
             </div>
           </section>
         )}
