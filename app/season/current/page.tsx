@@ -325,8 +325,28 @@ export default async function SeasonCurrentPage({
   const yesterdayTotal = parseFloat(yesterdayRows[0]?.total ?? "0");
   const survivedYesterday = yesterdayTotal >= cfg.target;
 
-  // ── ELIMINATION SCREEN ──────────────────────────────────────────
+  // ── SPECTATOR MODE (eliminated but still in the world) ──────────
   if (survival && !survival.is_alive) {
+    // Fallen league rank
+    const { rows: fallenRows } = await db.query<{ rank: string; total: string }>(
+      `WITH fallen AS (
+         SELECT ud.user_id, u.name,
+           COALESCE(SUM(a.value), 0) AS total,
+           ROW_NUMBER() OVER (ORDER BY COALESCE(SUM(a.value), 0) DESC) AS rank
+         FROM user_disciplines ud
+         JOIN users u ON u.id = ud.user_id
+         LEFT JOIN activities a ON a.user_id = ud.user_id AND a.discipline_id = ud.discipline_id AND a.recorded_at::date = CURRENT_DATE
+         WHERE ud.discipline_id = $1
+           AND NOT EXISTS (SELECT 1 FROM user_survival us WHERE us.user_id = ud.user_id AND us.discipline_id = $1 AND us.is_alive = TRUE)
+         GROUP BY ud.user_id, u.name
+       )
+       SELECT rank::int, total::float, (SELECT COUNT(*) FROM fallen) AS total
+       FROM fallen WHERE user_id = $2`,
+      [activeDisciplineId, session.userId]
+    );
+    const fallenRank = fallenRows[0] ? parseInt(fallenRows[0].rank as unknown as string, 10) : null;
+    const fallenTotal = parseInt(fallenRows[0]?.total ?? "0", 10);
+
     return (
       <main className="min-h-screen bg-[#0a0606] text-white flex flex-col">
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -334,48 +354,106 @@ export default async function SeasonCurrentPage({
           <div className="absolute bottom-0 left-0 right-0 h-[300px] bg-gradient-to-t from-red-950/10 to-transparent" />
         </div>
 
-        <div className="relative z-10 max-w-md mx-auto w-full px-5 pt-20 pb-12 flex flex-col items-center text-center flex-1 justify-center">
-          <div className="w-16 h-16 rounded-2xl border border-red-900/40 bg-red-950/20 flex items-center justify-center mb-6">
-            <span className="text-3xl">💀</span>
+        <div className="relative z-10 max-w-md mx-auto w-full px-5 pt-6 pb-28">
+
+          {/* TOP BAR */}
+          <header className="flex items-center justify-between mb-6">
+            <Link href="/profile" className="flex items-center gap-2 text-white/40 hover:text-white/70 transition-colors">
+              <div className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+              <span className="text-[11px] uppercase tracking-[0.2em] font-medium">Сезон {SEASON.number}</span>
+            </Link>
+            <div className="flex items-center gap-2">
+              <NotificationBell />
+              <form action={logout}>
+                <button type="submit" className="w-9 h-9 rounded-xl border border-white/[0.06] bg-white/[0.03] flex items-center justify-center text-white/40 hover:text-white/70 transition-colors">
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </form>
+            </div>
+          </header>
+
+          {/* Elimination banner */}
+          <div className="mb-5 rounded-[22px] border border-red-900/30 bg-red-950/15 p-5 text-center">
+            <div className="w-12 h-12 rounded-2xl border border-red-900/40 bg-red-950/20 flex items-center justify-center mx-auto mb-3">
+              <span className="text-2xl">💀</span>
+            </div>
+            <h1 className="text-[20px] font-bold tracking-[-0.02em] text-white/80 mb-1">
+              Ты выбыл из {cfg.name.toLowerCase()}
+            </h1>
+            <p className="text-[13px] text-white/40 leading-relaxed">
+              Ты не выполнил норму {SEASON.day} дня.<br />
+              Survival rank заморожен. Но мир продолжается.
+            </p>
           </div>
 
-          <h1 className="text-[28px] font-bold tracking-[-0.03em] text-white/90 mb-2">
-            Ты выбыл
-          </h1>
+          {/* Fallen League */}
+          <div className="mb-5 rounded-[22px] border border-white/[0.06] bg-white/[0.015] p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl border border-white/[0.08] bg-white/[0.03] flex items-center justify-center shrink-0">
+                <span className="text-sm">⚰️</span>
+              </div>
+              <div>
+                <p className="text-[13px] font-semibold text-white/70">Fallen League · {cfg.name}</p>
+                <p className="text-[11px] text-white/30 mt-0.5">
+                  {fallenRank ? `#${fallenRank} среди павших · ${cfg.format(fallenTotal)} ${cfg.unit} сегодня` : "Ты единственный в лиге павших"}
+                </p>
+              </div>
+            </div>
+          </div>
 
-          <p className="text-[14px] text-white/40 leading-relaxed max-w-xs mb-8">
-            Ты не выполнил норму {SEASON.day} дня в {cfg.name.toLowerCase()}.<br />
-            Сезон продолжается без тебя.
-          </p>
-
-          <div className="w-full rounded-[22px] border border-white/[0.06] bg-white/[0.02] p-5 mb-8">
+          {/* Stats */}
+          <div className="mb-5 rounded-[22px] border border-white/[0.06] bg-white/[0.02] p-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center">
-                <p className="text-[28px] font-semibold text-white/70">{survival.survived_days}</p>
-                <p className="text-[11px] text-white/30 uppercase tracking-[0.1em] mt-1">Дней прожито</p>
+                <p className="text-[24px] font-semibold text-white/60">{survival.survived_days}</p>
+                <p className="text-[10px] text-white/25 uppercase tracking-[0.1em] mt-1">Дней прожито</p>
               </div>
               <div className="text-center">
-                <p className="text-[28px] font-semibold text-white/70">{survival.longest_streak}</p>
-                <p className="text-[11px] text-white/30 uppercase tracking-[0.1em] mt-1">Макс. серия</p>
+                <p className="text-[24px] font-semibold text-white/60">{survival.longest_streak}</p>
+                <p className="text-[10px] text-white/25 uppercase tracking-[0.1em] mt-1">Макс. серия</p>
               </div>
             </div>
           </div>
 
-          <div className="w-full rounded-[22px] border border-white/[0.04] bg-white/[0.01] p-4 mb-8 backdrop-blur-[2px]">
-            <p className="text-[11px] text-white/20 uppercase tracking-[0.15em] mb-2">Сейчас в сезоне</p>
-            <div className="space-y-2 opacity-40">
-              <div className="h-3 w-full rounded bg-white/[0.04]" />
-              <div className="h-3 w-3/4 rounded bg-white/[0.04]" />
-              <div className="h-3 w-1/2 rounded bg-white/[0.04]" />
+          {/* Live feed (spectator) */}
+          <LiveFeed items={feedItems} />
+
+          {/* Events available */}
+          <div className="mb-5">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-white/30 mb-2">Доступные события</p>
+            <div className="rounded-[22px] border border-white/[0.06] bg-white/[0.018] overflow-hidden">
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.04]">
+                <span className="text-sm">⚡</span>
+                <div className="flex-1">
+                  <p className="text-[13px] text-white/70 font-medium">RUN EVENT</p>
+                  <p className="text-[11px] text-white/30">Старт через 6 часов · 412 участников</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.04]">
+                <span className="text-sm">💥</span>
+                <div className="flex-1">
+                  <p className="text-[13px] text-white/70 font-medium">BURPEE WAR</p>
+                  <p className="text-[11px] text-white/30">Идёт сейчас · 89 участников</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 px-4 py-3">
+                <span className="text-sm">🏃</span>
+                <div className="flex-1">
+                  <p className="text-[13px] text-white/70 font-medium">Беговая лига</p>
+                  <p className="text-[11px] text-white/30">Ты сейчас #{fallenRank ?? "—"} среди павших</p>
+                </div>
+              </div>
             </div>
           </div>
 
+          {/* Record CTA — still available */}
           <Link
-            href="/profile"
-            className="w-full h-14 rounded-[20px] bg-white/[0.06] text-white/60 text-[14px] font-semibold flex items-center justify-center active:scale-[0.985] transition-all border border-white/[0.06]"
+            href={`/record?d=${activeDisciplineId}`}
+            className="w-full h-14 rounded-[20px] bg-white/[0.06] text-white/60 text-[14px] font-semibold flex items-center justify-center gap-2 active:scale-[0.985] transition-all border border-white/[0.06]"
           >
-            К другим дисциплинам
+            Записать результат · {cfg.emoji}
           </Link>
+
         </div>
       </main>
     );
