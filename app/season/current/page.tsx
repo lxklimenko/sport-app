@@ -306,6 +306,25 @@ export default async function SeasonCurrentPage({
   const isMorning = hour >= 5 && hour < 12;
   const justStartedToday = todayValue === 0;
 
+  // ── Final week mode ─────────────────────────────────────────────
+  const isFinalWeek = daysLeft <= 7 && daysLeft > 0;
+  const isFinalDays = daysLeft <= 3 && daysLeft > 0;
+  const finalWeekBg = isFinalDays ? "bg-[#080808]" : isFinalWeek ? "bg-[#09090a]" : null;
+
+  // ── Night reset moment ──────────────────────────────────────────
+  const isNightReset = hour >= 0 && hour < 5;
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split("T")[0];
+  const { rows: yesterdayRows } = await db.query<{ total: string }>(
+    `SELECT COALESCE(SUM(value), 0) AS total
+     FROM activities
+     WHERE user_id = $1 AND discipline_id = $2 AND recorded_at::date = $3`,
+    [session.userId, activeDisciplineId, yesterdayStr]
+  );
+  const yesterdayTotal = parseFloat(yesterdayRows[0]?.total ?? "0");
+  const survivedYesterday = yesterdayTotal >= cfg.target;
+
   // ── ELIMINATION SCREEN ──────────────────────────────────────────
   if (survival && !survival.is_alive) {
     return (
@@ -364,14 +383,17 @@ export default async function SeasonCurrentPage({
 
   // ── NORMAL SCREEN ───────────────────────────────────────────────
   return (
-    <main className={`min-h-screen text-white flex flex-col transition-colors duration-700 ${isDead ? "bg-[#110808]" : isEvening && !isDead && danger !== "safe" ? "bg-[#0f0808]" : "bg-[#0B0B0C]"}`}>
+    <main className={`min-h-screen text-white flex flex-col transition-colors duration-700 ${isDead ? "bg-[#110808]" : isEvening && !isDead && danger !== "safe" ? "bg-[#0f0808]" : finalWeekBg ?? "bg-[#0B0B0C]"}`}>
 
       {/* ambient glows */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className={`absolute top-[-200px] left-1/2 -translate-x-1/2 w-[700px] h-[700px] rounded-full blur-3xl transition-all duration-1000 ${isRed ? "bg-[#FFB4AB]/[0.08]" : isEvening && !isDead && danger !== "safe" ? "bg-orange-500/[0.04]" : "bg-white/[0.015]"}`} />
+        <div className={`absolute top-[-200px] left-1/2 -translate-x-1/2 w-[700px] h-[700px] rounded-full blur-3xl transition-all duration-1000 ${isRed ? "bg-[#FFB4AB]/[0.08]" : isEvening && !isDead && danger !== "safe" ? "bg-orange-500/[0.04]" : isFinalWeek ? "bg-white/[0.02]" : "bg-white/[0.015]"}`} />
         {isRed && <div className="absolute top-[60px] right-[-80px] w-[300px] h-[300px] bg-red-900/20 rounded-full blur-3xl" />}
         {isEvening && !isDead && danger !== "safe" && !isRed && (
           <div className="absolute bottom-[-80px] right-[-60px] w-[250px] h-[250px] bg-orange-800/15 rounded-full blur-3xl" />
+        )}
+        {isFinalWeek && !isRed && (
+          <div className="absolute top-[40%] left-[-100px] w-[300px] h-[300px] bg-white/[0.02] rounded-full blur-3xl" />
         )}
         {danger === "safe" && <div className="absolute bottom-[-100px] left-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-green-900/[0.06] rounded-full blur-3xl" />}
       </div>
@@ -405,6 +427,55 @@ export default async function SeasonCurrentPage({
                 <p className="text-[14px] font-semibold text-emerald-300">Ты пережил {SEASON.day - 1} день</p>
                 <p className="text-[12px] text-white/35 mt-0.5">
                   🔥 {survival.current_streak} {survival.current_streak < 5 ? "дня" : "дней"} подряд · Сегодня новый день
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Night reset moment */}
+        {isNightReset && (
+          <div className="mb-5 rounded-[22px] border border-white/[0.06] bg-white/[0.015] p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl border border-white/[0.08] bg-white/[0.03] flex items-center justify-center shrink-0">
+                <span className="text-sm">🌙</span>
+              </div>
+              <div>
+                {survivedYesterday ? (
+                  <>
+                    <p className="text-[14px] font-semibold text-white/70">Ночь пережита</p>
+                    <p className="text-[12px] text-white/35 mt-0.5">
+                      Ты всё ещё внутри · День {SEASON.day} начался
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[14px] font-semibold text-white/70">Новый день начался</p>
+                    <p className="text-[12px] text-white/35 mt-0.5">
+                      Вчера: {cfg.format(yesterdayTotal)} {cfg.unit} из {cfg.format(cfg.target)}
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Final week banner */}
+        {isFinalWeek && !isMorning && !isNightReset && (
+          <div className="mb-5 rounded-[22px] border border-white/[0.06] bg-white/[0.015] p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl border border-white/[0.08] bg-white/[0.03] flex items-center justify-center shrink-0">
+                <span className="text-sm">⚡</span>
+              </div>
+              <div>
+                <p className="text-[13px] font-semibold text-white/70">
+                  {isFinalDays ? "Финальные дни сезона" : "Финальная неделя сезона"}
+                </p>
+                <p className="text-[11px] text-white/30 mt-0.5">
+                  {isFinalDays
+                    ? `Осталось ${daysLeft} ${daysLeft === 1 ? "день" : "дня"}. Слабые уже вылетели.`
+                    : `Осталось ${daysLeft} дней. Теперь ошибка стоит сезона.`}
                 </p>
               </div>
             </div>
