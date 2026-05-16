@@ -60,7 +60,36 @@ async function getRealRivals(db: Pool, disciplineId: string, userId: string) {
      ORDER BY r.rank`,
     [disciplineId, userId]
   );
-  return rows;
+
+  // Enrich with rival memory — how many consecutive days each rival has been ahead
+  const enriched = await Promise.all(
+    rows.map(async (r) => {
+      if (r.user_id === userId) return { ...r, days_ahead: 0 };
+
+      const { rows: streakRows } = await db.query<{ days: string }>(
+        `SELECT COUNT(*) AS days FROM (
+           SELECT DISTINCT a.recorded_at::date AS d
+           FROM activities a
+           WHERE a.user_id = $1 AND a.discipline_id = $2
+         ) user_days
+         WHERE EXISTS (
+           SELECT 1 FROM activities a2
+           WHERE a2.user_id = $3 AND a2.discipline_id = $2 AND a2.recorded_at::date = user_days.d
+           GROUP BY a2.recorded_at::date
+           HAVING COALESCE(SUM(a2.value), 0) > (
+             SELECT COALESCE(SUM(a3.value), 0)
+             FROM activities a3
+             WHERE a3.user_id = $1 AND a3.discipline_id = $2 AND a3.recorded_at::date = user_days.d
+           )
+         )`,
+        [userId, disciplineId, r.user_id]
+      );
+
+      return { ...r, days_ahead: parseInt(streakRows[0]?.days ?? "0", 10) };
+    })
+  );
+
+  return enriched;
 }
 
 type FeedItem = { text: string; sub: string; dot: "red" | "orange" | "green" | "white" };
@@ -231,6 +260,16 @@ export default async function SeasonCurrentPage({
     [activeDisciplineId]
   );
   const totalPlayers = parseInt(totalRes.rows[0].count, 10);
+
+  // ── Last survivors count ───────────────────────────────────────
+  const { rows: aliveRows } = await db.query<{ count: string }>(
+    `SELECT COUNT(*) FROM user_survival
+     WHERE discipline_id = $1 AND is_alive = TRUE`,
+    [activeDisciplineId]
+  );
+  const aliveCount = parseInt(aliveRows[0]?.count ?? "0", 10);
+  const survivalPct = totalPlayers > 0 ? Math.round((aliveCount / totalPlayers) * 100) : 100;
+  const isLastPhase = survivalPct < 30 && aliveCount > 0;
 
   const pressureMsg =
     danger === "dead"
@@ -496,6 +535,21 @@ export default async function SeasonCurrentPage({
           </div>
         </section>
 
+        {/* ── LAST SURVIVORS BANNER ────────────────────────────────── */}
+        {isLastPhase && (
+          <div className="mb-5 rounded-[22px] border border-white/[0.06] bg-white/[0.015] p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl border border-white/[0.08] bg-white/[0.03] flex items-center justify-center shrink-0">
+                <span className="text-sm">⚔️</span>
+              </div>
+              <div>
+                <p className="text-[13px] font-semibold text-white/70">Осталось {aliveCount} выживших</p>
+                <p className="text-[11px] text-white/30 mt-0.5">{survivalPct}% от старта сезона</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── REAL RIVALS ──────────────────────────────────────────── */}
         <section className="mb-5">
           <div className="flex items-center justify-between mb-2">
@@ -512,6 +566,9 @@ export default async function SeasonCurrentPage({
                 <span className="text-[11px] text-white/25 w-10 shrink-0">#{r.rank}</span>
                 <span className="flex-1 text-[13px] text-white/45 truncate">{r.name.split(/\s+/)[0]}</span>
                 <span className="text-[13px] text-white/40 tabular-nums">{cfg.format(parseFloat(r.today_total as unknown as string))}</span>
+                {r.days_ahead >= 3 && (
+                  <span className="text-[10px] text-white/20 whitespace-nowrap">{r.days_ahead} дн.</span>
+                )}
               </div>
             ))}
 
