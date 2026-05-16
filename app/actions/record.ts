@@ -4,6 +4,10 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getPool } from "@/lib/db";
 import { getDisciplineLabel } from "@/lib/disciplines";
+import {
+  generateOvertakeNotifications,
+  generateMilestoneNotification,
+} from "@/lib/notifications";
 
 const DAILY_LIMITS: Record<string, { maxTotal: number; maxEntries: number }> = {
   steps:   { maxTotal: 100_000, maxEntries: 20 },
@@ -78,6 +82,12 @@ export async function recordActivity(
       `${userName} записал ${Math.round(value).toLocaleString("ru")} ${disciplineLabel}`,
     ]
   );
+
+  // Generate notifications (fire-and-forget — don't block redirect)
+  Promise.all([
+    generateOvertakeNotifications(session.userId, disciplineId, disciplineLabel),
+    generateMilestoneNotification(session.userId, disciplineId, disciplineLabel),
+  ]).catch(() => {});
 
   redirect(`/season/current?d=${disciplineId}`);
 }

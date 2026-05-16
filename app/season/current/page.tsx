@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { LogOut, AlertTriangle, Shield, ChevronUp, ChevronDown, Minus, Zap } from "lucide-react";
+import { AlertTriangle, Shield, ChevronUp, ChevronDown, Minus, Zap, LogOut } from "lucide-react";
 import { getSession } from "@/lib/session";
 import { getPool, migrateDatabase } from "@/lib/db";
 import { logout } from "@/app/actions/auth";
+import { generateDangerNotification } from "@/lib/notifications";
+import { getDisciplineLabel } from "@/lib/disciplines";
+import { NotificationBell } from "@/components/notification-bell";
 import { Pool } from "pg";
 
 // ─── config ──────────────────────────────────────────────────────────────────
@@ -244,6 +247,15 @@ export default async function SeasonCurrentPage({
       ? { headline: `Осталось ${cfg.format(cfg.target - todayValue)} ${cfg.unit}`, sub: "Почти у цели — не останавливайся." }
       : { headline: "Ты выполнил норму на сегодня", sub: "Ты в безопасности. Можно добавить ещё." };
 
+  // Generate danger notification (fire-and-forget)
+  const disciplineLabel = getDisciplineLabel(activeDisciplineId);
+  generateDangerNotification(
+    session.userId,
+    activeDisciplineId,
+    disciplineLabel,
+    cfg.target
+  ).catch(() => {});
+
   // Visual theme by danger
   const isDead = danger === "dead";
   const isRed = danger === "dead" || danger === "danger";
@@ -266,11 +278,14 @@ export default async function SeasonCurrentPage({
             <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${isRed ? "bg-red-400" : "bg-green-400"}`} />
             <span className="text-[11px] uppercase tracking-[0.2em] font-medium">Сезон {SEASON.number}</span>
           </Link>
-          <form action={logout}>
-            <button type="submit" className="w-9 h-9 rounded-xl border border-white/[0.06] bg-white/[0.03] flex items-center justify-center text-white/40 hover:text-white/70 transition-colors">
-              <LogOut className="w-4 h-4" />
-            </button>
-          </form>
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            <form action={logout}>
+              <button type="submit" className="w-9 h-9 rounded-xl border border-white/[0.06] bg-white/[0.03] flex items-center justify-center text-white/40 hover:text-white/70 transition-colors">
+                <LogOut className="w-4 h-4" />
+              </button>
+            </form>
+          </div>
         </header>
 
         {/* DISCIPLINE TABS */}
