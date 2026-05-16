@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getPool } from "@/lib/db";
+import { getDisciplineLabel } from "@/lib/disciplines";
 
 const DAILY_LIMITS: Record<string, { maxTotal: number; maxEntries: number }> = {
   steps:   { maxTotal: 100_000, maxEntries: 20 },
@@ -56,6 +57,26 @@ export async function recordActivity(
   await db.query(
     "INSERT INTO activities (user_id, discipline_id, value) VALUES ($1, $2, $3)",
     [session.userId, disciplineId, value]
+  );
+
+  // Write to season feed
+  const user = await db.query(
+    "SELECT name FROM users WHERE id = $1",
+    [session.userId]
+  );
+  const userName = user.rows[0]?.name ?? "Кто-то";
+  const disciplineLabel = getDisciplineLabel(disciplineId);
+
+  await db.query(
+    `INSERT INTO season_feed (type, user_name, discipline, value, message)
+     VALUES ($1, $2, $3, $4, $5)`,
+    [
+      "activity",
+      userName,
+      disciplineLabel,
+      Math.round(value),
+      `${userName} записал ${Math.round(value).toLocaleString("ru")} ${disciplineLabel}`,
+    ]
   );
 
   redirect(`/season/current?d=${disciplineId}`);

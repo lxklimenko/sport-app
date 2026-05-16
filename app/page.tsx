@@ -1,6 +1,11 @@
 import Link from "next/link";
+import { getLiveFeed } from "@/lib/feed";
+import { LiveFeed } from "./live-feed";
 
-export default function HomePage() {
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const feed = await getLiveFeed(20);
   return (
     <main className="min-h-screen bg-[#0B0B0C] text-white overflow-hidden relative">
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -174,43 +179,7 @@ export default function HomePage() {
         </section>
 
         {/* LIVE FEED */}
-        <section className="mt-5 rounded-[24px] border border-white/[0.03] bg-white/[0.008] backdrop-blur-2xl p-3.5">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="text-[11px] uppercase tracking-[0.18em] text-white/30">
-                Сейчас в сезоне
-              </p>
-              <h2 className="mt-0.5 text-base font-semibold tracking-tight text-white">
-                Живая лента
-              </h2>
-            </div>
-            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-start gap-3">
-              <div className="w-1.5 h-1.5 rounded-full bg-orange-300 mt-2 shrink-0" />
-              <div>
-                <p className="text-sm text-white/80">Бег стартует через 6 часов</p>
-                <p className="mt-0.5 text-xs text-white/30">482 участника уже вошли</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-1.5 h-1.5 rounded-full bg-white/50 mt-2 shrink-0" />
-              <div>
-                <p className="text-sm text-white/80">214 человек потеряли серию сегодня</p>
-                <p className="mt-0.5 text-xs text-white/30">3 минуты назад</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-1.5 h-1.5 rounded-full bg-green-300 mt-2 shrink-0" />
-              <div>
-                <p className="text-sm text-white/80">Мария вошла в ТОП 10 по бегу</p>
-                <p className="mt-0.5 text-xs text-white/30">8 минут назад</p>
-              </div>
-            </div>
-          </div>
-        </section>
+        <LiveFeed items={feed} />
       </div>
     </main>
   );

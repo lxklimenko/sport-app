@@ -39,4 +39,15 @@ export async function migrateDatabase() {
       recorded_at   TIMESTAMPTZ DEFAULT NOW()
     )
   `);
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS season_feed (
+      id          BIGSERIAL PRIMARY KEY,
+      type        TEXT NOT NULL,
+      user_name   TEXT,
+      discipline  TEXT,
+      value       INTEGER,
+      message     TEXT NOT NULL,
+      created_at  TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
 }
