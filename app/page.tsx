@@ -1,15 +1,67 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getLiveFeed } from "@/lib/feed";
-import { generateAtmosphericEvents } from "@/lib/feed-engine";
 import { LiveFeed } from "./live-feed";
+import { DisciplineModal } from "@/components/discipline-modal";
+import type { FeedItem } from "@/lib/feed";
 
-export const dynamic = "force-dynamic";
+// ─── discipline cards config ─────────────────────────────────────────────────
 
-export default async function HomePage() {
-  // Generate atmospheric events on page load (they dedupe internally)
-  await generateAtmosphericEvents();
+const DISCIPLINE_CARDS = [
+  {
+    id: "steps",
+    emoji: "👟",
+    name: "Шаги",
+    desc: "10 000 шагов каждый день",
+    atRisk: "2 184 под угрозой",
+    atRiskColor: "text-[#FFB4AB]",
+    accent: "border-white/[0.08] bg-white/[0.03]",
+    accentHover: "hover:border-white/[0.15] hover:bg-white/[0.05]",
+  },
+  {
+    id: "running",
+    emoji: "🏃",
+    name: "Бег",
+    desc: "Событие на 3 дня",
+    atRisk: "482 уже вошли",
+    atRiskColor: "text-orange-300",
+    accent: "border-orange-500/10 bg-orange-500/[0.03]",
+    accentHover: "hover:border-orange-500/20 hover:bg-orange-500/[0.05]",
+  },
+  {
+    id: "burpees",
+    emoji: "💥",
+    name: "Бёрпи",
+    desc: "Скоро откроется",
+    atRisk: "Только для выживших",
+    atRiskColor: "text-white/40",
+    accent: "border-white/[0.04] bg-white/[0.018]",
+    accentHover: "hover:border-white/[0.08] hover:bg-white/[0.03]",
+  },
+];
 
-  const feed = await getLiveFeed(20);
+// ─── page ────────────────────────────────────────────────────────────────────
+
+export default function HomePage() {
+  const [feed, setFeed] = useState<FeedItem[]>([]);
+  const [selectedDiscipline, setSelectedDiscipline] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch("/api/feed");
+        if (res.ok) {
+          const data: FeedItem[] = await res.json();
+          setFeed(data);
+        }
+      } catch {
+        // silent
+      }
+    }
+    load();
+  }, []);
+
   return (
     <main className="min-h-screen bg-[#0B0B0C] text-white overflow-hidden relative">
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -112,79 +164,40 @@ export default async function HomePage() {
           </div>
 
           <div className="space-y-2.5">
-            {/* STEPS */}
-            <div className="rounded-[22px] border border-white/[0.08] bg-white/[0.03] backdrop-blur-2xl p-3.5 shadow-[0_0_30px_rgba(255,255,255,0.03)]">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/[0.06] flex items-center justify-center text-[20px] shrink-0">
-                  👟
+            {DISCIPLINE_CARDS.map((d) => (
+              <button
+                key={d.id}
+                onClick={() => setSelectedDiscipline(d.id)}
+                className={`w-full text-left rounded-[22px] border p-3.5 transition-all active:scale-[0.99] ${d.accent} ${d.accentHover}`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white/[0.06] flex items-center justify-center text-[20px] shrink-0">
+                    {d.emoji}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[16px] font-semibold text-white leading-none">{d.name}</p>
+                    <p className="mt-1 text-xs text-white/50">{d.desc}</p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className={`text-[11px] font-medium ${d.atRiskColor}`}>{d.atRisk}</p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[16px] font-semibold text-white leading-none">Шаги</p>
-                  <p className="mt-1 text-xs text-white/50">10 000 шагов каждый день</p>
-                </div>
-                <div className="shrink-0 text-right">
-                  <p className="text-[11px] font-medium text-[#FFB4AB]">2 184 под угрозой</p>
-                  <p className="text-[10px] text-white/25 mt-0.5">вылета сегодня</p>
-                </div>
-              </div>
-            </div>
-
-            {/* RUNNING */}
-            <div className="rounded-[22px] border border-orange-500/10 bg-orange-500/[0.03] backdrop-blur-2xl p-3.5">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-orange-500/[0.08] flex items-center justify-center text-[20px] shrink-0">
-                  🏃
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[16px] font-semibold text-white leading-none">Бег</p>
-                  <p className="mt-1 text-xs text-orange-200/75">Старт через 6 часов</p>
-                </div>
-                <div className="shrink-0 text-right">
-                  <p className="text-[11px] font-medium text-orange-300">482 уже вошли</p>
-                  <p className="text-[10px] text-white/25 mt-0.5">мест осталось мало</p>
-                </div>
-              </div>
-            </div>
-
-            {/* BURPEES */}
-            <div className="rounded-[22px] border border-white/[0.04] bg-white/[0.018] backdrop-blur-2xl p-3.5">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/[0.05] flex items-center justify-center text-[20px] shrink-0">
-                  💥
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[16px] font-semibold text-white leading-none">Бёрпи</p>
-                  <p className="mt-1 text-xs text-white/50">Скоро откроется</p>
-                </div>
-                <div className="shrink-0 text-right">
-                  <p className="text-[11px] font-medium text-white/40">Только для</p>
-                  <p className="text-[11px] font-medium text-white/40">выживших</p>
-                </div>
-              </div>
-            </div>
-
-            {/* CYCLING */}
-            <div className="rounded-[22px] border border-white/[0.04] bg-white/[0.018] backdrop-blur-2xl p-3.5">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/[0.05] flex items-center justify-center text-[20px] shrink-0">
-                  🚴
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[16px] font-semibold text-white leading-none">Велосипед</p>
-                  <p className="mt-1 text-xs text-white/50">Сезонная дисциплина</p>
-                </div>
-                <div className="shrink-0 text-right">
-                  <p className="text-[11px] font-medium text-white/30">Сезон</p>
-                  <p className="text-[11px] font-medium text-white/30">1 · Активен</p>
-                </div>
-              </div>
-            </div>
+              </button>
+            ))}
           </div>
         </section>
 
         {/* LIVE FEED */}
         <LiveFeed items={feed} />
       </div>
+
+      {/* DISCIPLINE MODAL */}
+      {selectedDiscipline && (
+        <DisciplineModal
+          disciplineId={selectedDiscipline}
+          onClose={() => setSelectedDiscipline(null)}
+        />
+      )}
     </main>
   );
 }
