@@ -271,6 +271,17 @@ export default async function SeasonCurrentPage({
   const survivalPct = totalPlayers > 0 ? Math.round((aliveCount / totalPlayers) * 100) : 100;
   const isLastPhase = survivalPct < 30 && aliveCount > 0;
 
+  // ── Dead vs Alive tension ───────────────────────────────────────
+  const { rows: deadVsAliveRows } = await db.query<{ alive_avg: string; dead_avg: string }>(
+    `SELECT
+       COALESCE((SELECT AVG(daily.total) FROM (SELECT COALESCE(SUM(a.value), 0) AS total FROM activities a JOIN user_disciplines ud ON ud.user_id = a.user_id AND ud.discipline_id = $1 WHERE a.discipline_id = $1 AND a.recorded_at::date = CURRENT_DATE AND EXISTS (SELECT 1 FROM user_survival us WHERE us.user_id = a.user_id AND us.discipline_id = $1 AND us.is_alive = TRUE) GROUP BY a.user_id) daily), 0) AS alive_avg,
+       COALESCE((SELECT AVG(daily.total) FROM (SELECT COALESCE(SUM(a.value), 0) AS total FROM activities a JOIN user_disciplines ud ON ud.user_id = a.user_id AND ud.discipline_id = $1 WHERE a.discipline_id = $1 AND a.recorded_at::date = CURRENT_DATE AND NOT EXISTS (SELECT 1 FROM user_survival us WHERE us.user_id = a.user_id AND us.discipline_id = $1 AND us.is_alive = TRUE) GROUP BY a.user_id) daily), 0) AS dead_avg`,
+    [activeDisciplineId]
+  );
+  const aliveAvg = parseFloat(deadVsAliveRows[0]?.alive_avg ?? "0");
+  const deadAvg = parseFloat(deadVsAliveRows[0]?.dead_avg ?? "0");
+  const deadWinning = deadAvg > aliveAvg && aliveAvg > 0;
+
   const pressureMsg =
     danger === "dead"
       ? { headline: `${((userRank ?? 2) - 1).toLocaleString("ru")} человек уже впереди тебя`, sub: "Ты ещё ничего не записал сегодня. Каждый час — это места в рейтинге." }
@@ -694,6 +705,23 @@ export default async function SeasonCurrentPage({
               <div>
                 <p className="text-[13px] font-semibold text-white/70">Осталось {aliveCount} выживших</p>
                 <p className="text-[11px] text-white/30 mt-0.5">{survivalPct}% от старта сезона</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── DEAD VS ALIVE TENSION ────────────────────────────────── */}
+        {deadWinning && (
+          <div className="mb-5 rounded-[22px] border border-white/[0.06] bg-white/[0.015] p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl border border-white/[0.08] bg-white/[0.03] flex items-center justify-center shrink-0">
+                <span className="text-sm">⚰️</span>
+              </div>
+              <div>
+                <p className="text-[13px] font-semibold text-white/70">Павшие набирают больше выживших</p>
+                <p className="text-[11px] text-white/30 mt-0.5">
+                  Среднее у павших: {cfg.format(deadAvg)} · У выживших: {cfg.format(aliveAvg)} {cfg.unit}
+                </p>
               </div>
             </div>
           </div>
