@@ -8,6 +8,7 @@ import { generateDangerNotification } from "@/lib/notifications";
 import { getDisciplineLabel } from "@/lib/disciplines";
 import { NotificationBell } from "@/components/notification-bell";
 import { migrateSurvival, getSurvival } from "@/lib/survival";
+import { migrateEvents, getEventsWithParticipation, joinEvent } from "@/lib/events";
 import { Pool } from "pg";
 
 // ─── config ──────────────────────────────────────────────────────────────────
@@ -292,7 +293,9 @@ export default async function SeasonCurrentPage({
       : { headline: "Ты выполнил норму на сегодня", sub: "Ты в безопасности. Можно добавить ещё." };
 
   await migrateSurvival();
+  await migrateEvents();
   const survival = await getSurvival(session.userId, activeDisciplineId);
+  const events = await getEventsWithParticipation(session.userId);
 
   const disciplineLabel = getDisciplineLabel(activeDisciplineId);
   generateDangerNotification(
@@ -430,32 +433,27 @@ export default async function SeasonCurrentPage({
           <LiveFeed items={feedItems} />
 
           {/* Events available */}
-          <div className="mb-5">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-white/30 mb-2">Доступные события</p>
-            <div className="rounded-[22px] border border-white/[0.06] bg-white/[0.018] overflow-hidden">
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.04]">
-                <span className="text-sm">⚡</span>
-                <div className="flex-1">
-                  <p className="text-[13px] text-white/70 font-medium">RUN EVENT</p>
-                  <p className="text-[11px] text-white/30">Старт через 6 часов · 412 участников</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.04]">
-                <span className="text-sm">💥</span>
-                <div className="flex-1">
-                  <p className="text-[13px] text-white/70 font-medium">BURPEE WAR</p>
-                  <p className="text-[11px] text-white/30">Идёт сейчас · 89 участников</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 px-4 py-3">
-                <span className="text-sm">🏃</span>
-                <div className="flex-1">
-                  <p className="text-[13px] text-white/70 font-medium">Беговая лига</p>
-                  <p className="text-[11px] text-white/30">Ты сейчас #{fallenRank ?? "—"} среди павших</p>
-                </div>
+          {events.length > 0 && (
+            <div className="mb-5">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-white/30 mb-2">События</p>
+              <div className="rounded-[22px] border border-white/[0.06] bg-white/[0.018] overflow-hidden">
+                {events.map((e, i) => {
+                  const isLive = new Date(e.starts_at) <= new Date() && new Date(e.ends_at) > new Date();
+                  const startsIn = Math.round((new Date(e.starts_at).getTime() - Date.now()) / 3600000);
+                  const timeLabel = isLive ? "Идёт сейчас" : startsIn > 0 ? `Старт через ${startsIn} ч` : "Скоро";
+                  return (
+                    <div key={e.id} className={`flex items-center gap-3 px-4 py-3 ${i < events.length - 1 ? "border-b border-white/[0.04]" : ""}`}>
+                      <span className="text-sm">{e.emoji ?? "📅"}</span>
+                      <div className="flex-1">
+                        <p className="text-[13px] text-white/70 font-medium">{e.title}</p>
+                        <p className="text-[11px] text-white/30">{timeLabel}{e.joined ? " · ✅ Ты участвуешь" : ""}</p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          </div>
+          )}
 
           {/* Record CTA — still available */}
           <Link
@@ -794,6 +792,29 @@ export default async function SeasonCurrentPage({
 
         {/* ── LIVE FEED ────────────────────────────────────────────── */}
         <LiveFeed items={feedItems} />
+
+        {/* ── EVENTS ───────────────────────────────────────────────── */}
+        {events.length > 0 && (
+          <section className="mb-5">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-white/30 mb-2">События</p>
+            <div className="rounded-[22px] border border-white/[0.06] bg-white/[0.018] overflow-hidden">
+              {events.map((e, i) => {
+                const isLive = new Date(e.starts_at) <= new Date() && new Date(e.ends_at) > new Date();
+                const startsIn = Math.round((new Date(e.starts_at).getTime() - Date.now()) / 3600000);
+                const timeLabel = isLive ? "Идёт сейчас" : startsIn > 0 ? `Старт через ${startsIn} ч` : "Скоро";
+                return (
+                  <div key={e.id} className={`flex items-center gap-3 px-4 py-3 ${i < events.length - 1 ? "border-b border-white/[0.04]" : ""}`}>
+                    <span className="text-sm">{e.emoji ?? "📅"}</span>
+                    <div className="flex-1">
+                      <p className="text-[13px] text-white/70 font-medium">{e.title}</p>
+                      <p className="text-[11px] text-white/30">{timeLabel}{e.joined ? " · ✅ Ты участвуешь" : ""}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
       </div>
 
