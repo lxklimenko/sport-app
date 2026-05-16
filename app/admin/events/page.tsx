@@ -1,11 +1,60 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { migrateEvents, getAllEvents } from "@/lib/events";
+import { useRouter } from "next/navigation";
+import type { SeasonEvent } from "@/lib/events";
 
-export const dynamic = "force-dynamic";
+export default function AdminEventsPage() {
+  const router = useRouter();
+  const [events, setEvents] = useState<SeasonEvent[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
 
-export default async function AdminEventsPage() {
-  await migrateEvents();
-  const events = await getAllEvents();
+  useEffect(() => {
+    loadEvents();
+  }, []);
+
+  async function loadEvents() {
+    try {
+      const res = await fetch("/admin/events/api");
+      if (res.ok) {
+        const data = await res.json();
+        setEvents(data);
+      }
+    } catch {
+      // silent
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setPending(true);
+
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+
+    try {
+      const res = await fetch("/admin/events/create", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (res.ok) {
+        router.refresh();
+        form.reset();
+        await loadEvents();
+      } else {
+        const data = await res.json();
+        setError(data.error || "Ошибка при создании события");
+      }
+    } catch {
+      setError("Ошибка сети");
+    } finally {
+      setPending(false);
+    }
+  }
 
   return (
     <main className="min-h-screen bg-[#0B0B0C] text-white">
@@ -19,8 +68,15 @@ export default async function AdminEventsPage() {
           </div>
         </header>
 
+        {/* Error message */}
+        {error && (
+          <div className="mb-6 rounded-[16px] border border-red-500/20 bg-red-500/[0.06] p-4">
+            <p className="text-[13px] text-red-300">{error}</p>
+          </div>
+        )}
+
         {/* Create form */}
-        <form action="/admin/events/create" method="POST" className="mb-10 rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="mb-10 rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-5 space-y-4">
           <p className="text-[13px] font-semibold text-white/70 mb-3">Создать событие</p>
 
           <div className="grid grid-cols-2 gap-3">
@@ -103,8 +159,12 @@ export default async function AdminEventsPage() {
             </label>
           </div>
 
-          <button type="submit" className="w-full h-12 rounded-[16px] bg-[#F3F3F3] text-black text-[13px] font-semibold active:scale-[0.985] transition-all">
-            Создать событие
+          <button
+            type="submit"
+            disabled={pending}
+            className="w-full h-12 rounded-[16px] bg-[#F3F3F3] text-black text-[13px] font-semibold active:scale-[0.985] transition-all disabled:opacity-50"
+          >
+            {pending ? "Создаём..." : "Создать событие"}
           </button>
         </form>
 
