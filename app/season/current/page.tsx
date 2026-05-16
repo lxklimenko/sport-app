@@ -9,7 +9,7 @@ import { getDisciplineLabel } from "@/lib/disciplines";
 import { NotificationBell } from "@/components/notification-bell";
 import { EventCard } from "@/components/event-card";
 import { migrateSurvival, getSurvival } from "@/lib/survival";
-import { migrateEvents, getEventsWithParticipation, joinEvent } from "@/lib/events";
+import { migrateEvents, getEventsWithParticipation, joinEvent, type SeasonEvent } from "@/lib/events";
 import { Pool } from "pg";
 
 // ─── config ──────────────────────────────────────────────────────────────────
@@ -294,9 +294,14 @@ export default async function SeasonCurrentPage({
       : { headline: "Ты выполнил норму на сегодня", sub: "Ты в безопасности. Можно добавить ещё." };
 
   await migrateSurvival();
-  await migrateEvents();
+  let events: (SeasonEvent & { joined: boolean })[] = [];
+  try {
+    await migrateEvents();
+    events = await getEventsWithParticipation(session.userId);
+  } catch (e) {
+    console.error("migrateEvents error:", e);
+  }
   const survival = await getSurvival(session.userId, activeDisciplineId);
-  const events = await getEventsWithParticipation(session.userId);
 
   const disciplineLabel = getDisciplineLabel(activeDisciplineId);
   generateDangerNotification(
