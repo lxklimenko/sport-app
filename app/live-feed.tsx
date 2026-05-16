@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import type { FeedItem } from "@/lib/feed";
 
@@ -83,7 +84,7 @@ export function LiveFeed({ items: initialItems }: { items: FeedItem[] }) {
       </div>
 
       <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
-        {items.map((item, index) => (
+        {items.slice(0, 8).map((item, index) => (
           <div
             key={item.id}
             className={`flex items-start gap-3 ${
@@ -105,6 +106,14 @@ export function LiveFeed({ items: initialItems }: { items: FeedItem[] }) {
           </div>
         ))}
       </div>
+
+      <Link
+        href="/pulse"
+        className="mt-3 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-white/[0.06] bg-white/[0.02] text-[12px] text-white/40 hover:text-white/70 hover:bg-white/[0.04] transition-all"
+      >
+        Весь пульс сезона
+        <span className="text-[10px]">→</span>
+      </Link>
     </section>
   );
 }
