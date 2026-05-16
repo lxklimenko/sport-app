@@ -1,12 +1,9 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getSession } from "@/lib/session";
-import { migrateEvents, createEvent, getAllEvents } from "@/lib/events";
+import { migrateEvents, getAllEvents } from "@/lib/events";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminEventsPage() {
-  const session = await getSession();
-  if (!session.userId) redirect("/login");
-
   await migrateEvents();
   const events = await getAllEvents();
 

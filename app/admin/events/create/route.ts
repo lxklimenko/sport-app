@@ -1,13 +1,7 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/session";
 import { migrateEvents, createEvent } from "@/lib/events";
 
 export async function POST(request: Request) {
-  const session = await getSession();
-  if (!session.userId) {
-    return new Response("Unauthorized", { status: 401 });
-  }
-
   await migrateEvents();
 
   const formData = await request.formData();
