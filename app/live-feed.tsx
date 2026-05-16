@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useRef } from "react";
 import type { FeedItem } from "@/lib/feed";
 
 function timeAgo(date: Date): string {
@@ -20,22 +19,52 @@ function FeedDot({ type }: { type: string }) {
   const color =
     type === "activity"
       ? "bg-green-400"
+      : type === "overtake"
+      ? "bg-orange-400"
       : type === "danger"
       ? "bg-[#FFB4AB]"
+      : type === "join"
+      ? "bg-blue-400"
+      : type === "survival"
+      ? "bg-emerald-400"
       : "bg-white/50";
   return <div className={`w-1.5 h-1.5 rounded-full ${color} mt-2 shrink-0`} />;
 }
 
-export function LiveFeed({ items }: { items: FeedItem[] }) {
-  const router = useRouter();
+export function LiveFeed({ items: initialItems }: { items: FeedItem[] }) {
+  const [items, setItems] = useState<FeedItem[]>(initialItems);
+  const prevFirstId = useRef<number | null>(null);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      router.refresh();
+    // Detect if a new item appeared at the top
+    if (items.length > 0 && prevFirstId.current !== null && items[0].id !== prevFirstId.current) {
+      // New item arrived — keep the glow
+    }
+    prevFirstId.current = items[0]?.id ?? null;
+  }, [items]);
+
+  useEffect(() => {
+    setItems(initialItems);
+  }, [initialItems]);
+
+  // Poll /api/feed every 15 seconds (only when visible)
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      if (document.visibilityState !== "visible") return;
+
+      try {
+        const res = await fetch("/api/feed");
+        if (res.ok) {
+          const data: FeedItem[] = await res.json();
+          setItems(data);
+        }
+      } catch {
+        // silent
+      }
     }, 15000);
 
     return () => clearInterval(interval);
-  }, [router]);
+  }, []);
 
   if (items.length === 0) return null;
 
@@ -53,11 +82,21 @@ export function LiveFeed({ items }: { items: FeedItem[] }) {
         <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
       </div>
 
-      <div className="space-y-2">
-        {items.map((item) => (
-          <div key={item.id} className="flex items-start gap-3">
-            <FeedDot type={item.type} />
-            <div>
+      <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+        {items.map((item, index) => (
+          <div
+            key={item.id}
+            className={`flex items-start gap-3 ${
+              index === 0 ? "opacity-100" : ""
+            }`}
+          >
+            <div className="relative shrink-0">
+              <FeedDot type={item.type} />
+              {index === 0 && (
+                <div className="absolute -inset-1 rounded-full bg-green-400/20 animate-ping" />
+              )}
+            </div>
+            <div className={index === 0 ? "animate-pulse" : ""}>
               <p className="text-sm text-white/80">{item.message}</p>
               <p className="mt-0.5 text-xs text-white/30">
                 {timeAgo(item.created_at)}

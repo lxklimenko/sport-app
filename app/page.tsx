@@ -1,10 +1,14 @@
 import Link from "next/link";
 import { getLiveFeed } from "@/lib/feed";
+import { generateAtmosphericEvents } from "@/lib/feed-engine";
 import { LiveFeed } from "./live-feed";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
+  // Generate atmospheric events on page load (they dedupe internally)
+  await generateAtmosphericEvents();
+
   const feed = await getLiveFeed(20);
   return (
     <main className="min-h-screen bg-[#0B0B0C] text-white overflow-hidden relative">
