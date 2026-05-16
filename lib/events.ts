@@ -169,6 +169,61 @@ export async function getEventById(id: string): Promise<SeasonEvent | null> {
   return rows[0] ?? null;
 }
 
+// ─── Update event ────────────────────────────────────────────────────────────
+
+export async function updateEvent(
+  id: string,
+  updates: Partial<{
+    title: string;
+    slug: string;
+    discipline: string;
+    mode: EventMode;
+    description: string | null;
+    starts_at: string;
+    ends_at: string;
+    daily_target: number | null;
+    total_target: number | null;
+    is_survival: boolean;
+    allow_eliminated: boolean;
+    badge_color: string | null;
+    emoji: string | null;
+    is_active: boolean;
+  }>
+): Promise<SeasonEvent | null> {
+  const db = getPool();
+  const fields: string[] = [];
+  const values: any[] = [];
+  let idx = 1;
+
+  for (const [key, value] of Object.entries(updates)) {
+    if (value !== undefined) {
+      fields.push(`${key} = $${idx}`);
+      values.push(value);
+      idx++;
+    }
+  }
+
+  if (fields.length === 0) return null;
+
+  values.push(id);
+  const { rows } = await db.query<SeasonEvent>(
+    `UPDATE season_events SET ${fields.join(", ")} WHERE id = $${idx} RETURNING *`,
+    values
+  );
+  return rows[0] ?? null;
+}
+
+// ─── Delete event ────────────────────────────────────────────────────────────
+
+export async function deleteEvent(id: string): Promise<boolean> {
+  const db = getPool();
+  const { rowCount } = await db.query(
+    `DELETE FROM season_events WHERE id = $1`,
+    [id]
+  );
+  return (rowCount ?? 0) > 0;
+}
+
 // ─── Auto-start: mark events as active when starts_at <= NOW() ──────────────
 
 export async function autoStartEvents() {
