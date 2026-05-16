@@ -7,6 +7,7 @@ import { logout } from "@/app/actions/auth";
 import { generateDangerNotification } from "@/lib/notifications";
 import { getDisciplineLabel } from "@/lib/disciplines";
 import { NotificationBell } from "@/components/notification-bell";
+import { migrateSurvival, getSurvival } from "@/lib/survival";
 import { Pool } from "pg";
 
 // ─── config ──────────────────────────────────────────────────────────────────
@@ -247,6 +248,10 @@ export default async function SeasonCurrentPage({
       ? { headline: `Осталось ${cfg.format(cfg.target - todayValue)} ${cfg.unit}`, sub: "Почти у цели — не останавливайся." }
       : { headline: "Ты выполнил норму на сегодня", sub: "Ты в безопасности. Можно добавить ещё." };
 
+  // Get survival state
+  await migrateSurvival();
+  const survival = await getSurvival(session.userId, activeDisciplineId);
+
   // Generate danger notification (fire-and-forget)
   const disciplineLabel = getDisciplineLabel(activeDisciplineId);
   generateDangerNotification(
@@ -323,7 +328,7 @@ export default async function SeasonCurrentPage({
           </p>
 
           {/* STATUS BADGE */}
-          <div className="mt-4">
+          <div className="mt-4 flex items-center gap-2 flex-wrap">
             {isDead ? (
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-[#FFB4AB]/30 bg-[#FFB4AB]/[0.08]">
                 <AlertTriangle className="w-3.5 h-3.5 text-[#FFB4AB]" />
@@ -344,6 +349,20 @@ export default async function SeasonCurrentPage({
             ) : (
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/[0.06] bg-white/[0.02]">
                 <span className="text-[12px] text-white/35">День {SEASON.day} из {SEASON.total} · {daysLeft} осталось</span>
+              </div>
+            )}
+
+            {/* Survival streak */}
+            {survival && survival.current_streak > 0 && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06]">
+                <span className="text-[12px] text-emerald-400 font-semibold">
+                  🔥 {survival.current_streak} {survival.current_streak < 5 ? "дня" : "дней"}
+                </span>
+              </div>
+            )}
+            {survival && !survival.is_alive && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/[0.06] bg-white/[0.02]">
+                <span className="text-[12px] text-white/40">Выбыл · {survival.survived_days} {survival.survived_days < 5 ? "дня" : "дней"}</span>
               </div>
             )}
           </div>
