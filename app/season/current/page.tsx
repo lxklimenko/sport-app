@@ -66,7 +66,6 @@ async function getRealRivals(db: Pool, disciplineId: string, userId: string) {
 type FeedItem = { text: string; sub: string; dot: "red" | "orange" | "green" | "white" };
 
 async function getLiveFeed(db: Pool, disciplineId: string): Promise<FeedItem[]> {
-  // Real recent activities (last 2 hours, other users)
   const { rows: recentRows } = await db.query<{
     name: string; discipline_id: string; value: string; minutes_ago: string;
   }>(
@@ -82,7 +81,6 @@ async function getLiveFeed(db: Pool, disciplineId: string): Promise<FeedItem[]> 
     []
   );
 
-  // Count of users at risk today (0 activity)
   const { rows: riskRows } = await db.query<{ at_risk: string }>(
     `SELECT COUNT(*) AS at_risk
      FROM user_disciplines ud
@@ -99,13 +97,12 @@ async function getLiveFeed(db: Pool, disciplineId: string): Promise<FeedItem[]> 
 
   const feed: FeedItem[] = [];
 
-  // Real items
   for (const row of recentRows) {
     const cfg = DISCIPLINE_CONFIG[row.discipline_id as DisciplineId];
     if (!cfg) continue;
     const mins = parseInt(row.minutes_ago, 10);
     const timeAgo = mins < 1 ? "только что" : `${mins} мин назад`;
-    const shortName = row.name.trim().split(/\s+/)[0]; // first name only
+    const shortName = row.name.trim().split(/\s+/)[0];
     feed.push({
       text: `${shortName} записал ${cfg.format(parseFloat(row.value))} ${cfg.unit}`,
       sub: timeAgo,
@@ -113,7 +110,6 @@ async function getLiveFeed(db: Pool, disciplineId: string): Promise<FeedItem[]> 
     });
   }
 
-  // Static atmospheric items
   if (atRisk > 0) {
     feed.push({
       text: `${atRisk.toLocaleString("ru")} ${atRisk === 1 ? "участник" : "участников"} ещё ничего не записали`,
@@ -225,20 +221,17 @@ export default async function SeasonCurrentPage({
   const pct = Math.round(progress * 100);
   const daysLeft = SEASON.total - SEASON.day;
 
-  // Find user row in rivals
   const userRivalRow = rivalsRows.find((r) => r.user_id === session.userId);
   const userRank = userRivalRow ? parseInt(userRivalRow.rank as unknown as string, 10) : null;
   const above = rivalsRows.filter((r) => userRank && parseInt(r.rank as unknown as string, 10) < userRank);
   const below = rivalsRows.filter((r) => userRank && parseInt(r.rank as unknown as string, 10) > userRank);
 
-  // Total participants
   const totalRes = await db.query<{ count: string }>(
     "SELECT COUNT(*) FROM user_disciplines WHERE discipline_id = $1",
     [activeDisciplineId]
   );
   const totalPlayers = parseInt(totalRes.rows[0].count, 10);
 
-  // Pressure message
   const pressureMsg =
     danger === "dead"
       ? { headline: `${((userRank ?? 2) - 1).toLocaleString("ru")} человек уже впереди тебя`, sub: "Ты ещё ничего не записал сегодня. Каждый час — это места в рейтинге." }
@@ -248,11 +241,9 @@ export default async function SeasonCurrentPage({
       ? { headline: `Осталось ${cfg.format(cfg.target - todayValue)} ${cfg.unit}`, sub: "Почти у цели — не останавливайся." }
       : { headline: "Ты выполнил норму на сегодня", sub: "Ты в безопасности. Можно добавить ещё." };
 
-  // Get survival state
   await migrateSurvival();
   const survival = await getSurvival(session.userId, activeDisciplineId);
 
-  // Generate danger notification (fire-and-forget)
   const disciplineLabel = getDisciplineLabel(activeDisciplineId);
   generateDangerNotification(
     session.userId,
@@ -261,17 +252,88 @@ export default async function SeasonCurrentPage({
     cfg.target
   ).catch(() => {});
 
-  // Visual theme by danger
   const isDead = danger === "dead";
   const isRed = danger === "dead" || danger === "danger";
 
+  // ── Evening pressure (after 20:00) ──────────────────────────────
+  const now = new Date();
+  const hour = now.getHours();
+  const isEvening = hour >= 20 || hour < 6;
+  const eveningUrgency = isEvening && !isDead && danger !== "safe"
+    ? `До вылета осталось ${cfg.format(cfg.target - todayValue)} ${cfg.unit}`
+    : null;
+
+  // ── Morning survival moment ─────────────────────────────────────
+  const isMorning = hour >= 5 && hour < 12;
+  const justStartedToday = todayValue === 0;
+
+  // ── ELIMINATION SCREEN ──────────────────────────────────────────
+  if (survival && !survival.is_alive) {
+    return (
+      <main className="min-h-screen bg-[#0a0606] text-white flex flex-col">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[700px] h-[700px] rounded-full blur-3xl bg-red-950/20" />
+          <div className="absolute bottom-0 left-0 right-0 h-[300px] bg-gradient-to-t from-red-950/10 to-transparent" />
+        </div>
+
+        <div className="relative z-10 max-w-md mx-auto w-full px-5 pt-20 pb-12 flex flex-col items-center text-center flex-1 justify-center">
+          <div className="w-16 h-16 rounded-2xl border border-red-900/40 bg-red-950/20 flex items-center justify-center mb-6">
+            <span className="text-3xl">💀</span>
+          </div>
+
+          <h1 className="text-[28px] font-bold tracking-[-0.03em] text-white/90 mb-2">
+            Ты выбыл
+          </h1>
+
+          <p className="text-[14px] text-white/40 leading-relaxed max-w-xs mb-8">
+            Ты не выполнил норму {SEASON.day} дня в {cfg.name.toLowerCase()}.<br />
+            Сезон продолжается без тебя.
+          </p>
+
+          <div className="w-full rounded-[22px] border border-white/[0.06] bg-white/[0.02] p-5 mb-8">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center">
+                <p className="text-[28px] font-semibold text-white/70">{survival.survived_days}</p>
+                <p className="text-[11px] text-white/30 uppercase tracking-[0.1em] mt-1">Дней прожито</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[28px] font-semibold text-white/70">{survival.longest_streak}</p>
+                <p className="text-[11px] text-white/30 uppercase tracking-[0.1em] mt-1">Макс. серия</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="w-full rounded-[22px] border border-white/[0.04] bg-white/[0.01] p-4 mb-8 backdrop-blur-[2px]">
+            <p className="text-[11px] text-white/20 uppercase tracking-[0.15em] mb-2">Сейчас в сезоне</p>
+            <div className="space-y-2 opacity-40">
+              <div className="h-3 w-full rounded bg-white/[0.04]" />
+              <div className="h-3 w-3/4 rounded bg-white/[0.04]" />
+              <div className="h-3 w-1/2 rounded bg-white/[0.04]" />
+            </div>
+          </div>
+
+          <Link
+            href="/profile"
+            className="w-full h-14 rounded-[20px] bg-white/[0.06] text-white/60 text-[14px] font-semibold flex items-center justify-center active:scale-[0.985] transition-all border border-white/[0.06]"
+          >
+            К другим дисциплинам
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
+  // ── NORMAL SCREEN ───────────────────────────────────────────────
   return (
-    <main className={`min-h-screen text-white flex flex-col transition-colors duration-700 ${isDead ? "bg-[#110808]" : "bg-[#0B0B0C]"}`}>
+    <main className={`min-h-screen text-white flex flex-col transition-colors duration-700 ${isDead ? "bg-[#110808]" : isEvening && !isDead && danger !== "safe" ? "bg-[#0f0808]" : "bg-[#0B0B0C]"}`}>
 
       {/* ambient glows */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className={`absolute top-[-200px] left-1/2 -translate-x-1/2 w-[700px] h-[700px] rounded-full blur-3xl transition-all duration-1000 ${isRed ? "bg-[#FFB4AB]/[0.08]" : "bg-white/[0.015]"}`} />
+        <div className={`absolute top-[-200px] left-1/2 -translate-x-1/2 w-[700px] h-[700px] rounded-full blur-3xl transition-all duration-1000 ${isRed ? "bg-[#FFB4AB]/[0.08]" : isEvening && !isDead && danger !== "safe" ? "bg-orange-500/[0.04]" : "bg-white/[0.015]"}`} />
         {isRed && <div className="absolute top-[60px] right-[-80px] w-[300px] h-[300px] bg-red-900/20 rounded-full blur-3xl" />}
+        {isEvening && !isDead && danger !== "safe" && !isRed && (
+          <div className="absolute bottom-[-80px] right-[-60px] w-[250px] h-[250px] bg-orange-800/15 rounded-full blur-3xl" />
+        )}
         {danger === "safe" && <div className="absolute bottom-[-100px] left-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-green-900/[0.06] rounded-full blur-3xl" />}
       </div>
 
@@ -280,7 +342,7 @@ export default async function SeasonCurrentPage({
         {/* TOP BAR */}
         <header className="flex items-center justify-between mb-6">
           <Link href="/profile" className="flex items-center gap-2 text-white/40 hover:text-white/70 transition-colors">
-            <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${isRed ? "bg-red-400" : "bg-green-400"}`} />
+            <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${isRed ? "bg-red-400" : isEvening && !isDead && danger !== "safe" ? "bg-orange-400" : "bg-green-400"}`} />
             <span className="text-[11px] uppercase tracking-[0.2em] font-medium">Сезон {SEASON.number}</span>
           </Link>
           <div className="flex items-center gap-2">
@@ -292,6 +354,23 @@ export default async function SeasonCurrentPage({
             </form>
           </div>
         </header>
+
+        {/* Morning survival moment */}
+        {isMorning && justStartedToday && survival && survival.current_streak > 0 && (
+          <div className="mb-5 rounded-[22px] border border-emerald-500/15 bg-emerald-500/[0.04] p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.08] flex items-center justify-center shrink-0">
+                <Shield className="w-4 h-4 text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-[14px] font-semibold text-emerald-300">Ты пережил {SEASON.day - 1} день</p>
+                <p className="text-[12px] text-white/35 mt-0.5">
+                  🔥 {survival.current_streak} {survival.current_streak < 5 ? "дня" : "дней"} подряд · Сегодня новый день
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* DISCIPLINE TABS */}
         {joinedIds.length > 1 && (
@@ -310,7 +389,6 @@ export default async function SeasonCurrentPage({
             {cfg.emoji} {cfg.name} · Сегодня
           </p>
 
-          {/* Big number */}
           <div className="leading-none mb-1">
             <span className={[
               "text-[80px] font-semibold tracking-[-0.06em] leading-none transition-colors duration-700",
@@ -327,7 +405,6 @@ export default async function SeasonCurrentPage({
             {cfg.heroUnit} · СЕГОДНЯ
           </p>
 
-          {/* STATUS BADGE */}
           <div className="mt-4 flex items-center gap-2 flex-wrap">
             {isDead ? (
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-[#FFB4AB]/30 bg-[#FFB4AB]/[0.08]">
@@ -352,17 +429,11 @@ export default async function SeasonCurrentPage({
               </div>
             )}
 
-            {/* Survival streak */}
             {survival && survival.current_streak > 0 && (
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06]">
                 <span className="text-[12px] text-emerald-400 font-semibold">
                   🔥 {survival.current_streak} {survival.current_streak < 5 ? "дня" : "дней"}
                 </span>
-              </div>
-            )}
-            {survival && !survival.is_alive && (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/[0.06] bg-white/[0.02]">
-                <span className="text-[12px] text-white/40">Выбыл · {survival.survived_days} {survival.survived_days < 5 ? "дня" : "дней"}</span>
               </div>
             )}
           </div>
@@ -372,7 +443,7 @@ export default async function SeasonCurrentPage({
         <section className="mb-5">
           <div className={[
             "rounded-[22px] border p-4 transition-colors",
-            isRed ? "border-[#FFB4AB]/10 bg-[#FFB4AB]/[0.02]" : "border-white/[0.08] bg-white/[0.025]",
+            isRed ? "border-[#FFB4AB]/10 bg-[#FFB4AB]/[0.02]" : isEvening && !isDead && danger !== "safe" ? "border-orange-500/10 bg-orange-500/[0.02]" : "border-white/[0.08] bg-white/[0.025]",
           ].join(" ")}>
             <div className="flex items-center justify-between mb-3">
               <p className="text-[12px] text-white/40 uppercase tracking-[0.14em]">Дневная цель</p>
@@ -400,12 +471,12 @@ export default async function SeasonCurrentPage({
         <section className="mb-5">
           <div className={[
             "rounded-[22px] border p-4 transition-colors",
-            isRed ? "border-[#FFB4AB]/20 bg-[#FFB4AB]/[0.05]" : "border-white/[0.08] bg-white/[0.025]",
+            isRed ? "border-[#FFB4AB]/20 bg-[#FFB4AB]/[0.05]" : isEvening && !isDead && danger !== "safe" ? "border-orange-500/15 bg-orange-500/[0.03]" : "border-white/[0.08] bg-white/[0.025]",
           ].join(" ")}>
             <div className="flex items-start gap-3">
               <div className={[
                 "w-9 h-9 rounded-xl border flex items-center justify-center shrink-0",
-                isRed ? "border-[#FFB4AB]/20 bg-[#FFB4AB]/[0.08]" : "border-white/[0.08] bg-white/[0.04]",
+                isRed ? "border-[#FFB4AB]/20 bg-[#FFB4AB]/[0.08]" : isEvening && !isDead && danger !== "safe" ? "border-orange-500/15 bg-orange-500/[0.06]" : "border-white/[0.08] bg-white/[0.04]",
               ].join(" ")}>
                 {danger === "safe"
                   ? <Shield className="w-4 h-4 text-white/50" />
@@ -413,9 +484,13 @@ export default async function SeasonCurrentPage({
               </div>
               <div>
                 <p className={`text-[15px] font-semibold leading-tight ${isRed ? "text-white" : "text-white/80"}`}>
-                  {pressureMsg.headline}
+                  {eveningUrgency ?? pressureMsg.headline}
                 </p>
-                <p className="mt-1 text-[12px] text-white/35 leading-relaxed">{pressureMsg.sub}</p>
+                <p className="mt-1 text-[12px] text-white/35 leading-relaxed">
+                  {isEvening && !isDead && danger !== "safe"
+                    ? `Осталось меньше 4 часов. ${pressureMsg.sub}`
+                    : pressureMsg.sub}
+                </p>
               </div>
             </div>
           </div>
