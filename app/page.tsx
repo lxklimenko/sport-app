@@ -5,6 +5,7 @@ import Link from "next/link";
 import { LiveFeed } from "./live-feed";
 import { DisciplineModal } from "@/components/discipline-modal";
 import type { FeedItem } from "@/lib/feed";
+import type { SeasonEvent } from "@/lib/events";
 
 // ─── discipline cards config ─────────────────────────────────────────────────
 
@@ -45,15 +46,23 @@ const DISCIPLINE_CARDS = [
 
 export default function HomePage() {
   const [feed, setFeed] = useState<FeedItem[]>([]);
+  const [events, setEvents] = useState<SeasonEvent[]>([]);
   const [selectedDiscipline, setSelectedDiscipline] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch("/api/feed");
-        if (res.ok) {
-          const data: FeedItem[] = await res.json();
+        const [feedRes, eventsRes] = await Promise.all([
+          fetch("/api/feed"),
+          fetch("/api/events/live"),
+        ]);
+        if (feedRes.ok) {
+          const data: FeedItem[] = await feedRes.json();
           setFeed(data);
+        }
+        if (eventsRes.ok) {
+          const data: SeasonEvent[] = await eventsRes.json();
+          setEvents(data);
         }
       } catch {
         // silent
@@ -186,6 +195,48 @@ export default function HomePage() {
             ))}
           </div>
         </section>
+
+        {/* LIVE EVENTS */}
+        {events.length > 0 && (
+          <section className="mt-8">
+            <div className="mb-4">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-white/30">
+                События сейчас
+              </p>
+              <h2 className="mt-1 text-[22px] font-semibold tracking-tight text-white">
+                Присоединяйся
+              </h2>
+            </div>
+            <div className="rounded-[22px] border border-white/[0.06] bg-white/[0.018] overflow-hidden">
+              {events.map((e) => {
+                const isLive = new Date(e.starts_at) <= new Date() && new Date(e.ends_at) > new Date();
+                const endsIn = Math.round((new Date(e.ends_at).getTime() - Date.now()) / 3600000);
+                return (
+                  <Link
+                    key={e.id}
+                    href="/season/current"
+                    className="flex items-center gap-3 px-4 py-3.5 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors"
+                  >
+                    <span className="text-lg">{e.emoji ?? "📅"}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[14px] text-white/80 font-medium truncate">{e.title}</p>
+                      <p className="text-[11px] text-white/30 mt-0.5">
+                        {isLive ? (
+                          <span className="text-green-400">🔴 LIVE · осталось {endsIn} ч</span>
+                        ) : (
+                          <span>Скоро</span>
+                        )}
+                      </p>
+                    </div>
+                    <div className="shrink-0">
+                      <span className="text-[11px] text-white/40">→</span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* LIVE FEED */}
         <LiveFeed items={feed} />
