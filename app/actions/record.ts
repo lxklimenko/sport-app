@@ -63,6 +63,19 @@ export async function recordActivity(
     [session.userId, disciplineId, value]
   );
 
+  // Update event_participants for any active events matching this discipline
+  await db.query(
+    `UPDATE event_participants ep
+     SET value = value + $1
+     FROM season_events e
+     WHERE ep.event_id = e.id
+       AND ep.user_id = $2
+       AND e.discipline = $3
+       AND e.starts_at <= NOW()
+       AND e.ends_at > NOW()`,
+    [value, session.userId, disciplineId]
+  );
+
   // Write to season feed
   const user = await db.query(
     "SELECT name FROM users WHERE id = $1",
