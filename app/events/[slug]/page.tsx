@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ChevronLeft, Users, Skull, Zap, Clock, Trophy, TrendingDown, AlertTriangle, Shield, Flame } from "lucide-react";
+import { ChevronLeft, Users, Skull, Zap, Clock, Trophy, TrendingDown, AlertTriangle, Shield, Flame, Swords } from "lucide-react";
 import { getSession } from "@/lib/session";
 import { getPool, migrateDatabase } from "@/lib/db";
 import { migrateEvents, getEventBySlug, getEventLeaderboard } from "@/lib/events";
@@ -17,18 +17,20 @@ const DISCIPLINE_CONFIG: Record<string, { emoji: string; unit: string; format: (
 
 const THEMES: Record<string, {
   bg: string; glow: string; accent: string; accentText: string; border: string; dot: string; live: string;
+  heroGlow: string; heroBorder: string;
 }> = {
-  red:    { bg: "bg-[#0a0606]", glow: "bg-red-950/20", accent: "bg-red-500/20", accentText: "text-red-400", border: "border-red-900/30", dot: "bg-red-400", live: "bg-red-500" },
-  orange: { bg: "bg-[#0b0806]", glow: "bg-orange-950/20", accent: "bg-orange-500/20", accentText: "text-orange-400", border: "border-orange-900/30", dot: "bg-orange-400", live: "bg-orange-500" },
-  blue:   { bg: "bg-[#06080b]", glow: "bg-blue-950/20", accent: "bg-blue-500/20", accentText: "text-blue-400", border: "border-blue-900/30", dot: "bg-blue-400", live: "bg-blue-500" },
-  green:  { bg: "bg-[#060b08]", glow: "bg-emerald-950/20", accent: "bg-emerald-500/20", accentText: "text-emerald-400", border: "border-emerald-900/30", dot: "bg-emerald-400", live: "bg-emerald-500" },
-  purple: { bg: "bg-[#08060b]", glow: "bg-purple-950/20", accent: "bg-purple-500/20", accentText: "text-purple-400", border: "border-purple-900/30", dot: "bg-purple-400", live: "bg-purple-500" },
+  red:    { bg: "bg-[#0a0606]", glow: "bg-red-950/20", accent: "bg-red-500/20", accentText: "text-red-400", border: "border-red-900/30", dot: "bg-red-400", live: "bg-red-500", heroGlow: "bg-red-500/[0.08]", heroBorder: "border-red-500/20" },
+  orange: { bg: "bg-[#0b0806]", glow: "bg-orange-950/20", accent: "bg-orange-500/20", accentText: "text-orange-400", border: "border-orange-900/30", dot: "bg-orange-400", live: "bg-orange-500", heroGlow: "bg-orange-500/[0.08]", heroBorder: "border-orange-500/20" },
+  blue:   { bg: "bg-[#06080b]", glow: "bg-blue-950/20", accent: "bg-blue-500/20", accentText: "text-blue-400", border: "border-blue-900/30", dot: "bg-blue-400", live: "bg-blue-500", heroGlow: "bg-blue-500/[0.08]", heroBorder: "border-blue-500/20" },
+  green:  { bg: "bg-[#060b08]", glow: "bg-emerald-950/20", accent: "bg-emerald-500/20", accentText: "text-emerald-400", border: "border-emerald-900/30", dot: "bg-emerald-400", live: "bg-emerald-500", heroGlow: "bg-emerald-500/[0.08]", heroBorder: "border-emerald-500/20" },
+  purple: { bg: "bg-[#08060b]", glow: "bg-purple-950/20", accent: "bg-purple-500/20", accentText: "text-purple-400", border: "border-purple-900/30", dot: "bg-purple-400", live: "bg-purple-500", heroGlow: "bg-purple-500/[0.08]", heroBorder: "border-purple-500/20" },
 };
 
 function getTheme(color: string | null) {
   return THEMES[color ?? ""] ?? {
     bg: "bg-[#0B0B0C]", glow: "bg-white/[0.015]", accent: "bg-white/[0.05]", accentText: "text-white/60",
     border: "border-white/[0.08]", dot: "bg-white/40", live: "bg-emerald-400",
+    heroGlow: "bg-white/[0.04]", heroBorder: "border-white/[0.12]",
   };
 }
 
@@ -150,10 +152,12 @@ export default async function EventPage({
 
   return (
     <main className={`min-h-screen ${theme.bg} text-white flex flex-col`}>
+      {/* ── AMBIENT GLOW ─────────────────────────────────────────── */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className={`absolute top-[-200px] left-1/2 -translate-x-1/2 w-[700px] h-[700px] rounded-full blur-3xl ${theme.glow}`} />
+        <div className={`absolute top-[-300px] left-1/2 -translate-x-1/2 w-[900px] h-[900px] rounded-full blur-3xl ${theme.heroGlow}`} />
+        <div className={`absolute bottom-[-200px] right-[-120px] w-[500px] h-[500px] rounded-full blur-3xl ${theme.glow}`} />
         {isLive && (
-          <div className={`absolute bottom-[-100px] right-[-80px] w-[300px] h-[300px] rounded-full blur-3xl ${theme.glow}`} />
+          <div className={`absolute top-[40%] left-[-100px] w-[300px] h-[300px] rounded-full blur-3xl ${theme.glow}`} />
         )}
       </div>
 
@@ -174,94 +178,104 @@ export default async function EventPage({
         theme={theme}
       />
 
-      <div className="relative z-10 max-w-md mx-auto w-full px-5 pt-6 pb-32">
+      <div className="relative z-10 max-w-md mx-auto w-full">
 
-        {/* ── TOP BAR ─────────────────────────────────────────────── */}
-        <header className="flex items-center gap-3 mb-6">
-          <Link
-            href="/season/current"
-            className="w-9 h-9 rounded-xl border border-white/[0.06] bg-white/[0.03] flex items-center justify-center text-white/40 hover:text-white/70 transition-colors shrink-0"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </Link>
-          <div className="flex items-center gap-2">
-            <span className="text-[20px]">{event.emoji ?? "📅"}</span>
-            <div>
-              <p className={`text-[11px] uppercase tracking-[0.2em] ${theme.accentText} leading-none`}>
-                {isLive ? "Событие идёт" : isUpcoming ? "Скоро" : "Завершено"}
-              </p>
-              <p className="text-[16px] font-semibold leading-tight">{event.title}</p>
-            </div>
-          </div>
-        </header>
-
-        {/* ── 1. HERO ─────────────────────────────────────────────── */}
-        <section className="mb-6">
-          <div className={`rounded-[22px] border ${theme.border} ${theme.accent.replace("/20", "/[0.03]")} p-5`}>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full animate-pulse ${isLive ? theme.live : "bg-white/30"}`} />
-                <span className={`text-[11px] uppercase tracking-[0.14em] ${theme.accentText}`}>
-                  {isLive ? "LIVE" : isUpcoming ? "СТАРТУЕТ" : "ЗАВЕРШЕНО"}
-                </span>
-              </div>
-              <span className="text-[11px] text-white/30">
-                {cfg.emoji} {getDisciplineLabel(event.discipline)}
+        {/* ── EVENT ROOM STICKY BADGE ─────────────────────────────── */}
+        <div className="sticky top-0 z-30 px-5 pt-3 pb-2 bg-gradient-to-b from-[#0a0606] via-[#0a0606]/95 to-transparent">
+          <div className="flex items-center justify-between">
+            <Link
+              href="/season/current"
+              className="w-8 h-8 rounded-xl border border-white/[0.06] bg-white/[0.03] flex items-center justify-center text-white/40 hover:text-white/70 transition-colors shrink-0"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Link>
+            <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border ${theme.border} ${theme.accent}`}>
+              <Swords className={`w-3 h-3 ${theme.accentText}`} />
+              <span className={`text-[9px] uppercase tracking-[0.18em] font-bold ${theme.accentText}`}>
+                EVENT ROOM
               </span>
             </div>
+            <div className="w-8" /> {/* spacer */}
+          </div>
+        </div>
 
-            {/* Description */}
-            {event.description && (
-              <p className="text-[13px] text-white/50 leading-relaxed mb-4">{event.description}</p>
-            )}
+        {/* ── 1. HUGE EVENT HERO ──────────────────────────────────── */}
+        <section className="px-5 pt-6 pb-8">
+          <div className={`rounded-[28px] border ${theme.heroBorder} ${theme.accent.replace("/20", "/[0.06]")} p-6 text-center relative overflow-hidden`}>
+            {/* Inner glow */}
+            <div className={`absolute inset-0 pointer-events-none ${theme.heroGlow} opacity-50`} />
 
-            {/* Countdown */}
-            <div className="flex items-center gap-4">
-              <Clock className={`w-5 h-5 ${theme.accentText}`} />
-              <div>
-                <p className="text-[28px] font-semibold tracking-tight">
+            <div className="relative z-10">
+              {/* Giant emoji */}
+              <div className="text-[72px] leading-none mb-4 select-none">
+                {event.emoji ?? "💪"}
+              </div>
+
+              {/* Event title */}
+              <h1 className="text-[32px] font-bold tracking-[-0.04em] leading-tight text-white mb-2">
+                {event.title}
+              </h1>
+
+              {/* Discipline badge */}
+              <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border ${theme.border} ${theme.accent} mb-4`}>
+                <span className="text-[13px]">{cfg.emoji}</span>
+                <span className={`text-[11px] font-semibold ${theme.accentText}`}>
+                  {getDisciplineLabel(event.discipline)}
+                </span>
+              </div>
+
+              {/* Description */}
+              {event.description && (
+                <p className="text-[13px] text-white/50 leading-relaxed mb-4 max-w-xs mx-auto">
+                  {event.description}
+                </p>
+              )}
+
+              {/* Countdown */}
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Clock className={`w-4 h-4 ${theme.accentText}`} />
+                <span className="text-[20px] font-bold tracking-tight text-white/90">
                   {isLive
                     ? `Осталось ${endsIn} ч`
                     : isUpcoming
                     ? `Старт через ${startsIn} ч`
                     : "Завершено"}
-                </p>
-                <p className="text-[11px] text-white/30 mt-0.5">
-                  {isLive ? `из ${totalHours} ч` : `${totalHours} ч длительность`}
-                </p>
+                </span>
               </div>
-            </div>
 
-            {/* Stats row */}
-            <div className="mt-4 flex items-center gap-4 text-[12px] text-white/40">
-              <div className="flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5" />
-                <span>{participantCount} {participantCount === 1 ? "участник" : "участников"}</span>
+              {/* Stats row */}
+              <div className="flex items-center justify-center gap-5 text-[12px] text-white/40">
+                <div className="flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5" />
+                  <span>{participantCount}</span>
+                </div>
+                {aliveCount > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <Zap className={`w-3.5 h-3.5 ${theme.accentText}/60`} />
+                    <span className={`${theme.accentText}/60`}>{aliveCount} в игре</span>
+                  </div>
+                )}
+                {eliminatedCount > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <Skull className="w-3.5 h-3.5 text-red-400/40" />
+                    <span className="text-red-400/40">{eliminatedCount} выбыли</span>
+                  </div>
+                )}
               </div>
-              {aliveCount > 0 && (
-                <div className="flex items-center gap-1.5">
-                  <Zap className={`w-3.5 h-3.5 ${theme.accentText}/60`} />
-                  <span className={`${theme.accentText}/60`}>{aliveCount} в игре</span>
-                </div>
-              )}
-              {eliminatedCount > 0 && (
-                <div className="flex items-center gap-1.5">
-                  <Skull className="w-3.5 h-3.5 text-red-400/40" />
-                  <span className="text-red-400/40">{eliminatedCount} выбыли</span>
-                </div>
-              )}
             </div>
           </div>
         </section>
 
         {/* ── JOIN CTA ────────────────────────────────────────────── */}
         {!joined && isLive && (
-          <JoinButton eventId={event.id} title={event.title} emoji={event.emoji} participantCount={participantCount} theme={theme} />
+          <div className="px-5 mb-6">
+            <JoinButton eventId={event.id} title={event.title} emoji={event.emoji} participantCount={participantCount} theme={theme} />
+          </div>
         )}
 
-        {/* ── TOP CTA — visible immediately ──────────────────────── */}
+        {/* ── 2. TOP CTA — event-specific ─────────────────────────── */}
         {joined && isLive && (
-          <section className="mb-5">
+          <div className="px-5 mb-5">
             <Link
               href={`/record?d=${event.discipline}&event=${event.slug}`}
               className={`w-full h-16 rounded-[22px] ${theme.accent} ${theme.accentText} text-[15px] font-bold flex items-center justify-center gap-2.5 active:scale-[0.985] transition-all border ${theme.border} shadow-[0_10px_40px_rgba(0,0,0,0.3)]`}
@@ -269,12 +283,12 @@ export default async function EventPage({
               <Zap className="w-5 h-5" />
               ЗАПИСАТЬ {cfg.emoji} {getDisciplineLabel(event.discipline).toUpperCase()}
             </Link>
-          </section>
+          </div>
         )}
 
-        {/* ── YOUR STATUS ────────────────────────────────────────── */}
+        {/* ── 3. YOUR STATUS ──────────────────────────────────────── */}
         {joined && (
-          <section className="mb-5">
+          <div className="px-5 mb-5">
             <div className={`rounded-[22px] border ${theme.border} ${theme.accent.replace("/20", "/[0.03]")} p-4`}>
               <p className="text-[10px] uppercase tracking-[0.18em] text-white/30 mb-3">ТВОЙ СТАТУС</p>
 
@@ -363,12 +377,12 @@ export default async function EventPage({
                 </div>
               )}
             </div>
-          </section>
+          </div>
         )}
 
-        {/* ── 3. PRESSURE: dropped from TOP 10 ────────────────────── */}
+        {/* ── 4. PRESSURE: dropped from TOP 10 ────────────────────── */}
         {droppedFromTop10 && (
-          <section className="mb-5">
+          <div className="px-5 mb-5">
             <div className="rounded-[22px] border border-red-900/30 bg-red-950/15 p-4">
               <div className="flex items-start gap-3">
                 <div className="w-9 h-9 rounded-xl border border-red-900/30 bg-red-950/20 flex items-center justify-center shrink-0">
@@ -384,11 +398,11 @@ export default async function EventPage({
                 </div>
               </div>
             </div>
-          </section>
+          </div>
         )}
 
-        {/* ── 4. EVENT LEADERBOARD ────────────────────────────────── */}
-        <section className="mb-5">
+        {/* ── 5. EVENT LEADERBOARD ────────────────────────────────── */}
+        <div className="px-5 mb-5">
           <div className="flex items-center justify-between mb-2">
             <p className="text-[11px] uppercase tracking-[0.18em] text-white/30">Таблица лидеров</p>
             <p className="text-[11px] text-white/20">{participantCount} участников</p>
@@ -443,11 +457,11 @@ export default async function EventPage({
               </div>
             )}
           </div>
-        </section>
+        </div>
 
-        {/* ── 5. LIVE FEED ────────────────────────────────────────── */}
+        {/* ── 6. LIVE FEED ────────────────────────────────────────── */}
         {feedRows.length > 0 && (
-          <section className="mb-5">
+          <div className="px-5 mb-5">
             <p className="text-[11px] uppercase tracking-[0.18em] text-white/30 mb-2">Активность</p>
             <div className="rounded-[22px] border border-white/[0.06] bg-white/[0.018] overflow-hidden">
               {feedRows.map((row, i) => {
@@ -471,12 +485,12 @@ export default async function EventPage({
                 );
               })}
             </div>
-          </section>
+          </div>
         )}
 
-        {/* ── 6. ELIMINATION PRESSURE ─────────────────────────────── */}
+        {/* ── 7. ELIMINATION PRESSURE ─────────────────────────────── */}
         {eliminatedCount > 0 && (
-          <section className="mb-5">
+          <div className="px-5 mb-5">
             <div className="rounded-[22px] border border-white/[0.06] bg-white/[0.015] p-4">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl border border-white/[0.08] bg-white/[0.03] flex items-center justify-center shrink-0">
@@ -492,12 +506,12 @@ export default async function EventPage({
                 </div>
               </div>
             </div>
-          </section>
+          </div>
         )}
 
-        {/* ── 7. PARTICIPANTS SOCIAL PROOF ────────────────────────── */}
+        {/* ── 8. PARTICIPANTS SOCIAL PROOF ────────────────────────── */}
         {participantCount > 0 && (
-          <section className="mb-5">
+          <div className="px-5 mb-5">
             <div className="rounded-[22px] border border-white/[0.06] bg-white/[0.015] p-4">
               <p className="text-[11px] uppercase tracking-[0.18em] text-white/30 mb-3">Участники</p>
               <div className="grid grid-cols-3 gap-3 text-center">
@@ -515,12 +529,12 @@ export default async function EventPage({
                 </div>
               </div>
             </div>
-          </section>
+          </div>
         )}
 
-        {/* ── 8. EVENT STORY ──────────────────────────────────────── */}
+        {/* ── 9. EVENT STORY ──────────────────────────────────────── */}
         {eventStory.length > 0 && (
-          <section className="mb-5">
+          <div className="px-5 mb-5">
             <p className="text-[11px] uppercase tracking-[0.18em] text-white/30 mb-2">История события</p>
             <div className="rounded-[22px] border border-white/[0.06] bg-white/[0.018] overflow-hidden">
               {eventStory.map((s, i) => (
@@ -537,14 +551,17 @@ export default async function EventPage({
                 </div>
               ))}
             </div>
-          </section>
+          </div>
         )}
+
+        {/* Bottom spacer for sticky CTA */}
+        <div className="h-24" />
 
       </div>
 
       {/* ── STICKY BOTTOM CTA ────────────────────────────────────── */}
       {joined && isLive && (
-        <div className="fixed bottom-0 left-0 right-0 px-5 pb-8 pt-4 bg-gradient-to-t from-[#0B0B0C] via-[#0B0B0C]/95 to-transparent z-20">
+        <div className="fixed bottom-0 left-0 right-0 px-5 pb-8 pt-4 bg-gradient-to-t from-[#0a0606] via-[#0a0606]/95 to-transparent z-20">
           <Link
             href={`/record?d=${event.discipline}&event=${event.slug}`}
             className={`w-full max-w-md mx-auto h-14 rounded-[20px] ${theme.accent} ${theme.accentText} text-[14px] font-semibold flex items-center justify-center gap-2 active:scale-[0.985] transition-all border ${theme.border} shadow-[0_10px_40px_rgba(0,0,0,0.3)]`}

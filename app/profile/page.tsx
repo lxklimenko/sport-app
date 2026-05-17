@@ -210,7 +210,7 @@ export default async function ProfilePage() {
       [session.userId]
     ),
     db.query(
-      `SELECT e.id, e.title, e.emoji, e.discipline, e.starts_at, e.ends_at, e.is_active
+      `SELECT e.id, e.title, e.emoji, e.discipline, e.starts_at, e.ends_at, e.is_active, e.slug
        FROM season_events e
        JOIN event_participants ep ON ep.event_id = e.id
        WHERE ep.user_id = $1 AND e.ends_at > NOW()
@@ -479,7 +479,7 @@ export default async function ProfilePage() {
                 return (
                   <Link
                     key={e.id}
-                    href="/season/current"
+                    href={`/events/${e.slug}`}
                     className="flex items-center gap-3 px-4 py-3.5 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors"
                   >
                     <span className="text-lg">{e.emoji ?? "📅"}</span>
