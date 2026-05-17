@@ -4,7 +4,17 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Zap } from "lucide-react";
 
-export function JoinButton({ eventId, title }: { eventId: string; title: string }) {
+interface Theme {
+  bg: string;
+  glow: string;
+  accent: string;
+  accentText: string;
+  border: string;
+  dot: string;
+  live: string;
+}
+
+export function JoinButton({ eventId, title, theme }: { eventId: string; title: string; theme?: Theme }) {
   const router = useRouter();
   const [joining, setJoining] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -30,6 +40,10 @@ export function JoinButton({ eventId, title }: { eventId: string; title: string 
     }
   };
 
+  const btnClass = theme
+    ? `${theme.accent} ${theme.accentText} border ${theme.border}`
+    : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+
   return (
     <>
       {toast && (
@@ -41,7 +55,7 @@ export function JoinButton({ eventId, title }: { eventId: string; title: string 
       <button
         onClick={handleJoin}
         disabled={joining}
-        className="w-full h-14 rounded-[20px] bg-emerald-500/20 text-emerald-300 text-[14px] font-semibold flex items-center justify-center gap-2 active:scale-[0.985] transition-all border border-emerald-500/30 disabled:opacity-50 mb-5"
+        className={`w-full h-14 rounded-[20px] text-[14px] font-semibold flex items-center justify-center gap-2 active:scale-[0.985] transition-all disabled:opacity-50 mb-5 ${btnClass}`}
       >
         <Zap className="w-4 h-4" />
         {joining ? "..." : "ВОЙТИ В СОБЫТИЕ"}

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ChevronLeft, Users, Skull, Zap, Clock, Trophy } from "lucide-react";
+import { ChevronLeft, Users, Skull, Zap, Clock, Trophy, TrendingDown, AlertTriangle } from "lucide-react";
 import { getSession } from "@/lib/session";
 import { getPool, migrateDatabase } from "@/lib/db";
 import { migrateEvents, getEventBySlug, getEventLeaderboard } from "@/lib/events";
@@ -11,6 +11,36 @@ const DISCIPLINE_CONFIG: Record<string, { emoji: string; unit: string; format: (
   running: { emoji: "🏃", unit: "км",    format: (v) => v.toFixed(1) },
   burpees: { emoji: "💥", unit: "повт.", format: (v) => String(Math.floor(v)) },
 };
+
+// ─── Color themes per badge_color ────────────────────────────────────────────
+
+const THEMES: Record<string, {
+  bg: string;
+  glow: string;
+  accent: string;
+  accentText: string;
+  border: string;
+  dot: string;
+  live: string;
+}> = {
+  red:    { bg: "bg-[#0a0606]", glow: "bg-red-950/20", accent: "bg-red-500/20", accentText: "text-red-400", border: "border-red-900/30", dot: "bg-red-400", live: "bg-red-500" },
+  orange: { bg: "bg-[#0b0806]", glow: "bg-orange-950/20", accent: "bg-orange-500/20", accentText: "text-orange-400", border: "border-orange-900/30", dot: "bg-orange-400", live: "bg-orange-500" },
+  blue:   { bg: "bg-[#06080b]", glow: "bg-blue-950/20", accent: "bg-blue-500/20", accentText: "text-blue-400", border: "border-blue-900/30", dot: "bg-blue-400", live: "bg-blue-500" },
+  green:  { bg: "bg-[#060b08]", glow: "bg-emerald-950/20", accent: "bg-emerald-500/20", accentText: "text-emerald-400", border: "border-emerald-900/30", dot: "bg-emerald-400", live: "bg-emerald-500" },
+  purple: { bg: "bg-[#08060b]", glow: "bg-purple-950/20", accent: "bg-purple-500/20", accentText: "text-purple-400", border: "border-purple-900/30", dot: "bg-purple-400", live: "bg-purple-500" },
+};
+
+function getTheme(color: string | null) {
+  return THEMES[color ?? ""] ?? {
+    bg: "bg-[#0B0B0C]",
+    glow: "bg-white/[0.015]",
+    accent: "bg-white/[0.05]",
+    accentText: "text-white/60",
+    border: "border-white/[0.08]",
+    dot: "bg-white/40",
+    live: "bg-emerald-400",
+  };
+}
 
 export default async function EventPage({
   params,
@@ -36,6 +66,8 @@ export default async function EventPage({
   const endsIn = Math.round((end.getTime() - now.getTime()) / 3600000);
   const startsIn = Math.round((start.getTime() - now.getTime()) / 3600000);
   const totalHours = Math.round((end.getTime() - start.getTime()) / 3600000);
+
+  const theme = getTheme(event.badge_color);
 
   // Check if user joined
   const { rows: joinRows } = await db.query(
@@ -65,6 +97,10 @@ export default async function EventPage({
   const userRank = userEntry?.rank ?? null;
   const userValue = userEntry?.value ?? 0;
 
+  // Pressure: dropped out of TOP 10?
+  const droppedFromTop10 = joined && userRank && userRank > 10;
+  const top10Threshold = leaderboard.length >= 10 ? leaderboard[9].value : 0;
+
   // Recent feed for this discipline
   const { rows: feedRows } = await db.query<{
     name: string; value: string; minutes_ago: string;
@@ -83,11 +119,11 @@ export default async function EventPage({
   const cfg = DISCIPLINE_CONFIG[event.discipline] ?? { emoji: "💪", unit: "раз", format: (v) => String(Math.floor(v)) };
 
   return (
-    <main className="min-h-screen bg-[#0B0B0C] text-white flex flex-col">
+    <main className={`min-h-screen ${theme.bg} text-white flex flex-col`}>
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-white/[0.015] rounded-full blur-3xl" />
+        <div className={`absolute top-[-200px] left-1/2 -translate-x-1/2 w-[700px] h-[700px] rounded-full blur-3xl ${theme.glow}`} />
         {isLive && (
-          <div className="absolute bottom-[-100px] right-[-80px] w-[300px] h-[300px] bg-emerald-900/[0.08] rounded-full blur-3xl" />
+          <div className={`absolute bottom-[-100px] right-[-80px] w-[300px] h-[300px] rounded-full blur-3xl ${theme.glow}`} />
         )}
       </div>
 
@@ -103,7 +139,7 @@ export default async function EventPage({
           <div className="flex items-center gap-2">
             <span className="text-[20px]">{event.emoji ?? "📅"}</span>
             <div>
-              <p className="text-[11px] uppercase tracking-[0.2em] text-white/30 leading-none">
+              <p className={`text-[11px] uppercase tracking-[0.2em] ${theme.accentText} leading-none`}>
                 {isLive ? "Событие идёт" : isUpcoming ? "Скоро" : "Завершено"}
               </p>
               <p className="text-[16px] font-semibold leading-tight">{event.title}</p>
@@ -113,11 +149,11 @@ export default async function EventPage({
 
         {/* HERO COUNTDOWN */}
         <section className="mb-6">
-          <div className="rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-5">
+          <div className={`rounded-[22px] border ${theme.border} ${theme.accent.replace("bg-", "bg-").replace("/20", "/[0.03]")} p-5`}>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full animate-pulse ${isLive ? "bg-emerald-400" : "bg-white/30"}`} />
-                <span className="text-[11px] uppercase tracking-[0.14em] text-white/40">
+                <div className={`w-2 h-2 rounded-full animate-pulse ${isLive ? theme.live : "bg-white/30"}`} />
+                <span className={`text-[11px] uppercase tracking-[0.14em] ${theme.accentText}`}>
                   {isLive ? "LIVE" : isUpcoming ? "СТАРТУЕТ" : "ЗАВЕРШЕНО"}
                 </span>
               </div>
@@ -127,7 +163,7 @@ export default async function EventPage({
             </div>
 
             <div className="flex items-center gap-4">
-              <Clock className="w-5 h-5 text-white/30" />
+              <Clock className={`w-5 h-5 ${theme.accentText}`} />
               <div>
                 <p className="text-[28px] font-semibold tracking-tight">
                   {isLive
@@ -152,8 +188,8 @@ export default async function EventPage({
               </div>
               {aliveCount > 0 && (
                 <div className="flex items-center gap-1.5">
-                  <Zap className="w-3.5 h-3.5 text-emerald-400/60" />
-                  <span className="text-emerald-400/60">{aliveCount} в игре</span>
+                  <Zap className={`w-3.5 h-3.5 ${theme.accentText}/60`} />
+                  <span className={`${theme.accentText}/60`}>{aliveCount} в игре</span>
                 </div>
               )}
               {eliminatedCount > 0 && (
@@ -168,23 +204,65 @@ export default async function EventPage({
 
         {/* JOIN CTA */}
         {!joined && isLive && (
-          <JoinButton eventId={event.id} title={event.title} />
+          <JoinButton eventId={event.id} title={event.title} theme={theme} />
         )}
 
         {/* YOUR STATUS */}
         {joined && (
           <section className="mb-5">
-            <div className="rounded-[22px] border border-emerald-500/15 bg-emerald-500/[0.04] p-4">
+            <div className={`rounded-[22px] border ${theme.border} ${theme.accent.replace("/20", "/[0.04]")} p-4`}>
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.08] flex items-center justify-center shrink-0">
-                  <Trophy className="w-4 h-4 text-emerald-400" />
+                <div className={`w-9 h-9 rounded-xl border ${theme.border} ${theme.accent} flex items-center justify-center shrink-0`}>
+                  <Trophy className={`w-4 h-4 ${theme.accentText}`} />
                 </div>
                 <div>
-                  <p className="text-[14px] font-semibold text-emerald-300">
+                  <p className={`text-[14px] font-semibold ${theme.accentText}`}>
                     Ты участвуешь
                   </p>
                   <p className="text-[12px] text-white/35 mt-0.5">
                     {userRank ? `#${userRank} · ${cfg.format(userValue)} ${cfg.unit}` : "Пока без результата"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* PRESSURE: dropped from TOP 10 */}
+        {droppedFromTop10 && (
+          <section className="mb-5">
+            <div className="rounded-[22px] border border-red-900/30 bg-red-950/15 p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl border border-red-900/30 bg-red-950/20 flex items-center justify-center shrink-0">
+                  <TrendingDown className="w-4 h-4 text-red-400" />
+                </div>
+                <div>
+                  <p className="text-[14px] font-semibold text-red-300 leading-tight">
+                    Ты выпал из TOP 10
+                  </p>
+                  <p className="mt-1 text-[12px] text-white/35 leading-relaxed">
+                    #{userRank} место · До TOP 10 нужно {cfg.format(top10Threshold - userValue)} {cfg.unit}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ELIMINATION MOMENT */}
+        {eliminatedCount > 0 && (
+          <section className="mb-5">
+            <div className="rounded-[22px] border border-white/[0.06] bg-white/[0.015] p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl border border-white/[0.08] bg-white/[0.03] flex items-center justify-center shrink-0">
+                  <Skull className="w-4 h-4 text-white/40" />
+                </div>
+                <div>
+                  <p className="text-[13px] font-semibold text-white/70">
+                    {eliminatedCount} {eliminatedCount === 1 ? "игрок выбыл" : "игроков выбыли"}
+                  </p>
+                  <p className="text-[11px] text-white/30 mt-0.5">
+                    {aliveCount} осталось в игре · {Math.round((aliveCount / participantCount) * 100)}% выживаемость
                   </p>
                 </div>
               </div>
@@ -243,7 +321,7 @@ export default async function EventPage({
                     href={`/user/${row.name}`}
                     className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors"
                   >
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                    <div className={`w-1.5 h-1.5 rounded-full ${theme.dot} shrink-0`} />
                     <div className="flex-1 min-w-0">
                       <p className="text-[13px] text-white/75 leading-tight">
                         {shortName} записал {cfg.format(parseFloat(row.value))} {cfg.unit}
@@ -261,11 +339,11 @@ export default async function EventPage({
         {joined && isLive && (
           <Link
             href={`/record?d=${event.discipline}`}
-            className="w-full h-14 rounded-[20px] bg-emerald-500/20 text-emerald-300 text-[14px] font-semibold flex items-center justify-center gap-2 active:scale-[0.985] transition-all border border-emerald-500/30"
+            className={`w-full h-14 rounded-[20px] ${theme.accent} ${theme.accentText} text-[14px] font-semibold flex items-center justify-center gap-2 active:scale-[0.985] transition-all border ${theme.border}`}
           >
             <Zap className="w-4 h-4" />
             ЗАПИСАТЬ РЕЗУЛЬТАТ
-            <span className="text-emerald-400/50">· {cfg.emoji}</span>
+            <span className={`${theme.accentText}/50`}>· {cfg.emoji}</span>
           </Link>
         )}
       </div>

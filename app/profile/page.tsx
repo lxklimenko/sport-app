@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Shield, LogOut, ChevronRight, TrendingDown, TrendingUp } from "lucide-react";
+import { Shield, LogOut, ChevronRight, TrendingDown, TrendingUp, Trophy, Skull, Zap } from "lucide-react";
 import { getSession } from "@/lib/session";
 import { getPool, migrateDatabase } from "@/lib/db";
 import { DisciplineCard } from "./discipline-card";
@@ -28,10 +28,9 @@ function buildHeatmapColumns(activeDays: Set<string>) {
   today.setHours(0, 0, 0, 0);
   const todayStr = toDateStr(today);
 
-  // Start exactly 16 weeks ago (112 days), aligned to Monday
   const origin = new Date(today);
   origin.setDate(today.getDate() - 16 * 7 + 1);
-  const dow = origin.getDay(); // 0=Sun
+  const dow = origin.getDay();
   const shift = dow === 0 ? -6 : 1 - dow;
   origin.setDate(origin.getDate() + shift);
 
@@ -105,7 +104,6 @@ function Heatmap({ columns }: { columns: HeatmapCol[] }) {
       </div>
 
       <div className="rounded-[22px] border border-white/[0.06] bg-white/[0.025] p-4 overflow-x-auto">
-        {/* month labels row */}
         <div className="flex gap-[3px] mb-1.5">
           {columns.map((col, i) => (
             <div key={i} className="w-[10px] shrink-0">
@@ -118,7 +116,6 @@ function Heatmap({ columns }: { columns: HeatmapCol[] }) {
           ))}
         </div>
 
-        {/* grid */}
         <div className="flex gap-[3px]">
           {columns.map((col, wi) => (
             <div key={wi} className="flex flex-col gap-[3px] shrink-0">
@@ -161,7 +158,7 @@ export default async function ProfilePage() {
   await migrateEvents();
   const db = getPool();
 
-  const [disciplinesRes, activitiesRes, eventsRes] = await Promise.all([
+  const [disciplinesRes, activitiesRes, eventsRes, survivalRes, rivalsRes] = await Promise.all([
     db.query("SELECT discipline_id FROM user_disciplines WHERE user_id = $1 ORDER BY joined_at", [session.userId]),
     db.query(
       `SELECT recorded_at::date::text AS day
@@ -178,6 +175,38 @@ export default async function ProfilePage() {
        ORDER BY e.starts_at ASC`,
       [session.userId]
     ),
+    // Survival stats
+    db.query(
+      `SELECT
+         COALESCE(SUM(survived_days), 0)::int AS total_survived,
+         COALESCE(MAX(longest_streak), 0)::int AS best_streak,
+         COALESCE(SUM(CASE WHEN is_alive = true THEN 1 ELSE 0 END), 0)::int AS alive_disciplines
+       FROM user_survival
+       WHERE user_id = $1`,
+      [session.userId]
+    ),
+    // Rivals beaten (users below you in ranking)
+    db.query(
+      `SELECT COUNT(*)::int AS beaten
+       FROM (
+         SELECT ud.user_id,
+           COALESCE(SUM(a.value), 0) AS my_total
+         FROM user_disciplines ud
+         LEFT JOIN activities a ON a.user_id = ud.user_id AND a.discipline_id = ud.discipline_id AND a.recorded_at::date = CURRENT_DATE
+         WHERE ud.discipline_id IN (SELECT discipline_id FROM user_disciplines WHERE user_id = $1)
+         GROUP BY ud.user_id
+       ) me
+       JOIN (
+         SELECT ud.user_id,
+           COALESCE(SUM(a.value), 0) AS their_total
+         FROM user_disciplines ud
+         LEFT JOIN activities a ON a.user_id = ud.user_id AND a.discipline_id = ud.discipline_id AND a.recorded_at::date = CURRENT_DATE
+         WHERE ud.discipline_id IN (SELECT discipline_id FROM user_disciplines WHERE user_id = $1)
+         GROUP BY ud.user_id
+       ) them ON them.user_id != $1
+       WHERE me.user_id = $1 AND them.their_total < me.my_total`,
+      [session.userId]
+    ),
   ]);
 
   const joinedIds: string[] = disciplinesRes.rows.map((r) => r.discipline_id);
@@ -185,6 +214,9 @@ export default async function ProfilePage() {
   const inSeason = joinedIds.length > 0;
   const heatmapColumns = buildHeatmapColumns(activeDays);
   const myEvents = eventsRes.rows;
+
+  const survival = survivalRes.rows[0] ?? { total_survived: 0, best_streak: 0, alive_disciplines: 0 };
+  const rivalsBeaten = parseInt(rivalsRes.rows[0]?.beaten ?? "0", 10);
 
   const name = session.name ?? "Игрок";
   const initials = name.slice(0, 1).toUpperCase();
@@ -230,6 +262,38 @@ export default async function ProfilePage() {
             <p className="mt-1 text-[12px] text-white/30">@{handle}</p>
           </div>
         </section>
+
+        {/* LEGENDARY STATS */}
+        {inSeason && (
+          <section className="mb-6">
+            <div className="rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-4">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-white/30 mb-3">История игрока</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="text-center">
+                  <div className="w-8 h-8 rounded-xl border border-white/[0.06] bg-white/[0.03] flex items-center justify-center mx-auto mb-1.5">
+                    <Shield className="w-3.5 h-3.5 text-white/50" />
+                  </div>
+                  <p className="text-[18px] font-semibold text-white/80">{survival.total_survived}</p>
+                  <p className="text-[9px] text-white/25 uppercase tracking-[0.1em] mt-0.5">Дней выжил</p>
+                </div>
+                <div className="text-center">
+                  <div className="w-8 h-8 rounded-xl border border-white/[0.06] bg-white/[0.03] flex items-center justify-center mx-auto mb-1.5">
+                    <Zap className="w-3.5 h-3.5 text-white/50" />
+                  </div>
+                  <p className="text-[18px] font-semibold text-white/80">{survival.best_streak}</p>
+                  <p className="text-[9px] text-white/25 uppercase tracking-[0.1em] mt-0.5">Луч. серия</p>
+                </div>
+                <div className="text-center">
+                  <div className="w-8 h-8 rounded-xl border border-white/[0.06] bg-white/[0.03] flex items-center justify-center mx-auto mb-1.5">
+                    <Skull className="w-3.5 h-3.5 text-white/50" />
+                  </div>
+                  <p className="text-[18px] font-semibold text-white/80">{rivalsBeaten}</p>
+                  <p className="text-[9px] text-white/25 uppercase tracking-[0.1em] mt-0.5">Побеждено</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* HERO */}
         <section className="mb-7">
