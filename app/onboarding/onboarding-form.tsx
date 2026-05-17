@@ -42,7 +42,17 @@ const DISCIPLINES = [
   },
 ] as const;
 
-export function OnboardingForm() {
+export function OnboardingForm({
+  totalPlayers,
+  eliminated24h,
+  activeNow,
+  activeEvents,
+}: {
+  totalPlayers: number;
+  eliminated24h: number;
+  activeNow: number;
+  activeEvents: number;
+}) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [pending, startTransition] = useTransition();
 
@@ -72,22 +82,57 @@ export function OnboardingForm() {
         </span>
       </div>
 
-      {/* HERO */}
-      <section className="mb-12">
-        <h1 className="text-[52px] leading-[0.9] tracking-[-0.05em] font-semibold text-[#F5F5F5]">
-          Ты не обязан
+      {/* ── WORLD STATS — emotional hook ──────────────────────────── */}
+      <section className="mb-8">
+        <h1 className="text-[52px] leading-[0.9] tracking-[-0.05em] font-semibold text-[#F5F5F5] mb-6">
+          Мир уже
           <br />
-          участвовать
-          <br />
-          во всём
+          внутри
         </h1>
-        <p className="mt-6 text-[15px] leading-[1.7] text-white/40">
-          Но каждая дисциплина —<br />
-          это отдельная война.
+
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="rounded-[18px] border border-white/[0.08] bg-white/[0.025] p-3.5">
+            <p className="text-[28px] font-bold tracking-tight text-white/90">
+              {totalPlayers.toLocaleString("ru")}
+            </p>
+            <p className="text-[10px] text-white/30 uppercase tracking-[0.12em] mt-1">
+              Игроков в сезоне
+            </p>
+          </div>
+          <div className="rounded-[18px] border border-red-900/20 bg-red-950/10 p-3.5">
+            <p className="text-[28px] font-bold tracking-tight text-red-400">
+              {eliminated24h}
+            </p>
+            <p className="text-[10px] text-red-400/50 uppercase tracking-[0.12em] mt-1">
+              Вылетели за 24ч
+            </p>
+          </div>
+          <div className="rounded-[18px] border border-emerald-900/20 bg-emerald-950/10 p-3.5">
+            <p className="text-[28px] font-bold tracking-tight text-emerald-400">
+              {activeNow}
+            </p>
+            <p className="text-[10px] text-emerald-400/50 uppercase tracking-[0.12em] mt-1">
+              Прямо сейчас
+            </p>
+          </div>
+          <div className="rounded-[18px] border border-white/[0.08] bg-white/[0.025] p-3.5">
+            <p className="text-[28px] font-bold tracking-tight text-white/90">
+              {activeEvents}
+            </p>
+            <p className="text-[10px] text-white/30 uppercase tracking-[0.12em] mt-1">
+              Событий активно
+            </p>
+          </div>
+        </div>
+
+        <p className="text-[14px] text-white/40 leading-relaxed">
+          {eliminated24h > 0
+            ? `${eliminated24h} человек не справились вчера. Слабые исчезают первыми.`
+            : `${totalPlayers.toLocaleString("ru")} уже внутри. Каждый день без тебя — их преимущество.`}
         </p>
       </section>
 
-      {/* QUESTION */}
+      {/* ── CHOOSE ────────────────────────────────────────────────── */}
       <div className="mb-5">
         <p className="text-[11px] uppercase tracking-[0.2em] text-white/25 font-medium">
           Где ты хочешь выживать?

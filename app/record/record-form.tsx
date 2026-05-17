@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useEffect } from "react";
+import { useActionState, useRef, useEffect, useState } from "react";
 import { recordActivity, RecordState } from "@/app/actions/record";
 
 const CONFIG = {
@@ -50,13 +50,35 @@ export function RecordForm({
   const cfg = CONFIG[disciplineId as DisciplineId] ?? CONFIG.steps;
   const boundAction = recordActivity.bind(null, disciplineId, eventSlug ?? null);
   const [state, formAction, pending] = useActionState(boundAction, initialState);
+  const [retryCount, setRetryCount] = useState(0);
+  const [isOffline, setIsOffline] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   // Auto-focus the input on mount
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  // Detect offline
+  useEffect(() => {
+    function handleOnline() { setIsOffline(false); }
+    function handleOffline() { setIsOffline(true); }
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  // Retry on network error
+  useEffect(() => {
+    if (state?.error?.includes("NetworkError") || state?.error?.includes("Failed to fetch") || state?.error?.includes("network")) {
+      setRetryCount((c) => c + 1);
+    }
+  }, [state?.error]);
 
   function addQuick(amount: number) {
     if (!inputRef.current) return;
@@ -66,8 +88,14 @@ export function RecordForm({
     inputRef.current.focus();
   }
 
+  function handleRetry() {
+    if (formRef.current) {
+      formRef.current.requestSubmit();
+    }
+  }
+
   return (
-    <form action={formAction} className="flex flex-col flex-1">
+    <form ref={formRef} action={formAction} className="flex flex-col flex-1">
 
       {/* EVENT CONTEXT */}
       {eventTitle && (
@@ -128,11 +156,33 @@ export function RecordForm({
         ))}
       </div>
 
+      {/* OFFLINE BANNER */}
+      {isOffline && (
+        <div className="mb-4 rounded-xl border border-orange-900/30 bg-orange-950/15 p-3">
+          <p className="text-[12px] text-orange-300 font-semibold text-center">
+            📡 Связь потеряна. Попробуем отправить ещё раз.
+          </p>
+        </div>
+      )}
+
       {/* ERROR */}
-      {state.error && (
-        <p className="mb-4 text-center text-[13px] text-[#FFB4AB] font-medium">
-          {state.error}
-        </p>
+      {state?.error && !isOffline && (
+        <div className="mb-4">
+          <p className="text-center text-[13px] text-[#FFB4AB] font-medium">
+            {state.error.includes("NetworkError") || state.error.includes("Failed to fetch") || state.error.includes("network")
+              ? "Связь потеряна. Попробуем отправить ещё раз."
+              : state.error}
+          </p>
+          {(state.error.includes("NetworkError") || state.error.includes("Failed to fetch") || state.error.includes("network")) && (
+            <button
+              type="button"
+              onClick={handleRetry}
+              className="mt-2 w-full h-10 rounded-xl border border-white/[0.08] bg-white/[0.04] text-[12px] text-white/60 font-semibold active:scale-[0.98] transition-all"
+            >
+              Повторить отправку
+            </button>
+          )}
+        </div>
       )}
 
       {/* SUBMIT */}
@@ -141,7 +191,14 @@ export function RecordForm({
         disabled={pending}
         className="w-full h-14 rounded-[20px] bg-[#F3F3F3] text-black text-[14px] font-semibold flex items-center justify-center active:scale-[0.985] transition-all disabled:opacity-60 shadow-[0_10px_40px_rgba(255,255,255,0.08)]"
       >
-        {pending ? "Фиксируем..." : "ЗАФИКСИРОВАТЬ"}
+        {pending ? (
+          <span className="flex items-center gap-2">
+            <span className="w-4 h-4 rounded-full border-2 border-black/30 border-t-black/80 animate-spin" />
+            Фиксируем...
+          </span>
+        ) : (
+          "ЗАФИКСИРОВАТЬ"
+        )}
       </button>
 
     </form>

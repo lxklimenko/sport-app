@@ -46,28 +46,7 @@ const DISCIPLINE_CARDS = [
 
 // ─── WorldStatus component ───────────────────────────────────────────────────
 
-function WorldStatus() {
-  const [world, setWorld] = useState<{
-    eliminated: number;
-    top3Entries: string[];
-    newEvents: { title: string; emoji: string | null }[];
-    activeNow: number;
-    overtakes: string[];
-  } | null>(null);
-
-  const fetchWorld = useCallback(async () => {
-    try {
-      const res = await fetch("/api/world");
-      if (res.ok) setWorld(await res.json());
-    } catch {}
-  }, []);
-
-  useEffect(() => {
-    fetchWorld();
-    const interval = setInterval(fetchWorld, 15000);
-    return () => clearInterval(interval);
-  }, [fetchWorld]);
-
+function WorldStatus({ world }: { world: WorldData | null }) {
   if (!world) return null;
 
   const hasNews = world.eliminated > 0 || world.top3Entries.length > 0 || world.newEvents.length > 0 || world.overtakes.length > 0;
@@ -132,18 +111,35 @@ function WorldStatus() {
   );
 }
 
+// ─── types ───────────────────────────────────────────────────────────────────
+
+interface WorldData {
+  eliminated: number;
+  top3Entries: string[];
+  newEvents: { title: string; emoji: string | null }[];
+  activeNow: number;
+  overtakes: string[];
+  totalUsers: number;
+  totalDisciplines: number;
+  seasonDay: number;
+  notMetTarget: number;
+  eventsActive: number;
+}
+
 // ─── page ────────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [events, setEvents] = useState<SeasonEvent[]>([]);
+  const [world, setWorld] = useState<WorldData | null>(null);
   const [selectedDiscipline, setSelectedDiscipline] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
-      const [feedRes, eventsRes] = await Promise.all([
+      const [feedRes, eventsRes, worldRes] = await Promise.all([
         fetch("/api/feed"),
         fetch("/api/events/live"),
+        fetch("/api/world"),
       ]);
       if (feedRes.ok) {
         const data: FeedItem[] = await feedRes.json();
@@ -152,6 +148,10 @@ export default function HomePage() {
       if (eventsRes.ok) {
         const data: SeasonEvent[] = await eventsRes.json();
         setEvents(data);
+      }
+      if (worldRes.ok) {
+        const data: WorldData = await worldRes.json();
+        setWorld(data);
       }
     } catch {
       // silent
@@ -163,6 +163,12 @@ export default function HomePage() {
     const interval = setInterval(fetchData, 15000);
     return () => clearInterval(interval);
   }, [fetchData]);
+
+  const totalUsers = world?.totalUsers ?? 0;
+  const activeNow = world?.activeNow ?? 0;
+  const seasonDay = world?.seasonDay ?? 1;
+  const totalDisciplines = world?.totalDisciplines ?? 0;
+  const notMetTarget = world?.notMetTarget ?? 0;
 
   return (
     <main className="min-h-screen bg-[#0B0B0C] text-white overflow-hidden relative">
@@ -205,14 +211,16 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* LIVE STATUS */}
+          {/* LIVE STATUS — real data */}
           <div className="mt-8">
             <div className="flex items-center gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse shadow-[0_0_12px_rgba(74,222,128,0.7)]" />
-              <p className="text-sm text-white/60">4 218 сейчас в сезоне</p>
+              <p className="text-sm text-white/60">
+                {activeNow > 0 ? `${activeNow} сейчас в сезоне` : "Сезон активен"}
+              </p>
             </div>
             <p className="mt-1.5 text-xs text-white/50 ml-[10px]">
-              День 12 продолжается
+              День {seasonDay} продолжается
             </p>
           </div>
 
@@ -225,28 +233,36 @@ export default function HomePage() {
               ВОЙТИ В СЕЗОН
             </Link>
             <p className="mt-3 text-[11px] text-white/25 text-center leading-relaxed">
-              Ты можешь не успеть
+              {notMetTarget > 0
+                ? `${notMetTarget} человек ещё не выполнили норму сегодня`
+                : "Ты можешь не успеть"}
             </p>
           </div>
 
-          {/* STATS */}
+          {/* STATS — real data */}
           <div className="mt-8 flex items-center gap-6">
             <div>
-              <p className="text-lg font-bold tracking-tight text-white">12 482</p>
+              <p className="text-lg font-bold tracking-tight text-white">
+                {totalUsers > 0 ? totalUsers.toLocaleString("ru") : "—"}
+              </p>
               <p className="mt-0.5 text-[11px] uppercase tracking-[0.14em] text-white/30">
                 в сезоне
               </p>
             </div>
             <div className="w-px h-8 bg-white/[0.06]" />
             <div>
-              <p className="text-lg font-bold tracking-tight text-white">18</p>
+              <p className="text-lg font-bold tracking-tight text-white">
+                {30 - seasonDay > 0 ? 30 - seasonDay : "—"}
+              </p>
               <p className="mt-0.5 text-[11px] uppercase tracking-[0.14em] text-white/30">
                 дней осталось
               </p>
             </div>
             <div className="w-px h-8 bg-white/[0.06]" />
             <div>
-              <p className="text-lg font-bold tracking-tight text-white">4</p>
+              <p className="text-lg font-bold tracking-tight text-white">
+                {totalDisciplines > 0 ? totalDisciplines : "—"}
+              </p>
               <p className="mt-0.5 text-[11px] uppercase tracking-[0.14em] text-white/30">
                 дисциплины
               </p>
@@ -256,7 +272,7 @@ export default function HomePage() {
 
         {/* WORLD STATUS — "Пока тебя не было" */}
         <div className="mt-8">
-          <WorldStatus />
+          <WorldStatus world={world} />
         </div>
 
         {/* DISCIPLINES */}
