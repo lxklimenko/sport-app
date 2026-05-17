@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Zap } from "lucide-react";
+import { EventEntryOverlay } from "@/components/event-entry-overlay";
 
 interface Theme {
   bg: string;
@@ -14,10 +15,16 @@ interface Theme {
   live: string;
 }
 
-export function JoinButton({ eventId, title, theme }: { eventId: string; title: string; theme?: Theme }) {
+export function JoinButton({ eventId, title, emoji, participantCount, theme }: {
+  eventId: string;
+  title: string;
+  emoji?: string | null;
+  participantCount?: number;
+  theme?: Theme;
+}) {
   const router = useRouter();
   const [joining, setJoining] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
+  const [showEntry, setShowEntry] = useState(false);
 
   const handleJoin = async () => {
     if (joining) return;
@@ -29,9 +36,7 @@ export function JoinButton({ eventId, title, theme }: { eventId: string; title: 
         body: JSON.stringify({ eventId }),
       });
       if (res.ok) {
-        setToast(`Ты вошёл в ${title}`);
-        setTimeout(() => setToast(null), 3000);
-        router.refresh();
+        setShowEntry(true);
       }
     } catch (e) {
       console.error(e);
@@ -46,10 +51,17 @@ export function JoinButton({ eventId, title, theme }: { eventId: string; title: 
 
   return (
     <>
-      {toast && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-white/[0.08] border border-white/[0.12] backdrop-blur-xl text-[13px] text-white font-medium animate-in fade-in slide-in-from-top-2 duration-300">
-          {toast}
-        </div>
+      {showEntry && theme && (
+        <EventEntryOverlay
+          title={title}
+          emoji={emoji ?? null}
+          participantCount={participantCount ?? 0}
+          theme={theme}
+          onDone={() => {
+            setShowEntry(false);
+            router.refresh();
+          }}
+        />
       )}
 
       <button

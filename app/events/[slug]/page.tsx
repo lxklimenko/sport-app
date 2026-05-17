@@ -5,6 +5,7 @@ import { getSession } from "@/lib/session";
 import { getPool, migrateDatabase } from "@/lib/db";
 import { migrateEvents, getEventBySlug, getEventLeaderboard } from "@/lib/events";
 import { getDisciplineLabel } from "@/lib/disciplines";
+import { EventMoments } from "@/components/event-moments";
 
 const DISCIPLINE_CONFIG: Record<string, { emoji: string; unit: string; format: (v: number) => string }> = {
   steps:   { emoji: "👟", unit: "шагов", format: (v) => v.toLocaleString("ru") },
@@ -156,6 +157,23 @@ export default async function EventPage({
         )}
       </div>
 
+      {/* ── VICTORY / ENDING MOMENTS ──────────────────────────── */}
+      <EventMoments
+        isLive={isLive}
+        isUpcoming={isUpcoming}
+        joined={joined}
+        userRank={userRank}
+        userValue={userValue}
+        dailyTarget={dailyTarget}
+        top3={leaderboard.slice(0, 3).map((e) => ({ name: e.name, value: e.value, rank: e.rank }))}
+        participantCount={participantCount}
+        aliveCount={aliveCount}
+        eliminatedCount={eliminatedCount}
+        title={event.title}
+        emoji={event.emoji}
+        theme={theme}
+      />
+
       <div className="relative z-10 max-w-md mx-auto w-full px-5 pt-6 pb-32">
 
         {/* ── TOP BAR ─────────────────────────────────────────────── */}
@@ -255,7 +273,7 @@ export default async function EventPage({
 
         {/* ── JOIN CTA ────────────────────────────────────────────── */}
         {!joined && isLive && (
-          <JoinButton eventId={event.id} title={event.title} theme={theme} />
+          <JoinButton eventId={event.id} title={event.title} emoji={event.emoji} participantCount={participantCount} theme={theme} />
         )}
 
         {/* ── 2. DAILY TARGET ─────────────────────────────────────── */}
