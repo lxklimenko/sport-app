@@ -81,6 +81,22 @@ export default async function EventPage({
   const totalHours = Math.round((end.getTime() - start.getTime()) / 3600000);
   const hour = now.getHours();
 
+  // ── Event phase ────────────────────────────────────────────────
+  const isFinalDay = isLive && endsIn <= 24;
+  const isFinalHours = isLive && endsIn <= 3;
+  const isMidPhase = isLive && !isFinalDay && endsIn > 48;
+  const isStartPhase = isLive && endsIn > totalHours * 0.7;
+
+  // Presence: count users currently in event (active in last 30 min)
+  const { rows: presenceRows } = await db.query<{ count: string }>(
+    `SELECT COUNT(DISTINCT a.user_id)::text AS count
+     FROM activities a
+     JOIN event_participants ep ON ep.user_id = a.user_id AND ep.event_id = $1
+     WHERE a.discipline_id = $2 AND a.recorded_at >= NOW() - INTERVAL '30 minutes'`,
+    [event.id, event.discipline]
+  );
+  const presenceCount = parseInt(presenceRows[0]?.count ?? "0", 10);
+
   const theme = getTheme(event.badge_color);
 
   // Check if user joined
@@ -262,9 +278,63 @@ export default async function EventPage({
                   </div>
                 )}
               </div>
+
+              {/* ── Phase mood ──────────────────────────────────── */}
+              {isFinalHours && (
+                <div className="mt-4 rounded-xl border border-red-500/30 bg-red-950/20 p-3 animate-pulse">
+                  <p className="text-[13px] font-bold text-red-300">
+                    ⚠️ ФИНАЛЬНЫЙ ШТУРМ
+                  </p>
+                  <p className="text-[11px] text-red-300/60 mt-0.5">
+                    Осталось {endsIn} ч. Каждая минута решает.
+                  </p>
+                </div>
+              )}
+              {isFinalDay && !isFinalHours && (
+                <div className="mt-4 rounded-xl border border-orange-500/30 bg-orange-950/15 p-3">
+                  <p className="text-[13px] font-bold text-orange-300">
+                    🔥 Последний день
+                  </p>
+                  <p className="text-[11px] text-orange-300/60 mt-0.5">
+                    {endsIn} ч до конца. Всё решится сейчас.
+                  </p>
+                </div>
+              )}
+              {isStartPhase && (
+                <div className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-950/15 p-3">
+                  <p className="text-[13px] font-bold text-emerald-300">
+                    🚀 Старт дан
+                  </p>
+                  <p className="text-[11px] text-emerald-300/60 mt-0.5">
+                    {participantCount} игроков в игре. Кто выживет?
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </section>
+
+        {/* ── PRESENCE ────────────────────────────────────────────── */}
+        {presenceCount > 0 && (
+          <div className="px-5 mb-5">
+            <div className="flex items-center justify-center gap-2">
+              <div className="flex -space-x-1.5">
+                {Array.from({ length: Math.min(presenceCount, 5) }).map((_, i) => (
+                  <div
+                    key={i}
+                    className={`w-5 h-5 rounded-full border-2 border-[${theme.bg.replace("bg-", "")}] ${theme.accent} flex items-center justify-center text-[8px] font-bold ${theme.accentText}`}
+                  >
+                    {String.fromCharCode(65 + (i % 26))}
+                  </div>
+                ))}
+              </div>
+              <p className="text-[11px] text-white/40">
+                <span className={`font-semibold ${theme.accentText}`}>{presenceCount}</span> человек сейчас в EVENT ROOM
+              </p>
+            </div>
+          </div>
+        )}
+
 
         {/* ── JOIN CTA ────────────────────────────────────────────── */}
         {!joined && isLive && (
