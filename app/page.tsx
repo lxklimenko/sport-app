@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { LiveFeed } from "./live-feed";
 import { EventCard } from "@/components/event-card";
 import { DisciplineModal } from "@/components/discipline-modal";
+import { Skull, Trophy, Zap, Clock } from "lucide-react";
 import type { FeedItem } from "@/lib/feed";
 import type { SeasonEvent } from "@/lib/events";
 
@@ -43,6 +44,94 @@ const DISCIPLINE_CARDS = [
   },
 ];
 
+// ─── WorldStatus component ───────────────────────────────────────────────────
+
+function WorldStatus() {
+  const [world, setWorld] = useState<{
+    eliminated: number;
+    top3Entries: string[];
+    newEvents: { title: string; emoji: string | null }[];
+    activeNow: number;
+    overtakes: string[];
+  } | null>(null);
+
+  const fetchWorld = useCallback(async () => {
+    try {
+      const res = await fetch("/api/world");
+      if (res.ok) setWorld(await res.json());
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    fetchWorld();
+    const interval = setInterval(fetchWorld, 15000);
+    return () => clearInterval(interval);
+  }, [fetchWorld]);
+
+  if (!world) return null;
+
+  const hasNews = world.eliminated > 0 || world.top3Entries.length > 0 || world.newEvents.length > 0 || world.overtakes.length > 0;
+  if (!hasNews) return null;
+
+  return (
+    <section className="mb-5">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
+        <p className="text-[11px] uppercase tracking-[0.18em] text-orange-300/70">
+          Пока тебя не было
+        </p>
+      </div>
+
+      <div className="rounded-[22px] border border-orange-900/20 bg-orange-950/10 overflow-hidden">
+        {world.eliminated > 0 && (
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-orange-900/10">
+            <div className="w-8 h-8 rounded-xl border border-red-900/30 bg-red-950/20 flex items-center justify-center shrink-0">
+              <Skull className="w-4 h-4 text-red-400" />
+            </div>
+            <p className="text-[13px] text-white/70">
+              <span className="font-semibold text-red-300">{world.eliminated}</span>{" "}
+              {world.eliminated === 1 ? "игрок вылетел" : "игроков вылетели"}
+            </p>
+          </div>
+        )}
+
+        {world.top3Entries.length > 0 && (
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-orange-900/10">
+            <div className="w-8 h-8 rounded-xl border border-emerald-900/30 bg-emerald-950/20 flex items-center justify-center shrink-0">
+              <Trophy className="w-4 h-4 text-emerald-400" />
+            </div>
+            <p className="text-[13px] text-white/70">
+              {world.top3Entries.join(", ")} {world.top3Entries.length === 1 ? "вошёл" : "вошли"} в TOP 3
+            </p>
+          </div>
+        )}
+
+        {world.newEvents.length > 0 && (
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-orange-900/10">
+            <div className="w-8 h-8 rounded-xl border border-blue-900/30 bg-blue-950/20 flex items-center justify-center shrink-0">
+              <Zap className="w-4 h-4 text-blue-400" />
+            </div>
+            <p className="text-[13px] text-white/70">
+              {world.newEvents.map((e) => `${e.emoji ?? "📅"} ${e.title}`).join(", ")} — присоединяйся
+            </p>
+          </div>
+        )}
+
+        {world.overtakes.length > 0 && (
+          <div className="flex items-center gap-3 px-4 py-3">
+            <div className="w-8 h-8 rounded-xl border border-orange-900/30 bg-orange-950/20 flex items-center justify-center shrink-0">
+              <Clock className="w-4 h-4 text-orange-400" />
+            </div>
+            <p className="text-[13px] text-white/70">
+              {world.overtakes[0]}
+            </p>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 // ─── page ────────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
@@ -50,27 +139,30 @@ export default function HomePage() {
   const [events, setEvents] = useState<SeasonEvent[]>([]);
   const [selectedDiscipline, setSelectedDiscipline] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [feedRes, eventsRes] = await Promise.all([
-          fetch("/api/feed"),
-          fetch("/api/events/live"),
-        ]);
-        if (feedRes.ok) {
-          const data: FeedItem[] = await feedRes.json();
-          setFeed(data);
-        }
-        if (eventsRes.ok) {
-          const data: SeasonEvent[] = await eventsRes.json();
-          setEvents(data);
-        }
-      } catch {
-        // silent
+  const fetchData = useCallback(async () => {
+    try {
+      const [feedRes, eventsRes] = await Promise.all([
+        fetch("/api/feed"),
+        fetch("/api/events/live"),
+      ]);
+      if (feedRes.ok) {
+        const data: FeedItem[] = await feedRes.json();
+        setFeed(data);
       }
+      if (eventsRes.ok) {
+        const data: SeasonEvent[] = await eventsRes.json();
+        setEvents(data);
+      }
+    } catch {
+      // silent
     }
-    load();
   }, []);
+
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, 15000);
+    return () => clearInterval(interval);
+  }, [fetchData]);
 
   return (
     <main className="min-h-screen bg-[#0B0B0C] text-white overflow-hidden relative">
@@ -161,6 +253,11 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
+        {/* WORLD STATUS — "Пока тебя не было" */}
+        <div className="mt-8">
+          <WorldStatus />
+        </div>
 
         {/* DISCIPLINES */}
         <section className="mt-8">
