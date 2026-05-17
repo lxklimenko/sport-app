@@ -19,6 +19,7 @@ export type RecordState = { error?: string };
 
 export async function recordActivity(
   disciplineId: string,
+  eventSlug: string | null,
   _prev: RecordState,
   formData: FormData
 ): Promise<RecordState> {
@@ -101,6 +102,11 @@ export async function recordActivity(
     generateOvertakeNotifications(session.userId, disciplineId, disciplineLabel),
     generateMilestoneNotification(session.userId, disciplineId, disciplineLabel),
   ]).catch(() => {});
+
+  // Redirect back to event if recording from event context
+  if (eventSlug) {
+    redirect(`/events/${eventSlug}`);
+  }
 
   redirect(`/season/current?d=${disciplineId}`);
 }

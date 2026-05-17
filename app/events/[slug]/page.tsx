@@ -232,23 +232,6 @@ export default async function EventPage({
               </div>
             </div>
 
-            {/* Status badge */}
-            {joined && (
-              <div className="mt-4 flex items-center gap-2">
-                <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border ${theme.border} ${theme.accent}`}>
-                  <Trophy className={`w-3.5 h-3.5 ${theme.accentText}`} />
-                  <span className={`text-[12px] font-semibold ${theme.accentText}`}>
-                    Ты участвуешь
-                  </span>
-                </div>
-                {userRank && (
-                  <span className="text-[12px] text-white/40">
-                    #{userRank} из {participantCount}
-                  </span>
-                )}
-              </div>
-            )}
-
             {/* Stats row */}
             <div className="mt-4 flex items-center gap-4 text-[12px] text-white/40">
               <div className="flex items-center gap-1.5">
@@ -276,30 +259,75 @@ export default async function EventPage({
           <JoinButton eventId={event.id} title={event.title} emoji={event.emoji} participantCount={participantCount} theme={theme} />
         )}
 
-        {/* ── 2. DAILY TARGET ─────────────────────────────────────── */}
+        {/* ── TOP CTA — visible immediately ──────────────────────── */}
+        {joined && isLive && (
+          <section className="mb-5">
+            <Link
+              href={`/record?d=${event.discipline}&event=${event.slug}`}
+              className={`w-full h-16 rounded-[22px] ${theme.accent} ${theme.accentText} text-[15px] font-bold flex items-center justify-center gap-2.5 active:scale-[0.985] transition-all border ${theme.border} shadow-[0_10px_40px_rgba(0,0,0,0.3)]`}
+            >
+              <Zap className="w-5 h-5" />
+              ЗАПИСАТЬ {cfg.emoji} {getDisciplineLabel(event.discipline).toUpperCase()}
+            </Link>
+          </section>
+        )}
+
+        {/* ── YOUR STATUS ────────────────────────────────────────── */}
         {joined && (
           <section className="mb-5">
-            <div className={`rounded-[22px] border ${isDead ? "border-red-900/30 bg-red-950/15" : isDanger ? "border-red-900/20 bg-red-950/10" : isWarning ? "border-orange-900/20 bg-orange-950/10" : "border-emerald-900/20 bg-emerald-950/10"} p-5`}>
-              {/* Big number */}
-              <div className="text-center mb-4">
-                <p className={`text-[64px] font-semibold tracking-[-0.06em] leading-none ${isDead ? "text-white/15" : isDanger ? "text-red-400/70" : isSafe ? "text-emerald-400" : "text-white/80"}`}>
-                  {cfg.format(userValue)}
-                </p>
-                <p className={`text-[12px] uppercase tracking-[0.2em] mt-1 ${isDead ? "text-white/15" : "text-white/40"}`}>
-                  из {cfg.format(dailyTarget)} {cfg.unit}
-                </p>
+            <div className={`rounded-[22px] border ${theme.border} ${theme.accent.replace("/20", "/[0.03]")} p-4`}>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-white/30 mb-3">ТВОЙ СТАТУС</p>
+
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Trophy className={`w-4 h-4 ${theme.accentText}`} />
+                  <span className={`text-[22px] font-bold tracking-tight ${theme.accentText}`}>
+                    #{userRank ?? "—"}
+                  </span>
+                  <span className="text-[12px] text-white/30">из {participantCount}</span>
+                </div>
+                <div className="text-right">
+                  <p className={`text-[22px] font-bold tracking-tight ${isDead ? "text-white/15" : isSafe ? "text-emerald-400" : "text-white/80"}`}>
+                    {cfg.format(userValue)}
+                  </p>
+                  <p className="text-[10px] text-white/25 uppercase tracking-[0.1em]">сегодня</p>
+                </div>
               </div>
 
               {/* Progress bar */}
-              <div className="h-2 rounded-full bg-white/[0.06] overflow-hidden mb-3">
+              <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden mb-3">
                 <div
                   className={`h-full rounded-full transition-all duration-700 ${isSafe ? "bg-emerald-400" : isDanger ? "bg-red-400" : "bg-white/40"}`}
                   style={{ width: `${Math.max(pct, pct > 0 ? 2 : 0)}%` }}
                 />
               </div>
 
+              {/* Distance metrics */}
+              <div className="grid grid-cols-2 gap-2">
+                {userRank && userRank > 10 && top10Threshold > 0 && (
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-2.5">
+                    <p className="text-[10px] text-white/25 uppercase tracking-[0.1em]">До TOP 10</p>
+                    <p className="text-[14px] font-semibold text-white/70 mt-0.5">
+                      {cfg.format(top10Threshold - userValue)} {cfg.unit}
+                    </p>
+                  </div>
+                )}
+                {userRank && userRank <= 10 && (
+                  <div className="rounded-xl border border-emerald-900/20 bg-emerald-950/10 p-2.5">
+                    <p className="text-[10px] text-emerald-400/50 uppercase tracking-[0.1em]">Ты в TOP 10</p>
+                    <p className="text-[14px] font-semibold text-emerald-400/70 mt-0.5">#{userRank}</p>
+                  </div>
+                )}
+                <div className={`rounded-xl border ${isSafe ? "border-emerald-900/20 bg-emerald-950/10" : isDanger ? "border-red-900/20 bg-red-950/10" : "border-white/[0.06] bg-white/[0.03]"} p-2.5`}>
+                  <p className="text-[10px] text-white/25 uppercase tracking-[0.1em]">До цели</p>
+                  <p className={`text-[14px] font-semibold mt-0.5 ${isSafe ? "text-emerald-400/70" : isDanger ? "text-red-300" : "text-white/70"}`}>
+                    {isSafe ? "Выполнена" : `${cfg.format(dailyTarget - userValue)} ${cfg.unit}`}
+                  </p>
+                </div>
+              </div>
+
               {/* Pressure text */}
-              <div className="flex items-start gap-2">
+              <div className="mt-3 flex items-start gap-2">
                 {isDead ? (
                   <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
                 ) : isSafe ? (
@@ -307,7 +335,7 @@ export default async function EventPage({
                 ) : (
                   <Flame className={`w-4 h-4 ${isDanger ? "text-red-400" : "text-orange-400"} shrink-0 mt-0.5`} />
                 )}
-                <p className={`text-[13px] leading-relaxed ${isDead ? "text-red-400" : isSafe ? "text-emerald-400/70" : isDanger ? "text-red-300" : "text-orange-300"}`}>
+                <p className={`text-[12px] leading-relaxed ${isDead ? "text-red-400" : isSafe ? "text-emerald-400/70" : isDanger ? "text-red-300" : "text-orange-300"}`}>
                   {isDead
                     ? "Ты ещё ничего не записал. Каждый час — места в рейтинге."
                     : isSafe
@@ -514,11 +542,11 @@ export default async function EventPage({
 
       </div>
 
-      {/* ── 3. CTA — always visible sticky bottom ────────────────── */}
+      {/* ── STICKY BOTTOM CTA ────────────────────────────────────── */}
       {joined && isLive && (
         <div className="fixed bottom-0 left-0 right-0 px-5 pb-8 pt-4 bg-gradient-to-t from-[#0B0B0C] via-[#0B0B0C]/95 to-transparent z-20">
           <Link
-            href={`/record?d=${event.discipline}`}
+            href={`/record?d=${event.discipline}&event=${event.slug}`}
             className={`w-full max-w-md mx-auto h-14 rounded-[20px] ${theme.accent} ${theme.accentText} text-[14px] font-semibold flex items-center justify-center gap-2 active:scale-[0.985] transition-all border ${theme.border} shadow-[0_10px_40px_rgba(0,0,0,0.3)]`}
           >
             <Zap className="w-4 h-4" />

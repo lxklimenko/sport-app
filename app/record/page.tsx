@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { getSession } from "@/lib/session";
 import { getPool, migrateDatabase } from "@/lib/db";
+import { getEventBySlug } from "@/lib/events";
 import { RecordForm } from "./record-form";
 
 const DISCIPLINE_META: Record<string, { emoji: string; name: string }> = {
@@ -14,7 +15,7 @@ const DISCIPLINE_META: Record<string, { emoji: string; name: string }> = {
 export default async function RecordPage({
   searchParams,
 }: {
-  searchParams: Promise<{ d?: string }>;
+  searchParams: Promise<{ d?: string; event?: string }>;
 }) {
   const session = await getSession();
   if (!session.userId) redirect("/login");
@@ -24,6 +25,7 @@ export default async function RecordPage({
 
   const params = await searchParams;
   const disciplineId = params.d ?? "steps";
+  const eventSlug = params.event ?? null;
 
   if (!Object.keys(DISCIPLINE_META).includes(disciplineId)) redirect("/season/current");
 
@@ -43,7 +45,21 @@ export default async function RecordPage({
   );
   const todayTotal = parseFloat(todayRes.rows[0].total);
 
+  // Event context
+  let eventTitle: string | null = null;
+  let eventEmoji: string | null = null;
+  if (eventSlug) {
+    const event = await getEventBySlug(eventSlug);
+    if (event) {
+      eventTitle = event.title;
+      eventEmoji = event.emoji;
+    }
+  }
+
   const meta = DISCIPLINE_META[disciplineId];
+
+  // Back link
+  const backHref = eventSlug ? `/events/${eventSlug}` : `/season/current?d=${disciplineId}`;
 
   return (
     <main className="min-h-screen bg-[#0B0B0C] text-white flex flex-col">
@@ -56,7 +72,7 @@ export default async function RecordPage({
         {/* TOP BAR */}
         <header className="flex items-center gap-3 mb-10">
           <Link
-            href={`/season/current?d=${disciplineId}`}
+            href={backHref}
             className="w-9 h-9 rounded-xl border border-white/[0.06] bg-white/[0.03] flex items-center justify-center text-white/40 hover:text-white/70 transition-colors shrink-0"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -80,7 +96,13 @@ export default async function RecordPage({
         </div>
 
         {/* FORM */}
-        <RecordForm disciplineId={disciplineId} todayTotal={todayTotal} />
+        <RecordForm
+          disciplineId={disciplineId}
+          todayTotal={todayTotal}
+          eventSlug={eventSlug}
+          eventTitle={eventTitle}
+          eventEmoji={eventEmoji}
+        />
 
       </div>
     </main>

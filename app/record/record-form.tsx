@@ -37,12 +37,18 @@ const initialState: RecordState = {};
 export function RecordForm({
   disciplineId,
   todayTotal,
+  eventSlug,
+  eventTitle,
+  eventEmoji,
 }: {
   disciplineId: string;
   todayTotal: number;
+  eventSlug?: string | null;
+  eventTitle?: string | null;
+  eventEmoji?: string | null;
 }) {
   const cfg = CONFIG[disciplineId as DisciplineId] ?? CONFIG.steps;
-  const boundAction = recordActivity.bind(null, disciplineId);
+  const boundAction = recordActivity.bind(null, disciplineId, eventSlug ?? null);
   const [state, formAction, pending] = useActionState(boundAction, initialState);
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -62,6 +68,16 @@ export function RecordForm({
 
   return (
     <form action={formAction} className="flex flex-col flex-1">
+
+      {/* EVENT CONTEXT */}
+      {eventTitle && (
+        <div className="mb-4 px-1">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04]">
+            <span className="text-[12px]">{eventEmoji ?? "📅"}</span>
+            <span className="text-[11px] text-white/60 font-medium">{eventTitle}</span>
+          </div>
+        </div>
+      )}
 
       {/* CURRENT PROGRESS */}
       {todayTotal > 0 && (
