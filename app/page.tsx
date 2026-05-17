@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { LiveFeed } from "./live-feed";
+import { EventCard } from "@/components/event-card";
 import { DisciplineModal } from "@/components/discipline-modal";
 import type { FeedItem } from "@/lib/feed";
 import type { SeasonEvent } from "@/lib/events";
@@ -208,32 +209,21 @@ export default function HomePage() {
               </h2>
             </div>
             <div className="rounded-[22px] border border-white/[0.06] bg-white/[0.018] overflow-hidden">
-              {events.map((e) => {
-                const isLive = new Date(e.starts_at) <= new Date() && new Date(e.ends_at) > new Date();
-                const endsIn = Math.round((new Date(e.ends_at).getTime() - Date.now()) / 3600000);
-                return (
-                  <Link
-                    key={e.id}
-                    href="/season/current"
-                    className="flex items-center gap-3 px-4 py-3.5 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors"
-                  >
-                    <span className="text-lg">{e.emoji ?? "📅"}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[14px] text-white/80 font-medium truncate">{e.title}</p>
-                      <p className="text-[11px] text-white/30 mt-0.5">
-                        {isLive ? (
-                          <span className="text-green-400">🔴 LIVE · осталось {endsIn} ч</span>
-                        ) : (
-                          <span>Скоро</span>
-                        )}
-                      </p>
-                    </div>
-                    <div className="shrink-0">
-                      <span className="text-[11px] text-white/40">→</span>
-                    </div>
-                  </Link>
-                );
-              })}
+              {events.map((e) => (
+                <EventCard
+                  key={e.id}
+                  id={e.id}
+                  title={e.title}
+                  emoji={e.emoji}
+                  discipline={e.discipline}
+                  starts_at={e.starts_at}
+                  ends_at={e.ends_at}
+                  joined={false}
+                  participant_count={(e as any).participant_count}
+                  alive_count={(e as any).alive_count}
+                  eliminated_count={(e as any).eliminated_count}
+                />
+              ))}
             </div>
           </section>
         )}
