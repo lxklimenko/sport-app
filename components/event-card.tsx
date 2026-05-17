@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Zap, Users, Skull } from "lucide-react";
 
 interface EventCardProps {
   id: string;
   title: string;
+  slug?: string;
   emoji: string | null;
   discipline: string;
   starts_at: string;
@@ -20,6 +22,7 @@ interface EventCardProps {
 export function EventCard({
   id,
   title,
+  slug,
   emoji,
   discipline,
   starts_at,
@@ -41,8 +44,11 @@ export function EventCard({
   const isUpcoming = start > now;
   const endsIn = Math.round((end.getTime() - now.getTime()) / 3600000);
   const startsIn = Math.round((start.getTime() - now.getTime()) / 3600000);
+  const eventSlug = slug ?? id;
 
-  const handleJoin = async () => {
+  const handleJoin = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (isJoined || joining) return;
     setJoining(true);
     try {
@@ -73,7 +79,10 @@ export function EventCard({
         </div>
       )}
 
-      <div className="px-4 py-3.5 border-b border-white/[0.04] last:border-0">
+      <Link
+        href={`/events/${eventSlug}`}
+        className="block px-4 py-3.5 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors active:scale-[0.995]"
+      >
         {/* Header row */}
         <div className="flex items-start gap-3">
           {/* Emoji */}
@@ -147,7 +156,7 @@ export function EventCard({
             </div>
           </div>
         )}
-      </div>
+      </Link>
     </>
   );
 }

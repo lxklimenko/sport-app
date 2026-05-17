@@ -740,7 +740,11 @@ export default async function SeasonCurrentPage({
 
           <div className="rounded-[22px] border border-white/[0.08] bg-white/[0.025] overflow-hidden">
             {above.map((r) => (
-              <div key={r.user_id} className="flex items-center gap-3 px-4 py-2.5 border-b border-white/[0.04]">
+              <Link
+                key={r.user_id}
+                href={`/user/${r.user_id}`}
+                className="flex items-center gap-3 px-4 py-2.5 border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors"
+              >
                 <ChevronUp className="w-3 h-3 text-white/20 shrink-0" />
                 <span className="text-[11px] text-white/25 w-10 shrink-0">#{r.rank}</span>
                 <span className="flex-1 text-[13px] text-white/45 truncate">{r.name.split(/\s+/)[0]}</span>
@@ -748,7 +752,7 @@ export default async function SeasonCurrentPage({
                 {r.days_ahead >= 3 && (
                   <span className="text-[10px] text-white/20 whitespace-nowrap">{r.days_ahead} дн.</span>
                 )}
-              </div>
+              </Link>
             ))}
 
             {/* YOU */}
