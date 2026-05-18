@@ -19,7 +19,7 @@ export function DisciplineCard({
       tabIndex={0}
       onClick={() => router.push(`/season/current?d=${id}`)}
       onKeyDown={(e) => e.key === "Enter" && router.push(`/season/current?d=${id}`)}
-      className="flex items-center gap-3 rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-3.5 cursor-pointer active:scale-[0.99] active:bg-white/[0.04] transition-all select-none"
+      className="touch-card flex items-center gap-3 rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-3.5 cursor-pointer active:scale-[0.99] active:bg-white/[0.04] transition-all select-none"
     >
       <div className="w-11 h-11 rounded-xl bg-white/[0.06] flex items-center justify-center text-[20px] shrink-0">
         {emoji}
@@ -31,7 +31,7 @@ export function DisciplineCard({
       <Link
         href={`/record?d=${id}`}
         onClick={(e) => e.stopPropagation()}
-        className="h-8 px-3 rounded-xl border border-white/[0.08] bg-white/[0.04] text-[12px] text-white/55 shrink-0 active:scale-[0.97] transition-all flex items-center"
+        className="touch-card h-8 px-3 rounded-xl border border-white/[0.08] bg-white/[0.04] text-[12px] text-white/55 shrink-0 active:scale-[0.97] transition-all flex items-center"
       >
         Записать
       </Link>

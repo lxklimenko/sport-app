@@ -59,7 +59,7 @@ export function TopStatusBar({
       {showProfile && (
         <Link
           href="/profile"
-          className="h-8 px-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] text-[11px] text-white/50 flex items-center gap-1 active:scale-[0.98] transition-all shrink-0 hover:bg-white/[0.05]"
+          className="touch-card h-8 px-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] text-[11px] text-white/50 flex items-center gap-1 active:scale-[0.98] transition-all shrink-0 hover:bg-white/[0.05]"
         >
           {userName ?? "Ты"} <ChevronRight className="w-3 h-3" />
         </Link>

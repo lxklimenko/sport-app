@@ -142,7 +142,7 @@ export default function AdminEventsPage() {
       <div className="max-w-2xl mx-auto px-5 pt-8 pb-28">
         <header className="flex items-center justify-between mb-8">
           <div>
-            <Link href="/profile" className="text-[11px] text-white/30 hover:text-white/50 uppercase tracking-[0.2em] mb-1 block">
+            <Link href="/profile" className="touch-card text-[11px] text-white/30 hover:text-white/50 uppercase tracking-[0.2em] mb-1 block">
               ← Назад
             </Link>
             <h1 className="text-[22px] font-bold tracking-[-0.02em]">Events Admin</h1>

@@ -369,7 +369,7 @@ export default function HomePage() {
           </div>
           <Link
             href="/login"
-            className="h-10 px-4 rounded-2xl border border-white/[0.06] bg-white/[0.03] backdrop-blur-xl text-sm text-white/65 inline-flex items-center justify-center active:scale-[0.98] transition-all"
+            className="touch-card h-10 px-4 rounded-2xl border border-white/[0.06] bg-white/[0.03] backdrop-blur-xl text-sm text-white/65 inline-flex items-center justify-center active:scale-[0.98] transition-all"
           >
             Войти
           </Link>
@@ -438,7 +438,7 @@ export default function HomePage() {
         <section className="mb-6 animate-fade-in-up">
           <Link
             href="/signup"
-            className="w-full h-13 rounded-[20px] bg-[#F3F3F3] text-black text-[14px] font-semibold flex items-center justify-center active:scale-[0.985] transition-all shadow-[0_10px_40px_rgba(255,255,255,0.08)]"
+            className="touch-card w-full h-13 rounded-[20px] bg-[#F3F3F3] text-black text-[14px] font-semibold flex items-center justify-center active:scale-[0.985] transition-all shadow-[0_10px_40px_rgba(255,255,255,0.08)]"
           >
             ВОЙТИ В СЕЗОН
           </Link>

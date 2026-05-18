@@ -13,7 +13,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="w-full h-12 rounded-[16px] bg-[#F3F3F3] text-black text-[14px] font-semibold transition active:scale-[0.985] disabled:opacity-60 disabled:cursor-not-allowed"
+      className="touch-card w-full h-12 rounded-[16px] bg-[#F3F3F3] text-black text-[14px] font-semibold transition active:scale-[0.985] disabled:opacity-60 disabled:cursor-not-allowed"
     >
       {pending ? "Создаём..." : "Создать профиль"}
     </button>

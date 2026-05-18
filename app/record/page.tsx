@@ -73,7 +73,7 @@ export default async function RecordPage({
         <header className="flex items-center gap-3 mb-10">
           <Link
             href={backHref}
-            className="w-9 h-9 rounded-xl border border-white/[0.06] bg-white/[0.03] flex items-center justify-center text-white/40 hover:text-white/70 transition-colors shrink-0"
+            className="touch-card w-9 h-9 rounded-xl border border-white/[0.06] bg-white/[0.03] flex items-center justify-center text-white/40 hover:text-white/70 transition-colors shrink-0"
           >
             <ChevronLeft className="w-4 h-4" />
           </Link>

@@ -66,7 +66,7 @@ export function NotificationBell() {
       {/* Bell icon */}
       <Link
         href="/notifications"
-        className="relative w-9 h-9 rounded-xl border border-white/[0.06] bg-white/[0.03] flex items-center justify-center text-white/40 hover:text-white/70 transition-colors"
+        className="touch-card relative w-9 h-9 rounded-xl border border-white/[0.06] bg-white/[0.03] flex items-center justify-center text-white/40 hover:text-white/70 transition-colors"
       >
         <Bell className="w-4 h-4" />
         {unread > 0 && (

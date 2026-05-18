@@ -13,7 +13,7 @@ export default async function LoginPage() {
         <div className="mb-8">
           <Link
             href="/"
-            className="text-[11px] uppercase tracking-[0.2em] text-white/30 hover:text-white/60 transition-colors"
+            className="touch-card text-[11px] uppercase tracking-[0.2em] text-white/30 hover:text-white/60 transition-colors"
           >
             ← Discipline
           </Link>
@@ -31,7 +31,7 @@ export default async function LoginPage() {
           Нет аккаунта?{" "}
           <Link
             href="/signup"
-            className="text-white/60 underline underline-offset-4 hover:text-white transition-colors"
+            className="touch-card text-white/60 underline underline-offset-4 hover:text-white transition-colors"
           >
             Создать профиль
           </Link>

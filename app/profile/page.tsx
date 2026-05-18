@@ -309,14 +309,14 @@ export default async function ProfilePage() {
 
         {/* TOP BAR */}
         <header className="flex items-center justify-between mb-8">
-          <Link href="/" className="flex items-center gap-2 text-white/40 hover:text-white/70 transition-colors">
+          <Link href="/" className="touch-card flex items-center gap-2 text-white/40 hover:text-white/70 transition-colors">
             <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
             <span className="text-[11px] uppercase tracking-[0.2em] font-medium">Discipline</span>
           </Link>
           <form action={logout}>
             <button
               type="submit"
-              className="w-9 h-9 rounded-xl border border-white/[0.06] bg-white/[0.03] flex items-center justify-center text-white/40 hover:text-white/70 transition-colors"
+              className="touch-card w-9 h-9 rounded-xl border border-white/[0.06] bg-white/[0.03] flex items-center justify-center text-white/40 hover:text-white/70 transition-colors"
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -422,7 +422,7 @@ export default async function ProfilePage() {
                 </div>
                 <Link
                   href="/season/current"
-                  className="flex-1 h-10 rounded-xl bg-[#F3F3F3] text-black text-[13px] font-semibold flex items-center justify-center gap-1 active:scale-[0.98] transition-all"
+                  className="touch-card flex-1 h-10 rounded-xl bg-[#F3F3F3] text-black text-[13px] font-semibold flex items-center justify-center gap-1 active:scale-[0.98] transition-all"
                 >
                   В бой <ChevronRight className="w-3.5 h-3.5" />
                 </Link>
@@ -430,7 +430,7 @@ export default async function ProfilePage() {
             ) : (
               <Link
                 href="/onboarding"
-                className="w-full h-10 rounded-xl bg-[#F3F3F3] text-black text-[13px] font-semibold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all"
+                className="touch-card w-full h-10 rounded-xl bg-[#F3F3F3] text-black text-[13px] font-semibold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all"
               >
                 Войти в сезон <ChevronRight className="w-3.5 h-3.5" />
               </Link>
@@ -448,7 +448,7 @@ export default async function ProfilePage() {
             {inSeason && (
               <Link
                 href="/onboarding"
-                className="h-8 px-3 rounded-xl border border-white/[0.06] bg-white/[0.03] text-[12px] text-white/50 flex items-center gap-1"
+                className="touch-card h-8 px-3 rounded-xl border border-white/[0.06] bg-white/[0.03] text-[12px] text-white/50 flex items-center gap-1"
               >
                 Изменить <ChevronRight className="w-3 h-3" />
               </Link>

@@ -1,13 +1,16 @@
 @import "tailwindcss";
 
+/* ─── Native app feel — disable text selection, tap highlights ──────────── */
+
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html,
 body {
   background: #050505;
-  overscroll-behavior: none;
+  overscroll-behavior-y: contain;
 }
 
 body {
@@ -15,6 +18,21 @@ body {
   padding: 0;
   min-height: 100vh;
   min-height: 100dvh;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Allow text selection in inputs and textareas */
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* ─── Touch cards — prevent zoom, double-tap zoom, long-press popup ─────── */
+
+.touch-card {
+  touch-action: manipulation;
 }
 
 /* ─── Animations ────────────────────────────────────────────────────────── */

@@ -149,7 +149,7 @@ export function RecordForm({
             key={amount}
             type="button"
             onClick={() => addQuick(amount)}
-            className="h-12 rounded-[16px] border border-white/[0.08] bg-white/[0.04] text-[15px] font-semibold text-white/70 active:scale-[0.97] active:bg-white/[0.07] transition-all"
+            className="touch-card h-12 rounded-[16px] border border-white/[0.08] bg-white/[0.04] text-[15px] font-semibold text-white/70 active:scale-[0.97] active:bg-white/[0.07] transition-all"
           >
             +{amount}
           </button>
@@ -177,7 +177,7 @@ export function RecordForm({
             <button
               type="button"
               onClick={handleRetry}
-              className="mt-2 w-full h-10 rounded-xl border border-white/[0.08] bg-white/[0.04] text-[12px] text-white/60 font-semibold active:scale-[0.98] transition-all"
+              className="touch-card mt-2 w-full h-10 rounded-xl border border-white/[0.08] bg-white/[0.04] text-[12px] text-white/60 font-semibold active:scale-[0.98] transition-all"
             >
               Повторить отправку
             </button>
@@ -189,7 +189,7 @@ export function RecordForm({
       <button
         type="submit"
         disabled={pending}
-        className="w-full h-14 rounded-[20px] bg-[#F3F3F3] text-black text-[14px] font-semibold flex items-center justify-center active:scale-[0.985] transition-all disabled:opacity-60 shadow-[0_10px_40px_rgba(255,255,255,0.08)]"
+        className="touch-card w-full h-14 rounded-[20px] bg-[#F3F3F3] text-black text-[14px] font-semibold flex items-center justify-center active:scale-[0.985] transition-all disabled:opacity-60 shadow-[0_10px_40px_rgba(255,255,255,0.08)]"
       >
         {pending ? (
           <span className="flex items-center gap-2">

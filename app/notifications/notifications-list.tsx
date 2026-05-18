@@ -92,7 +92,7 @@ export function NotificationsList({
       {unreadCount > 0 && (
         <button
           onClick={markAllRead}
-          className="w-full mb-3 py-2.5 rounded-xl border border-white/[0.06] bg-white/[0.02] text-[12px] text-white/40 hover:text-white/70 hover:bg-white/[0.04] flex items-center justify-center gap-1.5 transition-all"
+          className="touch-card w-full mb-3 py-2.5 rounded-xl border border-white/[0.06] bg-white/[0.02] text-[12px] text-white/40 hover:text-white/70 hover:bg-white/[0.04] flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
         >
           <CheckCheck className="w-3.5 h-3.5" />
           Отметить все как прочитанные ({unreadCount})

@@ -165,7 +165,7 @@ function DisciplineTab({ id, cfg, active }: {
     <Link
       href={`/season/current?d=${id}`}
       className={[
-        "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-medium transition-all",
+        "touch-card flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-medium transition-all",
         active ? "bg-white/[0.1] text-white border border-white/[0.12]" : "text-white/35 hover:text-white/60",
       ].join(" ")}
     >
@@ -333,7 +333,7 @@ export default async function SeasonCurrentPage({
     [activeDisciplineId]
   );
   const aliveCount = parseInt(aliveRows[0]?.count ?? "0", 10);
-  const survivalPct = totalPlayers > 0 ? Math.round((aliveCount / totalPlayers) * 100) : 100;
+  const survivalPct = totalPlayers > 0 ? Math.min(Math.round((aliveCount / totalPlayers) * 100), 100) : 100;
   const isLastPhase = survivalPct < 30 && aliveCount > 0;
 
   // ── Dead vs Alive tension ───────────────────────────────────────
@@ -440,14 +440,14 @@ export default async function SeasonCurrentPage({
 
           {/* TOP BAR */}
           <header className="flex items-center justify-between mb-6">
-            <Link href="/profile" className="flex items-center gap-2 text-white/40 hover:text-white/70 transition-colors">
+            <Link href="/profile" className="touch-card flex items-center gap-2 text-white/40 hover:text-white/70 transition-colors">
               <div className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
               <span className="text-[11px] uppercase tracking-[0.2em] font-medium">Сезон {SEASON.number}</span>
             </Link>
             <div className="flex items-center gap-2">
               <NotificationBell />
               <form action={logout}>
-                <button type="submit" className="w-9 h-9 rounded-xl border border-white/[0.06] bg-white/[0.03] flex items-center justify-center text-white/40 hover:text-white/70 transition-colors">
+                <button type="submit" className="touch-card w-9 h-9 rounded-xl border border-white/[0.06] bg-white/[0.03] flex items-center justify-center text-white/40 hover:text-white/70 transition-colors">
                   <LogOut className="w-4 h-4" />
                 </button>
               </form>
@@ -524,7 +524,7 @@ export default async function SeasonCurrentPage({
           {/* Record CTA — still available */}
           <Link
             href={`/record?d=${activeDisciplineId}`}
-            className="w-full h-14 rounded-[20px] bg-white/[0.06] text-white/60 text-[14px] font-semibold flex items-center justify-center gap-2 active:scale-[0.985] transition-all border border-white/[0.06]"
+            className="touch-card w-full h-14 rounded-[20px] bg-white/[0.06] text-white/60 text-[14px] font-semibold flex items-center justify-center gap-2 active:scale-[0.985] transition-all border border-white/[0.06]"
           >
             Записать результат · {cfg.emoji}
           </Link>
@@ -555,7 +555,7 @@ export default async function SeasonCurrentPage({
 
         {/* TOP BAR */}
         <header className="flex items-center justify-between mb-6">
-          <Link href="/profile" className="flex items-center gap-2 text-white/40 hover:text-white/70 transition-colors">
+            <Link href="/profile" className="touch-card flex items-center gap-2 text-white/40 hover:text-white/70 transition-colors">
             <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${isRed ? "bg-red-400" : isEvening && !isDead && danger !== "safe" ? "bg-orange-400" : "bg-green-400"}`} />
             <span className="text-[11px] uppercase tracking-[0.2em] font-medium">Сезон {SEASON.number}</span>
           </Link>
@@ -640,7 +640,7 @@ export default async function SeasonCurrentPage({
 
         {/* SEASON PROGRESS */}
         <section className="mb-5">
-          <Link href="/profile" className="block rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-4 active:scale-[0.99] transition-all">
+          <Link href="/profile" className="touch-card block rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-4 active:scale-[0.99] transition-all">
             <div className="flex items-center justify-between mb-2">
               <p className="text-[11px] uppercase tracking-[0.14em] text-white/30">Прогресс сезона</p>
               <span className="text-[11px] text-white/40">{daysLeft} дней осталось</span>
@@ -676,7 +676,7 @@ export default async function SeasonCurrentPage({
                   </p>
                   <Link
                     href={`/record?d=${activeDisciplineId}`}
-                    className="mt-3 inline-flex h-9 px-4 rounded-xl bg-[#FFB4AB] text-[#1a0808] text-[12px] font-semibold items-center gap-1 active:scale-[0.97] transition-all"
+                    className="touch-card mt-3 inline-flex h-9 px-4 rounded-xl bg-[#FFB4AB] text-[#1a0808] text-[12px] font-semibold items-center gap-1 active:scale-[0.97] transition-all"
                   >
                     Записать результат <ChevronRight className="w-3 h-3" />
                   </Link>
@@ -922,7 +922,7 @@ export default async function SeasonCurrentPage({
               <Link
                 key={r.user_id}
                 href={`/user/${r.user_id}`}
-                className="flex items-center gap-3 px-4 py-2.5 border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors"
+                className="touch-card flex items-center gap-3 px-4 py-2.5 border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors"
               >
                 <ChevronUp className="w-3 h-3 text-white/20 shrink-0" />
                 <span className="text-[11px] text-white/25 w-10 shrink-0">#{r.rank}</span>
@@ -1007,12 +1007,12 @@ export default async function SeasonCurrentPage({
       <div className="fixed bottom-0 left-0 right-0 px-5 pb-8 pt-4 bg-gradient-to-t from-[#0B0B0C] via-[#0B0B0C]/95 to-transparent">
         <Link
           href={`/record?d=${activeDisciplineId}`}
-          className={[
-            "w-full max-w-md mx-auto h-14 rounded-[20px] text-[14px] font-semibold flex items-center justify-center gap-2 active:scale-[0.985] transition-all",
-            isDead
-              ? "bg-[#FFB4AB] text-[#1a0808] shadow-[0_10px_40px_rgba(255,180,171,0.25)]"
-              : "bg-[#F3F3F3] text-black shadow-[0_10px_40px_rgba(255,255,255,0.08)]",
-          ].join(" ")}
+            className={[
+              "touch-card w-full max-w-md mx-auto h-14 rounded-[20px] text-[14px] font-semibold flex items-center justify-center gap-2 active:scale-[0.985] transition-all",
+              isDead
+                ? "bg-[#FFB4AB] text-[#1a0808] shadow-[0_10px_40px_rgba(255,180,171,0.25)]"
+                : "bg-[#F3F3F3] text-black shadow-[0_10px_40px_rgba(255,255,255,0.08)]",
+            ].join(" ")}
         >
           {isDead ? <Zap className="w-4 h-4" /> : null}
           ЗАПИСАТЬ РЕЗУЛЬТАТ

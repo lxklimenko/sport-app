@@ -202,7 +202,7 @@ export default async function EventPage({
           <div className="flex items-center justify-between">
             <Link
               href="/season/current"
-              className="w-8 h-8 rounded-xl border border-white/[0.06] bg-white/[0.03] flex items-center justify-center text-white/40 hover:text-white/70 transition-colors shrink-0"
+              className="touch-card w-8 h-8 rounded-xl border border-white/[0.06] bg-white/[0.03] flex items-center justify-center text-white/40 hover:text-white/70 transition-colors shrink-0"
             >
               <ChevronLeft className="w-4 h-4" />
             </Link>
@@ -349,7 +349,7 @@ export default async function EventPage({
           <div className="px-5 mb-5">
             <Link
               href={`/record?d=${event.discipline}&event=${event.slug}`}
-              className={`w-full h-16 rounded-[22px] ${theme.accent} ${theme.accentText} text-[15px] font-bold flex items-center justify-center gap-2.5 active:scale-[0.985] transition-all border ${theme.border} shadow-[0_10px_40px_rgba(0,0,0,0.3)]`}
+              className={`touch-card w-full h-16 rounded-[22px] ${theme.accent} ${theme.accentText} text-[15px] font-bold flex items-center justify-center gap-2.5 active:scale-[0.985] transition-all border ${theme.border} shadow-[0_10px_40px_rgba(0,0,0,0.3)]`}
             >
               <Zap className="w-5 h-5" />
               ЗАПИСАТЬ {cfg.emoji} {getDisciplineLabel(event.discipline).toUpperCase()}
@@ -488,7 +488,7 @@ export default async function EventPage({
                 <Link
                   key={entry.user_id}
                   href={`/user/${entry.user_id}`}
-                  className={`flex items-center gap-3 px-4 py-3 border-b border-white/[0.04] transition-colors hover:bg-white/[0.03] ${isMe ? "bg-white/[0.05]" : ""}`}
+                  className={`touch-card flex items-center gap-3 px-4 py-3 border-b border-white/[0.04] transition-colors hover:bg-white/[0.03] ${isMe ? "bg-white/[0.05]" : ""}`}
                 >
                   <span className="text-[18px] w-8 shrink-0">{medals[i]}</span>
                   <span className={`flex-1 text-[14px] truncate ${isMe ? "text-white font-semibold" : "text-white/60"}`}>
@@ -508,7 +508,7 @@ export default async function EventPage({
                 <Link
                   key={entry.user_id}
                   href={`/user/${entry.user_id}`}
-                  className={`flex items-center gap-3 px-4 py-2.5 border-b border-white/[0.04] last:border-0 transition-colors hover:bg-white/[0.03] ${isMe ? "bg-white/[0.05]" : ""}`}
+                  className={`touch-card flex items-center gap-3 px-4 py-2.5 border-b border-white/[0.04] last:border-0 transition-colors hover:bg-white/[0.03] ${isMe ? "bg-white/[0.05]" : ""}`}
                 >
                   <span className={`text-[11px] w-8 shrink-0 ${isMe ? "text-white/50 font-medium" : "text-white/25"}`}>
                     #{entry.rank}
@@ -543,7 +543,7 @@ export default async function EventPage({
                   <Link
                     key={i}
                     href={`/user/${row.user_id}`}
-                    className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors"
+                    className="touch-card flex items-center gap-3 px-4 py-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors"
                   >
                     <div className={`w-1.5 h-1.5 rounded-full ${theme.dot} shrink-0`} />
                     <div className="flex-1 min-w-0">
@@ -635,7 +635,7 @@ export default async function EventPage({
         <div className="fixed bottom-0 left-0 right-0 px-5 pb-8 pt-4 bg-gradient-to-t from-[#0a0606] via-[#0a0606]/95 to-transparent z-20">
           <Link
             href={`/record?d=${event.discipline}&event=${event.slug}`}
-            className={`w-full max-w-md mx-auto h-14 rounded-[20px] ${theme.accent} ${theme.accentText} text-[14px] font-semibold flex items-center justify-center gap-2 active:scale-[0.985] transition-all border ${theme.border} shadow-[0_10px_40px_rgba(0,0,0,0.3)]`}
+            className={`touch-card w-full max-w-md mx-auto h-14 rounded-[20px] ${theme.accent} ${theme.accentText} text-[14px] font-semibold flex items-center justify-center gap-2 active:scale-[0.985] transition-all border ${theme.border} shadow-[0_10px_40px_rgba(0,0,0,0.3)]`}
           >
             <Zap className="w-4 h-4" />
             ЗАПИСАТЬ РЕЗУЛЬТАТ

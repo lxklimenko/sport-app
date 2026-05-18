@@ -81,7 +81,7 @@ export function EventCard({
 
       <Link
         href={`/events/${eventSlug}`}
-        className="block px-4 py-3.5 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors active:scale-[0.995]"
+        className="touch-card block px-4 py-3.5 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors active:scale-[0.995]"
       >
         {/* Header row */}
         <div className="flex items-start gap-3">

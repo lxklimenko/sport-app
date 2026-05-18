@@ -314,7 +314,7 @@ export function DisciplineModal({
                   onJoin();
                   handleClose();
                 }}
-                className="w-full h-14 rounded-[20px] bg-[#F3F3F3] text-black text-[14px] font-semibold flex items-center justify-center gap-2 active:scale-[0.985] transition-all shadow-[0_10px_40px_rgba(255,255,255,0.08)]"
+                className="touch-card w-full h-14 rounded-[20px] bg-[#F3F3F3] text-black text-[14px] font-semibold flex items-center justify-center gap-2 active:scale-[0.985] transition-all shadow-[0_10px_40px_rgba(255,255,255,0.08)]"
               >
                 ВОЙТИ В ДИСЦИПЛИНУ
                 <span className="text-black/40 text-[13px]">· {meta.emoji}</span>
@@ -322,7 +322,7 @@ export function DisciplineModal({
             ) : (
               <Link
                 href={`/season/current?d=${meta.id}`}
-                className="w-full h-14 rounded-[20px] bg-[#F3F3F3] text-black text-[14px] font-semibold flex items-center justify-center gap-2 active:scale-[0.985] transition-all shadow-[0_10px_40px_rgba(255,255,255,0.08)]"
+                className="touch-card w-full h-14 rounded-[20px] bg-[#F3F3F3] text-black text-[14px] font-semibold flex items-center justify-center gap-2 active:scale-[0.985] transition-all shadow-[0_10px_40px_rgba(255,255,255,0.08)]"
               >
                 ПЕРЕЙТИ К ДИСЦИПЛИНЕ
                 <span className="text-black/40 text-[13px]">· {meta.emoji}</span>

@@ -205,7 +205,7 @@ export default async function UserProfilePage({
         {session.userId && (
           <Link
             href="/season/current"
-            className="w-full h-12 rounded-[20px] border border-white/[0.08] bg-white/[0.025] text-white/60 text-[13px] font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+            className="touch-card w-full h-12 rounded-[20px] border border-white/[0.08] bg-white/[0.025] text-white/60 text-[13px] font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
           >
             Вернуться в сезон ⚔️
           </Link>

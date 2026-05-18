@@ -152,7 +152,7 @@ export function OnboardingForm({
               disabled={isLocked}
               onClick={() => !isLocked && toggle(d.id)}
               className={[
-                "w-full text-left rounded-[22px] border p-4 transition-all duration-200",
+                "touch-card w-full text-left rounded-[22px] border p-4 transition-all duration-200",
                 isLocked
                   ? `${d.accent} opacity-40 cursor-not-allowed`
                   : isSelected
@@ -238,7 +238,7 @@ export function OnboardingForm({
           type="button"
           onClick={handleSubmit}
           disabled={pending || selected.size === 0}
-          className="w-full h-14 rounded-[20px] bg-[#F3F3F3] text-black text-[14px] font-semibold flex items-center justify-center gap-2 active:scale-[0.985] transition-all disabled:opacity-60 shadow-[0_10px_40px_rgba(255,255,255,0.08)]"
+          className="touch-card w-full h-14 rounded-[20px] bg-[#F3F3F3] text-black text-[14px] font-semibold flex items-center justify-center gap-2 active:scale-[0.985] transition-all disabled:opacity-60 shadow-[0_10px_40px_rgba(255,255,255,0.08)]"
         >
           {pending ? (
             <span className="opacity-60">Входим...</span>

@@ -32,7 +32,7 @@ export function BottomNav() {
                   key={item.href}
                   href={item.href}
                   className={[
-                    "relative flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-2xl transition-all duration-200",
+                    "touch-card relative flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-2xl transition-all duration-200",
                     isActive
                       ? "text-white"
                       : "text-white/30 hover:text-white/60",

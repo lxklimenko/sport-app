@@ -67,7 +67,7 @@ export function JoinButton({ eventId, title, emoji, participantCount, theme }: {
       <button
         onClick={handleJoin}
         disabled={joining}
-        className={`w-full h-14 rounded-[20px] text-[14px] font-semibold flex items-center justify-center gap-2 active:scale-[0.985] transition-all disabled:opacity-50 mb-5 ${btnClass}`}
+        className={`touch-card w-full h-14 rounded-[20px] text-[14px] font-semibold flex items-center justify-center gap-2 active:scale-[0.985] transition-all disabled:opacity-50 mb-5 ${btnClass}`}
       >
         <Zap className="w-4 h-4" />
         {joining ? "..." : "ВОЙТИ В СОБЫТИЕ"}

@@ -53,7 +53,7 @@ export default async function PulsePage({
           ) : (
             <Link
               href="/login"
-              className="h-9 px-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] text-[12px] text-white/50 flex items-center gap-1 active:scale-[0.98] transition-all"
+              className="touch-card h-9 px-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] text-[12px] text-white/50 flex items-center gap-1 active:scale-[0.98] transition-all"
             >
               Войти
             </Link>
@@ -89,7 +89,7 @@ export default async function PulsePage({
                 key={r}
                 href={`/pulse?range=${r}`}
                 className={[
-                  "px-4 py-2 rounded-xl text-[12px] font-medium transition-all",
+                  "touch-card px-4 py-2 rounded-xl text-[12px] font-medium transition-all",
                   isActive
                     ? "bg-orange-500/[0.15] text-orange-200 border border-orange-500/20"
                     : "text-white/35 hover:text-white/60",
