@@ -10,11 +10,8 @@ import { NotificationBell } from "@/components/notification-bell";
 import { EventCard } from "@/components/event-card";
 import { migrateSurvival, getSurvival } from "@/lib/survival";
 import { migrateEvents, getEventsWithParticipation, joinEvent, type SeasonEvent } from "@/lib/events";
+import { getCurrentSeason } from "@/lib/season";
 import { Pool } from "pg";
-
-// ─── config ──────────────────────────────────────────────────────────────────
-
-const SEASON = { number: 1, day: 12, total: 30 };
 
 const DISCIPLINE_CONFIG = {
   steps:   { emoji: "👟", name: "Шаги",  unit: "шагов", heroUnit: "ШАГОВ",  target: 10000, format: (v: number) => v.toLocaleString("ru") },
@@ -96,7 +93,7 @@ async function getRealRivals(db: Pool, disciplineId: string, userId: string) {
 
 type FeedItem = { text: string; sub: string; dot: "red" | "orange" | "green" | "white" };
 
-async function getLiveFeed(db: Pool, disciplineId: string): Promise<FeedItem[]> {
+async function getLiveFeed(db: Pool, disciplineId: string, season: { number: number; day: number; total: number }): Promise<FeedItem[]> {
   const { rows: recentRows } = await db.query<{
     name: string; discipline_id: string; value: string; minutes_ago: string;
   }>(
@@ -150,8 +147,8 @@ async function getLiveFeed(db: Pool, disciplineId: string): Promise<FeedItem[]> 
   }
 
   feed.push({
-    text: `Сезон ${SEASON.number} · День ${SEASON.day} из ${SEASON.total}`,
-    sub: `${SEASON.total - SEASON.day} дней до конца`,
+    text: `Сезон ${season.number} · День ${season.day} из ${season.total}`,
+    sub: `${season.total - season.day} дней до конца`,
     dot: "orange",
   });
 
@@ -214,6 +211,7 @@ export default async function SeasonCurrentPage({
 
   await migrateDatabase();
   const db = getPool();
+  const SEASON = await getCurrentSeason();
 
   const disciplinesRes = await db.query<{ discipline_id: string }>(
     "SELECT discipline_id FROM user_disciplines WHERE user_id = $1 ORDER BY joined_at",
@@ -242,7 +240,7 @@ export default async function SeasonCurrentPage({
       [session.userId]
     ),
     getRealRivals(db, activeDisciplineId, session.userId),
-    getLiveFeed(db, activeDisciplineId),
+    getLiveFeed(db, activeDisciplineId, SEASON),
   ]);
 
   const todayValue = parseFloat(todayRes.rows[0].total);

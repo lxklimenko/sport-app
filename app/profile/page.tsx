@@ -6,8 +6,7 @@ import { getPool, migrateDatabase } from "@/lib/db";
 import { DisciplineCard } from "./discipline-card";
 import { logout } from "@/app/actions/auth";
 import { migrateEvents } from "@/lib/events";
-
-const SEASON = { number: 1, day: 12, total: 30, players: 4218 };
+import { getCurrentSeason } from "@/lib/season";
 
 const DISCIPLINE_META: Record<string, { emoji: string; name: string; goal: string }> = {
   steps:   { emoji: "👟", name: "Шаги",    goal: "10 000 шагов каждый день" },
@@ -224,7 +223,9 @@ export default async function ProfilePage() {
   await migrateEvents();
   const db = getPool();
 
-  const [disciplinesRes, activitiesRes, eventsRes, survivalRes, rivalsRes, eventsCountRes] = await Promise.all([
+  const SEASON = await getCurrentSeason();
+
+  const [disciplinesRes, activitiesRes, eventsRes, survivalRes, rivalsRes, eventsCountRes, totalPlayersRes] = await Promise.all([
     db.query("SELECT discipline_id FROM user_disciplines WHERE user_id = $1 ORDER BY joined_at", [session.userId]),
     db.query(
       `SELECT recorded_at::date::text AS day
@@ -278,6 +279,7 @@ export default async function ProfilePage() {
        WHERE user_id = $1`,
       [session.userId]
     ),
+    db.query<{ count: string }>("SELECT COUNT(*)::int AS count FROM users"),
   ]);
 
   const joinedIds: string[] = disciplinesRes.rows.map((r) => r.discipline_id);
@@ -289,6 +291,7 @@ export default async function ProfilePage() {
   const survival = survivalRes.rows[0] ?? { total_survived: 0, best_streak: 0, current_streak: 0, alive_disciplines: 0 };
   const rivalsBeaten = parseInt(rivalsRes.rows[0]?.beaten ?? "0", 10);
   const eventsCount = parseInt(eventsCountRes.rows[0]?.count ?? "0", 10);
+  const totalPlayers = parseInt(totalPlayersRes.rows[0]?.count ?? "0", 10);
 
   const name = session.name ?? "Игрок";
   const initials = name.slice(0, 1).toUpperCase();
@@ -388,7 +391,7 @@ export default async function ProfilePage() {
                 Ты ещё<br />не внутри
               </h2>
               <p className="mt-3 text-[14px] text-white/35 leading-relaxed">
-                {SEASON.players.toLocaleString("ru")} уже в игре.
+                {totalPlayers.toLocaleString("ru")} уже в игре.
                 <br />
                 Каждый день без тебя — их преимущество.
               </p>
@@ -540,7 +543,7 @@ export default async function ProfilePage() {
               </div>
               <div>
                 <p className="text-[14px] font-semibold text-white leading-tight">
-                  {SEASON.players.toLocaleString("ru")} игроков уже набирают очки
+                  {totalPlayers.toLocaleString("ru")} игроков уже набирают очки
                 </p>
                 <p className="mt-1 text-[12px] text-white/35 leading-relaxed">
                   Ты пока нет. День {SEASON.day} продолжается.

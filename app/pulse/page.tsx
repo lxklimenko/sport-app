@@ -2,6 +2,8 @@ import Link from "next/link";
 import { getFeedByRange, type FeedRange } from "@/lib/feed";
 import { generateAtmosphericEvents } from "@/lib/feed-engine";
 import { PulseFeed } from "./pulse-feed";
+import { getSession } from "@/lib/session";
+import { NotificationBell } from "@/components/notification-bell";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +27,12 @@ export default async function PulsePage({
       ? (params.range as FeedRange)
       : "day";
 
-  const feed = await getFeedByRange(range, 50);
+  const [feed, session] = await Promise.all([
+    getFeedByRange(range, 50),
+    getSession(),
+  ]);
+
+  const isLoggedIn = !!session.userId;
 
   return (
     <main className="min-h-screen bg-[#0B0B0C] text-white overflow-hidden relative">
@@ -41,12 +48,16 @@ export default async function PulsePage({
             <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
             <span className="text-[11px] uppercase tracking-[0.2em] font-medium">Discipline</span>
           </Link>
-          <Link
-            href="/login"
-            className="h-9 px-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] text-[12px] text-white/50 flex items-center gap-1 active:scale-[0.98] transition-all"
-          >
-            Войти
-          </Link>
+          {isLoggedIn ? (
+            <NotificationBell />
+          ) : (
+            <Link
+              href="/login"
+              className="h-9 px-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] text-[12px] text-white/50 flex items-center gap-1 active:scale-[0.98] transition-all"
+            >
+              Войти
+            </Link>
+          )}
         </header>
 
         {/* HERO */}

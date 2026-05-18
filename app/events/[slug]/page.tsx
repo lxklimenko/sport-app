@@ -147,9 +147,10 @@ export default async function EventPage({
 
   // Recent feed
   const { rows: feedRows } = await db.query<{
-    name: string; value: string; minutes_ago: string;
+    user_id: string; name: string; value: string; minutes_ago: string;
   }>(
-    `SELECT u.name,
+    `SELECT u.id AS user_id,
+            u.name,
             a.value::float AS value,
             ROUND(EXTRACT(EPOCH FROM (NOW() - a.recorded_at)) / 60) AS minutes_ago
      FROM activities a
@@ -541,7 +542,7 @@ export default async function EventPage({
                 return (
                   <Link
                     key={i}
-                    href={`/user/${row.name}`}
+                    href={`/user/${row.user_id}`}
                     className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors"
                   >
                     <div className={`w-1.5 h-1.5 rounded-full ${theme.dot} shrink-0`} />

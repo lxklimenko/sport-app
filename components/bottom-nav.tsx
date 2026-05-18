@@ -14,7 +14,7 @@ export function BottomNav() {
   const pathname = usePathname();
 
   // Don't show on auth pages, onboarding, events detail
-  const hiddenPaths = ["/login", "/signup", "/onboarding", "/record", "/notifications"];
+  const hiddenPaths = ["/login", "/signup", "/onboarding", "/record"];
   const isHidden = hiddenPaths.some((p) => pathname === p || pathname.startsWith("/events/"));
 
   if (isHidden) return null;
