@@ -6,7 +6,6 @@ import { getPool, migrateDatabase } from "@/lib/db";
 import { DisciplineCard } from "./discipline-card";
 import { logout } from "@/app/actions/auth";
 import { migrateEvents } from "@/lib/events";
-import { getDivision, getDivisionProgress, DIVISIONS } from "@/lib/divisions";
 
 const SEASON = { number: 1, day: 12, total: 30, players: 4218 };
 
@@ -68,59 +67,84 @@ function buildHeatmapColumns(activeDays: Set<string>) {
   return columns;
 }
 
-// ─── Division Badge ─────────────────────────────────────────────────────────
+// ─── Survival Status ────────────────────────────────────────────────────────
 
-function DivisionBadge({ division }: { division: string }) {
-  const div = DIVISIONS.find((d) => d.label === division) ?? DIVISIONS[0];
+function SurvivalStatus({
+  totalSurvived,
+  eventsCount,
+  currentStreak,
+  aliveDisciplines,
+}: {
+  totalSurvived: number;
+  eventsCount: number;
+  currentStreak: number;
+  aliveDisciplines: number;
+}) {
+  const stats = [
+    { icon: "🔥", label: "дней внутри", value: totalSurvived },
+    { icon: "⚔️", label: "Пережил событий", value: eventsCount },
+    { icon: "💀", label: "Не вылетал дней", value: currentStreak },
+    { icon: "🩸", label: "Последние выживших", value: aliveDisciplines },
+  ];
+
   return (
-    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border ${div.border} ${div.bg}`}>
-      <span className="text-[12px]">{div.icon}</span>
-      <span className={`text-[10px] font-semibold uppercase tracking-[0.12em] ${div.color}`}>
-        {div.label}
-      </span>
-    </span>
+    <div className="rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-4">
+      <p className="text-[11px] uppercase tracking-[0.18em] text-white/30 mb-3">Статус выживания</p>
+      <div className="grid grid-cols-2 gap-3">
+        {stats.map((s) => (
+          <div key={s.label} className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[16px]">{s.icon}</span>
+              <span className="text-[20px] font-semibold text-white/90 tabular-nums">{s.value}</span>
+            </div>
+            <p className="text-[10px] text-white/30 uppercase tracking-[0.08em]">{s.label}</p>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
-function DivisionProgress({ days }: { days: number }) {
-  const { current, next, progress } = getDivisionProgress(days);
-  if (!next) {
-    return (
-      <div className={`rounded-xl border ${current.border} ${current.bg} p-3 text-center`}>
-        <p className={`text-[13px] font-semibold ${current.color}`}>
-          {current.icon} {current.label}
-        </p>
-        <p className="text-[11px] text-white/30 mt-1">Максимальный дивизион</p>
-      </div>
-    );
-  }
+// ─── Survival Timeline ──────────────────────────────────────────────────────
+
+function SurvivalTimeline({
+  day,
+  total,
+  daysLeft,
+  playersBeaten,
+}: {
+  day: number;
+  total: number;
+  daysLeft: number;
+  playersBeaten: number;
+}) {
+  const progress = Math.round((day / total) * 100);
 
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[14px]">{current.icon}</span>
-          <span className={`text-[11px] font-semibold uppercase tracking-[0.1em] ${current.color}`}>
-            {current.label}
-          </span>
+    <div className="rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-4">
+      <p className="text-[11px] uppercase tracking-[0.18em] text-white/30 mb-3">Survival Timeline</p>
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-[13px] text-white/70">День {day} из {total}</span>
+          <span className="text-[11px] text-white/30">{progress}%</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-[11px] text-white/20">→</span>
-          <span className="text-[14px]">{next.icon}</span>
-          <span className={`text-[11px] font-semibold uppercase tracking-[0.1em] ${next.color}`}>
-            {next.label}
-          </span>
+
+        <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+          <div className="h-full rounded-full bg-white/40 transition-all" style={{ width: `${progress}%` }} />
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 pt-1">
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-2.5 text-center">
+            <p className="text-[13px] font-semibold text-white/80">{daysLeft}</p>
+            <p className="text-[9px] text-white/25 uppercase tracking-[0.08em] mt-0.5">Дней до конца сезона</p>
+          </div>
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-2.5 text-center">
+            <p className="text-[13px] font-semibold text-white/80">{playersBeaten.toLocaleString("ru")}</p>
+            <p className="text-[9px] text-white/25 uppercase tracking-[0.08em] mt-0.5">Ты пережил игроков</p>
+          </div>
         </div>
       </div>
-      <div className="h-1 rounded-full bg-white/[0.06] overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all ${next.color.replace("text", "bg")}`}
-          style={{ width: `${progress}%` }}
-        />
-      </div>
-      <p className="text-[10px] text-white/25 mt-1.5">
-        {next.minDays - days} дней до {next.culture.toLowerCase()}
-      </p>
     </div>
   );
 }
@@ -200,7 +224,7 @@ export default async function ProfilePage() {
   await migrateEvents();
   const db = getPool();
 
-  const [disciplinesRes, activitiesRes, eventsRes, survivalRes, rivalsRes] = await Promise.all([
+  const [disciplinesRes, activitiesRes, eventsRes, survivalRes, rivalsRes, eventsCountRes] = await Promise.all([
     db.query("SELECT discipline_id FROM user_disciplines WHERE user_id = $1 ORDER BY joined_at", [session.userId]),
     db.query(
       `SELECT recorded_at::date::text AS day
@@ -221,6 +245,7 @@ export default async function ProfilePage() {
       `SELECT
          COALESCE(SUM(survived_days), 0)::int AS total_survived,
          COALESCE(MAX(longest_streak), 0)::int AS best_streak,
+         COALESCE(MAX(current_streak), 0)::int AS current_streak,
          COALESCE(SUM(CASE WHEN is_alive = true THEN 1 ELSE 0 END), 0)::int AS alive_disciplines
        FROM user_survival
        WHERE user_id = $1`,
@@ -247,6 +272,12 @@ export default async function ProfilePage() {
        WHERE me.user_id = $1 AND them.their_total < me.my_total`,
       [session.userId]
     ),
+    db.query(
+      `SELECT COUNT(*)::int AS count
+       FROM event_participants
+       WHERE user_id = $1`,
+      [session.userId]
+    ),
   ]);
 
   const joinedIds: string[] = disciplinesRes.rows.map((r) => r.discipline_id);
@@ -255,22 +286,19 @@ export default async function ProfilePage() {
   const heatmapColumns = buildHeatmapColumns(activeDays);
   const myEvents = eventsRes.rows;
 
-  const survival = survivalRes.rows[0] ?? { total_survived: 0, best_streak: 0, alive_disciplines: 0 };
+  const survival = survivalRes.rows[0] ?? { total_survived: 0, best_streak: 0, current_streak: 0, alive_disciplines: 0 };
   const rivalsBeaten = parseInt(rivalsRes.rows[0]?.beaten ?? "0", 10);
+  const eventsCount = parseInt(eventsCountRes.rows[0]?.count ?? "0", 10);
 
   const name = session.name ?? "Игрок";
   const initials = name.slice(0, 1).toUpperCase();
   const handle = name.toLowerCase().replace(/\s+/g, "_");
-  const progress = Math.round((SEASON.day / SEASON.total) * 100);
   const daysLeft = SEASON.total - SEASON.day;
-
-  // Division
-  const division = getDivision(survival.total_survived);
 
   return (
     <main className="min-h-screen bg-[#0B0B0C] text-white overflow-hidden relative">
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className={`absolute top-[-180px] left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full blur-3xl ${division.glow}`} />
+        <div className="absolute top-[-180px] left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full blur-3xl bg-white/[0.03]" />
         <div className="absolute bottom-[-200px] right-[-80px] w-[400px] h-[400px] rounded-full blur-3xl bg-orange-500/[0.04]" />
       </div>
 
@@ -294,63 +322,46 @@ export default async function ProfilePage() {
 
         {/* IDENTITY */}
         <section className="flex items-center gap-3.5 mb-7">
-          <div className={`w-14 h-14 rounded-[18px] bg-gradient-to-br from-white/[0.08] to-white/[0.03] border ${division.border} flex items-center justify-center text-xl font-bold text-white/60 select-none shrink-0`}>
+          <div className="w-14 h-14 rounded-[18px] bg-gradient-to-br from-white/[0.08] to-white/[0.03] border border-white/[0.08] flex items-center justify-center text-xl font-bold text-white/60 select-none shrink-0">
             {initials}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-[20px] font-semibold tracking-tight leading-none">{name}</h1>
-              <DivisionBadge division={division.label} />
+              {inSeason && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-green-500/30 bg-green-500/[0.08]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-green-400">
+                    Внутри
+                  </span>
+                </span>
+              )}
             </div>
             <p className="mt-1 text-[12px] text-white/30">@{handle}</p>
           </div>
         </section>
 
-        {/* DIVISION CULTURE */}
+        {/* SURVIVAL STATUS */}
         {inSeason && (
           <section className="mb-6">
-            <div className={`rounded-[22px] border ${division.border} ${division.bg.replace("/[0.08]", "/[0.04]")} p-4`}>
-              <div className="flex items-center gap-3 mb-3">
-                <span className="text-[24px]">{division.icon}</span>
-                <div>
-                  <p className={`text-[13px] font-semibold ${division.color}`}>{division.culture}</p>
-                  <p className="text-[11px] text-white/35 mt-0.5">{division.description}</p>
-                </div>
-              </div>
-              <DivisionProgress days={survival.total_survived} />
-            </div>
+            <SurvivalStatus
+              totalSurvived={survival.total_survived}
+              eventsCount={eventsCount}
+              currentStreak={survival.current_streak}
+              aliveDisciplines={survival.alive_disciplines}
+            />
           </section>
         )}
 
-        {/* LEGENDARY STATS */}
+        {/* SURVIVAL TIMELINE */}
         {inSeason && (
           <section className="mb-6">
-            <div className="rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-4">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-white/30 mb-3">История игрока</p>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="text-center">
-                  <div className="w-8 h-8 rounded-xl border border-white/[0.06] bg-white/[0.03] flex items-center justify-center mx-auto mb-1.5">
-                    <Shield className="w-3.5 h-3.5 text-white/50" />
-                  </div>
-                  <p className="text-[18px] font-semibold text-white/80">{survival.total_survived}</p>
-                  <p className="text-[9px] text-white/25 uppercase tracking-[0.1em] mt-0.5">Дней выжил</p>
-                </div>
-                <div className="text-center">
-                  <div className="w-8 h-8 rounded-xl border border-white/[0.06] bg-white/[0.03] flex items-center justify-center mx-auto mb-1.5">
-                    <Zap className="w-3.5 h-3.5 text-white/50" />
-                  </div>
-                  <p className="text-[18px] font-semibold text-white/80">{survival.best_streak}</p>
-                  <p className="text-[9px] text-white/25 uppercase tracking-[0.1em] mt-0.5">Луч. серия</p>
-                </div>
-                <div className="text-center">
-                  <div className="w-8 h-8 rounded-xl border border-white/[0.06] bg-white/[0.03] flex items-center justify-center mx-auto mb-1.5">
-                    <Skull className="w-3.5 h-3.5 text-white/50" />
-                  </div>
-                  <p className="text-[18px] font-semibold text-white/80">{rivalsBeaten}</p>
-                  <p className="text-[9px] text-white/25 uppercase tracking-[0.1em] mt-0.5">Побеждено</p>
-                </div>
-              </div>
-            </div>
+            <SurvivalTimeline
+              day={SEASON.day}
+              total={SEASON.total}
+              daysLeft={daysLeft}
+              playersBeaten={rivalsBeaten}
+            />
           </section>
         )}
 
@@ -396,7 +407,7 @@ export default async function ProfilePage() {
             </div>
 
             <div className="h-1 rounded-full bg-white/[0.06] overflow-hidden mb-3">
-              <div className="h-full rounded-full bg-white/30 transition-all" style={{ width: `${progress}%` }} />
+              <div className="h-full rounded-full bg-white/30 transition-all" style={{ width: `${Math.round((SEASON.day / SEASON.total) * 100)}%` }} />
             </div>
 
             {inSeason ? (
