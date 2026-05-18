@@ -83,6 +83,43 @@ body {
 .animate-fade-in-up-d4 { animation-delay: 0.2s; }
 .animate-fade-in-up-d5 { animation-delay: 0.25s; }
 
+/* ─── Panic / Midnight escalation ───────────────────────────────────────── */
+
+@keyframes heartbeat {
+  0%, 100% {
+    transform: scale(1);
+  }
+  14% {
+    transform: scale(1.04);
+  }
+  28% {
+    transform: scale(1);
+  }
+  42% {
+    transform: scale(1.02);
+  }
+  56% {
+    transform: scale(1);
+  }
+}
+
+.animate-heartbeat {
+  animation: heartbeat 1.5s ease-in-out infinite;
+}
+
+@keyframes panic-pulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-panic-pulse {
+  animation: panic-pulse 0.8s ease-in-out infinite;
+}
+
 /* ─── Safe area utilities ──────────────────────────────────────────────── */
 
 .safe-bottom {

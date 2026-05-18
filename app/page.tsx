@@ -42,6 +42,10 @@ interface SessionInfo {
   userRank: number | null;
   totalPlayers: number;
   rivalsBeaten: number;
+  rivalName: string | null;
+  stepsToRival: number | null;
+  hoursAway: number | null;
+  lastSeenAt: string | null;
 }
 
 // ─── Time of day ─────────────────────────────────────────────────────────────
@@ -338,8 +342,50 @@ export default function HomePage() {
           {/* AMBIENT INDICATOR */}
           <AmbientIndicator world={world} />
 
+          {/* RETURN MOMENT — when player comes back after hours away */}
+          {session.hoursAway !== null && session.hoursAway >= 2 && (
+            <section className="mb-5 animate-fade-in-up animate-fade-in-up-d2">
+              <div className="rounded-[22px] border border-white/[0.06] bg-white/[0.02] p-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl border border-white/[0.08] bg-white/[0.04] flex items-center justify-center shrink-0">
+                    <Clock className="w-4 h-4 text-white/40" />
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-semibold text-white leading-tight">
+                      Ты отсутствовал {session.hoursAway} {session.hoursAway >= 5 ? "часов" : "часа"}
+                    </p>
+                    <p className="mt-0.5 text-[12px] text-white/35 leading-relaxed">
+                      Сезон продолжался без тебя. {world?.eliminated ?? 0} {world?.eliminated === 1 ? "игрок не пережил" : "игроков не пережили"} это время.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* PERSONAL RIVAL HOOK — the person just ahead in ranking */}
+          {session.rivalName && session.stepsToRival !== null && session.stepsToRival > 0 && session.stepsToRival < 50000 && (
+            <section className="mb-5 animate-fade-in-up animate-fade-in-up-d2">
+              <Link href="/season/current" className="block rounded-[22px] border border-orange-900/15 bg-orange-950/8 p-4 active:scale-[0.99] transition-all">
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl border border-orange-900/20 bg-orange-950/15 flex items-center justify-center shrink-0">
+                    <span className="text-[16px]">🎯</span>
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-semibold text-white leading-tight">
+                      До {session.rivalName.split(/\s+/)[0]} осталось <AnimatedCounter value={session.stepsToRival} suffix=" шагов" />
+                    </p>
+                    <p className="mt-0.5 text-[12px] text-white/35 leading-relaxed">
+                      Обгони его и поднимись в рейтинге
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            </section>
+          )}
+
           {/* HERO — survival status */}
-          <section className="mb-6 animate-fade-in-up animate-fade-in-up-d2">
+          <section className="mb-6 animate-fade-in-up animate-fade-in-up-d3">
             <div className="flex items-start justify-between mb-2">
               <div>
                 <p className="text-[11px] uppercase tracking-[0.2em] text-white/30 mb-1">
