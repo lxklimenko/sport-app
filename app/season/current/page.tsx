@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { AlertTriangle, Shield, ChevronUp, ChevronDown, Minus, Zap, LogOut } from "lucide-react";
+import { AlertTriangle, Shield, ChevronUp, ChevronDown, ChevronRight, Minus, Zap, LogOut, Clock, Flame, Activity } from "lucide-react";
 import { getSession } from "@/lib/session";
 import { getPool, migrateDatabase } from "@/lib/db";
 import { logout } from "@/app/actions/auth";
@@ -60,7 +60,6 @@ async function getRealRivals(db: Pool, disciplineId: string, userId: string) {
     [disciplineId, userId]
   );
 
-  // Enrich with rival memory — how many consecutive days each rival has been ahead
   const enriched = await Promise.all(
     rows.map(async (r) => {
       if (r.user_id === userId) return { ...r, days_ahead: 0 };
@@ -226,7 +225,58 @@ export default async function SeasonCurrentPage({
   ) as DisciplineId;
   const cfg = DISCIPLINE_CONFIG[activeDisciplineId] ?? DISCIPLINE_CONFIG.steps;
 
-  // Parallel data fetch
+  // ── Session-level data (survival stats, rivals, hours away) ──────────
+  const [survivalRes, rivalsBeatenRes, lastSeenRes] = await Promise.all([
+    db.query(
+      `SELECT
+         COALESCE(SUM(survived_days), 0)::int AS total_survived,
+         COALESCE(MAX(current_streak), 0)::int AS current_streak,
+         COALESCE(SUM(CASE WHEN is_alive = true THEN 1 ELSE 0 END), 0)::int AS alive_disciplines
+       FROM user_survival
+       WHERE user_id = $1`,
+      [session.userId]
+    ),
+    db.query<{ beaten: string }>(
+      `SELECT COUNT(*)::int AS beaten
+       FROM (
+         SELECT ud.user_id,
+           COALESCE(SUM(a.value), 0) AS my_total
+         FROM user_disciplines ud
+         LEFT JOIN activities a ON a.user_id = ud.user_id AND a.discipline_id = ud.discipline_id AND a.recorded_at::date = CURRENT_DATE
+         WHERE ud.discipline_id IN (SELECT discipline_id FROM user_disciplines WHERE user_id = $1)
+         GROUP BY ud.user_id
+       ) me
+       JOIN (
+         SELECT ud.user_id,
+           COALESCE(SUM(a.value), 0) AS their_total
+         FROM user_disciplines ud
+         LEFT JOIN activities a ON a.user_id = ud.user_id AND a.discipline_id = ud.discipline_id AND a.recorded_at::date = CURRENT_DATE
+         WHERE ud.discipline_id IN (SELECT discipline_id FROM user_disciplines WHERE user_id = $1)
+         GROUP BY ud.user_id
+       ) them ON them.user_id != $1
+       WHERE me.user_id = $1 AND them.their_total < me.my_total`,
+      [session.userId]
+    ),
+    db.query<{ last_seen: string }>(
+      `SELECT MAX(recorded_at)::text AS last_seen
+       FROM activities
+       WHERE user_id = $1`,
+      [session.userId]
+    ),
+  ]);
+
+  const survival = survivalRes.rows[0] ?? { total_survived: 0, current_streak: 0, alive_disciplines: 0 };
+  const rivalsBeaten = parseInt(rivalsBeatenRes.rows[0]?.beaten ?? "0", 10);
+  const lastSeenAt = lastSeenRes.rows[0]?.last_seen ?? null;
+
+  // Hours away
+  let hoursAway: number | null = null;
+  if (lastSeenAt) {
+    const lastSeen = new Date(lastSeenAt);
+    hoursAway = Math.floor((Date.now() - lastSeen.getTime()) / (1000 * 60 * 60));
+  }
+
+  // ── Discipline-level data ────────────────────────────────────────────
   const [todayRes, daysRes, rivalsRows, feedItems] = await Promise.all([
     db.query<{ total: string }>(
       `SELECT COALESCE(SUM(value), 0) AS total
@@ -254,6 +304,21 @@ export default async function SeasonCurrentPage({
   const userRank = userRivalRow ? parseInt(userRivalRow.rank as unknown as string, 10) : null;
   const above = rivalsRows.filter((r) => userRank && parseInt(r.rank as unknown as string, 10) < userRank);
   const below = rivalsRows.filter((r) => userRank && parseInt(r.rank as unknown as string, 10) > userRank);
+
+  // Rival just ahead
+  const rivalJustAhead = above.length > 0 ? above[above.length - 1] : null;
+  let stepsToRival: number | null = null;
+  if (rivalJustAhead) {
+    const rivalRes2 = await db.query<{ total: string }>(
+      `SELECT COALESCE(SUM(value), 0) AS total
+       FROM activities
+       WHERE user_id = $1 AND discipline_id = $2 AND recorded_at::date = CURRENT_DATE`,
+      [session.userId, activeDisciplineId]
+    );
+    const myActualTotal = parseFloat(rivalRes2.rows[0]?.total ?? "0");
+    const rivalActualTotal = parseFloat(rivalJustAhead.today_total as unknown as string);
+    stepsToRival = Math.max(0, rivalActualTotal - myActualTotal);
+  }
 
   const totalRes = await db.query<{ count: string }>(
     "SELECT COUNT(*) FROM user_disciplines WHERE discipline_id = $1",
@@ -299,7 +364,7 @@ export default async function SeasonCurrentPage({
   } catch (e) {
     console.error("migrateEvents error:", e);
   }
-  const survival = await getSurvival(session.userId, activeDisciplineId);
+  const disciplineSurvival = await getSurvival(session.userId, activeDisciplineId);
 
   const disciplineLabel = getDisciplineLabel(activeDisciplineId);
   generateDangerNotification(
@@ -344,8 +409,7 @@ export default async function SeasonCurrentPage({
   const survivedYesterday = yesterdayTotal >= cfg.target;
 
   // ── SPECTATOR MODE (eliminated but still in the world) ──────────
-  if (survival && !survival.is_alive) {
-    // Fallen league rank
+  if (disciplineSurvival && !disciplineSurvival.is_alive) {
     const { rows: fallenRows } = await db.query<{ rank: string; total: string }>(
       `WITH fallen AS (
          SELECT ud.user_id, u.name,
@@ -423,11 +487,11 @@ export default async function SeasonCurrentPage({
           <div className="mb-5 rounded-[22px] border border-white/[0.06] bg-white/[0.02] p-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center">
-                <p className="text-[24px] font-semibold text-white/60">{survival.survived_days}</p>
+                <p className="text-[24px] font-semibold text-white/60">{disciplineSurvival.survived_days}</p>
                 <p className="text-[10px] text-white/25 uppercase tracking-[0.1em] mt-1">Дней прожито</p>
               </div>
               <div className="text-center">
-                <p className="text-[24px] font-semibold text-white/60">{survival.longest_streak}</p>
+                <p className="text-[24px] font-semibold text-white/60">{disciplineSurvival.longest_streak}</p>
                 <p className="text-[10px] text-white/25 uppercase tracking-[0.1em] mt-1">Макс. серия</p>
               </div>
             </div>
@@ -505,8 +569,125 @@ export default async function SeasonCurrentPage({
           </div>
         </header>
 
+        {/* RETURN MOMENT — when player comes back after hours away */}
+        {hoursAway !== null && hoursAway >= 2 && (
+          <div className="mb-5 rounded-[22px] border border-white/[0.06] bg-white/[0.02] p-4">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl border border-white/[0.08] bg-white/[0.04] flex items-center justify-center shrink-0">
+                <Clock className="w-4 h-4 text-white/40" />
+              </div>
+              <div>
+                <p className="text-[13px] font-semibold text-white leading-tight">
+                  Ты отсутствовал {hoursAway} {hoursAway >= 5 ? "часов" : "часа"}
+                </p>
+                <p className="mt-0.5 text-[12px] text-white/35 leading-relaxed">
+                  Сезон продолжался без тебя. {rivalsBeaten} игроков уже впереди.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* PERSONAL RIVAL HOOK */}
+        {rivalJustAhead && stepsToRival !== null && stepsToRival > 0 && stepsToRival < 50000 && (
+          <div className="mb-5 rounded-[22px] border border-orange-900/15 bg-orange-950/8 p-4">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl border border-orange-900/20 bg-orange-950/15 flex items-center justify-center shrink-0">
+                <span className="text-[16px]">🎯</span>
+              </div>
+              <div>
+                <p className="text-[13px] font-semibold text-white leading-tight">
+                  До {rivalJustAhead.name.split(/\s+/)[0]} осталось {cfg.format(stepsToRival)} {cfg.unit}
+                </p>
+                <p className="mt-0.5 text-[12px] text-white/35 leading-relaxed">
+                  Обгони его и поднимись в рейтинге
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* SURVIVAL HERO */}
+        <section className="mb-6">
+          <p className="text-[11px] uppercase tracking-[0.2em] text-white/30 mb-1">Твой статус</p>
+          <div className="flex items-start justify-between">
+            <h2 className="text-[42px] leading-[0.88] tracking-[-0.05em] font-semibold text-[#F5F5F5]">
+              {survival.total_survived} дней
+            </h2>
+            {isRed && (
+              <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border ${isDead ? "border-[#FFB4AB]/30 bg-[#FFB4AB]/[0.08]" : "border-orange-500/20 bg-orange-500/[0.06]"}`}>
+                <span className="text-[11px]">{isDead ? "💀" : "⚠️"}</span>
+                <span className={`text-[10px] font-semibold uppercase tracking-[0.08em] ${isDead ? "text-[#FFB4AB]" : "text-orange-300"}`}>
+                  {isDead ? "Мёртвая зона" : "Под угрозой"}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3 mt-3">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border border-white/[0.06] bg-white/[0.03]">
+              <Flame className="w-3 h-3 text-orange-400" />
+              <span className="text-[11px] text-white/60 font-medium">
+                {survival.current_streak} дней подряд
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border border-white/[0.06] bg-white/[0.03]">
+              <Shield className="w-3 h-3 text-white/40" />
+              <span className="text-[11px] text-white/60 font-medium">{survival.alive_disciplines} живы</span>
+            </div>
+          </div>
+        </section>
+
+        {/* SEASON PROGRESS */}
+        <section className="mb-5">
+          <Link href="/profile" className="block rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-4 active:scale-[0.99] transition-all">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[11px] uppercase tracking-[0.14em] text-white/30">Прогресс сезона</p>
+              <span className="text-[11px] text-white/40">{daysLeft} дней осталось</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden mb-3">
+              <div className="h-full rounded-full bg-white/40 transition-all" style={{ width: `${Math.round((SEASON.day / 30) * 100)}%` }} />
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[12px] text-white/50">День {SEASON.day} из 30</span>
+              <span className="text-[12px] text-white/30">Ты пережил {rivalsBeaten} игроков</span>
+            </div>
+          </Link>
+        </section>
+
+        {/* DANGER / PRESSURE — with breathing animation */}
+        {isRed && (
+          <section className="mb-5">
+            <div className={`rounded-[22px] border border-[#FFB4AB]/15 bg-[#FFB4AB]/[0.04] p-4 ${isRed ? "animate-breathe animate-breathe-glow" : ""}`}>
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl border border-[#FFB4AB]/20 bg-[#FFB4AB]/[0.08] flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-4 h-4 text-[#FFB4AB]" />
+                </div>
+                <div>
+                  <p className="text-[14px] font-semibold text-white leading-tight">
+                    {isDead
+                      ? "Ты ещё ничего не записал сегодня"
+                      : "Ты под угрозой вылета"}
+                  </p>
+                  <p className="mt-1 text-[12px] text-white/35 leading-relaxed">
+                    {isDead
+                      ? `${totalPlayers - (userRank ?? 1)} человек уже впереди. Каждый час — это места в рейтинге.`
+                      : `Осталось ${cfg.format(cfg.target - todayValue)} до нормы. Запиши результат сейчас.`}
+                  </p>
+                  <Link
+                    href={`/record?d=${activeDisciplineId}`}
+                    className="mt-3 inline-flex h-9 px-4 rounded-xl bg-[#FFB4AB] text-[#1a0808] text-[12px] font-semibold items-center gap-1 active:scale-[0.97] transition-all"
+                  >
+                    Записать результат <ChevronRight className="w-3 h-3" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Morning survival moment */}
-        {isMorning && justStartedToday && survival && survival.current_streak > 0 && (
+        {isMorning && justStartedToday && disciplineSurvival && disciplineSurvival.current_streak > 0 && (
           <div className="mb-5 rounded-[22px] border border-emerald-500/15 bg-emerald-500/[0.04] p-4">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.08] flex items-center justify-center shrink-0">
@@ -515,7 +696,7 @@ export default async function SeasonCurrentPage({
               <div>
                 <p className="text-[14px] font-semibold text-emerald-300">Ты пережил {SEASON.day - 1} день</p>
                 <p className="text-[12px] text-white/35 mt-0.5">
-                  🔥 {survival.current_streak} {survival.current_streak < 5 ? "дня" : "дней"} подряд · Сегодня новый день
+                  🔥 {disciplineSurvival.current_streak} {disciplineSurvival.current_streak < 5 ? "дня" : "дней"} подряд · Сегодня новый день
                 </p>
               </div>
             </div>
@@ -628,10 +809,10 @@ export default async function SeasonCurrentPage({
               </div>
             )}
 
-            {survival && survival.current_streak > 0 && (
+            {disciplineSurvival && disciplineSurvival.current_streak > 0 && (
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06]">
                 <span className="text-[12px] text-emerald-400 font-semibold">
-                  🔥 {survival.current_streak} {survival.current_streak < 5 ? "дня" : "дней"}
+                  🔥 {disciplineSurvival.current_streak} {disciplineSurvival.current_streak < 5 ? "дня" : "дней"}
                 </span>
               </div>
             )}
