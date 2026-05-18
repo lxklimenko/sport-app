@@ -70,25 +70,28 @@ export function LiveFeed({ items: initialItems }: { items: FeedItem[] }) {
   if (items.length === 0) return null;
 
   return (
-    <section className="mt-5 rounded-[24px] border border-white/[0.03] bg-white/[0.008] backdrop-blur-2xl p-3.5">
+    <section className="mt-5 rounded-[22px] border border-white/[0.03] bg-white/[0.008] backdrop-blur-2xl p-4">
       <div className="flex items-center justify-between mb-3">
-        <div>
+        <div className="flex items-center gap-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
           <p className="text-[11px] uppercase tracking-[0.18em] text-white/30">
             Сейчас в сезоне
           </p>
-          <h2 className="mt-0.5 text-base font-semibold tracking-tight text-white">
-            Живая лента
-          </h2>
         </div>
-        <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+        <Link
+          href="/pulse"
+          className="text-[10px] text-white/30 hover:text-white/60 transition-colors"
+        >
+          Весь пульс →
+        </Link>
       </div>
 
-      <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
-        {items.slice(0, 8).map((item, index) => (
+      <div className="space-y-2 max-h-[240px] overflow-y-auto pr-1">
+        {items.slice(0, 5).map((item, index) => (
           <div
             key={item.id}
             className={`flex items-start gap-3 ${
-              index === 0 ? "opacity-100" : ""
+              index === 0 ? "opacity-100" : "opacity-70"
             }`}
           >
             <div className="relative shrink-0">
@@ -97,23 +100,16 @@ export function LiveFeed({ items: initialItems }: { items: FeedItem[] }) {
                 <div className="absolute -inset-1 rounded-full bg-green-400/20 animate-ping" />
               )}
             </div>
-            <div className={index === 0 ? "animate-pulse" : ""}>
-              <p className="text-sm text-white/80">{item.message}</p>
-              <p className="mt-0.5 text-xs text-white/30">
+            <div>
+              <p className="text-[13px] text-white/70 leading-snug">{item.message}</p>
+              <p className="mt-0.5 text-[11px] text-white/25">
                 {timeAgo(item.created_at)}
               </p>
             </div>
           </div>
         ))}
       </div>
-
-      <Link
-        href="/pulse"
-        className="mt-3 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-white/[0.06] bg-white/[0.02] text-[12px] text-white/40 hover:text-white/70 hover:bg-white/[0.04] transition-all"
-      >
-        Весь пульс сезона
-        <span className="text-[10px]">→</span>
-      </Link>
     </section>
+
   );
 }

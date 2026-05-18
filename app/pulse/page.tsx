@@ -28,24 +28,24 @@ export default async function PulsePage({
       : "day";
 
   const [feed, session] = await Promise.all([
-    getFeedByRange(range, 50),
+    getFeedByRange(range, 100),
     getSession(),
   ]);
 
   const isLoggedIn = !!session.userId;
 
   return (
-    <main className="min-h-screen bg-[#0B0B0C] text-white overflow-hidden relative">
+    <main className="min-h-screen bg-[#080808] text-white overflow-hidden relative">
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-180px] left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-white/[0.02] rounded-full blur-3xl" />
-        <div className="absolute bottom-[-200px] right-[-80px] w-[400px] h-[400px] bg-orange-500/[0.04] rounded-full blur-3xl" />
+        <div className="absolute top-[-180px] left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-orange-500/[0.03] rounded-full blur-3xl" />
+        <div className="absolute bottom-[-200px] right-[-80px] w-[400px] h-[400px] bg-red-500/[0.03] rounded-full blur-3xl" />
       </div>
 
       <div className="relative z-10 max-w-md mx-auto px-5 pt-6 pb-20">
         {/* TOP BAR */}
         <header className="flex items-center justify-between mb-6">
           <Link href="/" className="flex items-center gap-2 text-white/40 hover:text-white/70 transition-colors">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+            <div className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
             <span className="text-[11px] uppercase tracking-[0.2em] font-medium">Discipline</span>
           </Link>
           {isLoggedIn ? (
@@ -60,8 +60,14 @@ export default async function PulsePage({
           )}
         </header>
 
-        {/* HERO */}
+        {/* HERO — raw, fast, chaotic */}
         <section className="mb-6">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
+            <span className="text-[10px] uppercase tracking-[0.18em] text-orange-300/60 font-semibold">
+              RAW STREAM
+            </span>
+          </div>
           <h1 className="text-[44px] leading-[0.9] tracking-[-0.05em] font-semibold text-[#F5F5F5]">
             Пульс
             <br />
@@ -85,7 +91,7 @@ export default async function PulsePage({
                 className={[
                   "px-4 py-2 rounded-xl text-[12px] font-medium transition-all",
                   isActive
-                    ? "bg-white/[0.1] text-white border border-white/[0.12]"
+                    ? "bg-orange-500/[0.15] text-orange-200 border border-orange-500/20"
                     : "text-white/35 hover:text-white/60",
                 ].join(" ")}
               >
@@ -95,9 +101,10 @@ export default async function PulsePage({
           })}
         </div>
 
-        {/* FEED */}
+        {/* FEED — raw stream */}
         <PulseFeed items={feed} range={range} />
       </div>
     </main>
   );
 }
+

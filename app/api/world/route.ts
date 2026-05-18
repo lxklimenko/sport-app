@@ -19,6 +19,8 @@ export async function GET() {
     seasonDays,
     notMetTarget,
     eventsActive,
+    lastSurvivors,
+    totalPlayers,
   ] = await Promise.all([
     // Recent eliminations (last 30 min)
     db.query<{ count: string }>(
@@ -87,6 +89,16 @@ export async function GET() {
        FROM season_events
        WHERE is_active = true AND ends_at > NOW()`
     ),
+    // Last survivors count
+    db.query<{ count: string }>(
+      `SELECT COUNT(*)::int AS count
+       FROM user_survival
+       WHERE is_alive = TRUE`
+    ),
+    // Total players (distinct users in disciplines)
+    db.query<{ count: string }>(
+      `SELECT COUNT(DISTINCT user_id)::int AS count FROM user_disciplines`
+    ),
   ]);
 
   return NextResponse.json({
@@ -103,5 +115,7 @@ export async function GET() {
     seasonDay: parseInt(seasonDays.rows[0]?.day ?? "1", 10),
     notMetTarget: parseInt(notMetTarget.rows[0]?.count ?? "0", 10),
     eventsActive: parseInt(eventsActive.rows[0]?.count ?? "0", 10),
+    lastSurvivors: parseInt(lastSurvivors.rows[0]?.count ?? "0", 10),
+    totalPlayers: parseInt(totalPlayers.rows[0]?.count ?? "0", 10),
   });
 }

@@ -16,45 +16,44 @@ function timeAgo(date: Date): string {
   return `${diffDays} ${diffDays === 1 ? "день" : diffDays < 5 ? "дня" : "дней"} назад`;
 }
 
-const TYPE_CONFIG: Record<string, { emoji: string; label: string; bg: string }> = {
-  activity: { emoji: "⚡", label: "Активность", bg: "bg-green-500/10 border-green-500/20" },
-  overtake: { emoji: "⬆", label: "Обгон", bg: "bg-orange-500/10 border-orange-500/20" },
-  danger:   { emoji: "⚠", label: "Под угрозой", bg: "bg-[#FFB4AB]/10 border-[#FFB4AB]/20" },
-  join:     { emoji: "👋", label: "Новые", bg: "bg-blue-500/10 border-blue-500/20" },
-  survival: { emoji: "💪", label: "Выжившие", bg: "bg-emerald-500/10 border-emerald-500/20" },
+const TYPE_CONFIG: Record<string, { emoji: string; label: string; bg: string; dot: string }> = {
+  activity: { emoji: "⚡", label: "Активность", bg: "bg-green-500/8 border-green-500/15", dot: "bg-green-400" },
+  overtake: { emoji: "⬆", label: "Обгон", bg: "bg-orange-500/8 border-orange-500/15", dot: "bg-orange-400" },
+  danger:   { emoji: "⚠", label: "Под угрозой", bg: "bg-[#FFB4AB]/8 border-[#FFB4AB]/15", dot: "bg-[#FFB4AB]" },
+  join:     { emoji: "👋", label: "Новые", bg: "bg-blue-500/8 border-blue-500/15", dot: "bg-blue-400" },
+  survival: { emoji: "💪", label: "Выжившие", bg: "bg-emerald-500/8 border-emerald-500/15", dot: "bg-emerald-400" },
 };
 
 function EventCard({ item, isNewest }: { item: FeedItem; isNewest: boolean }) {
-  const cfg = TYPE_CONFIG[item.type] ?? { emoji: "•", label: "Событие", bg: "bg-white/[0.03] border-white/[0.06]" };
+  const cfg = TYPE_CONFIG[item.type] ?? { emoji: "•", label: "Событие", bg: "bg-white/[0.02] border-white/[0.06]", dot: "bg-white/40" };
 
   return (
     <div
-      className={`rounded-[20px] border p-3.5 transition-all ${cfg.bg} ${
-        isNewest ? "ring-1 ring-green-400/30" : ""
+      className={`rounded-[16px] border p-3 transition-all ${cfg.bg} ${
+        isNewest ? "ring-1 ring-orange-400/20" : ""
       }`}
     >
-      <div className="flex items-start gap-3">
-        <div className="w-9 h-9 rounded-xl bg-white/[0.05] flex items-center justify-center text-[16px] shrink-0">
-          {cfg.emoji}
-        </div>
+      <div className="flex items-start gap-2.5">
+        <div className={`w-2 h-2 rounded-full ${cfg.dot} mt-1.5 shrink-0`} />
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-0.5">
-            <span className="text-[10px] uppercase tracking-[0.12em] text-white/30 font-medium">
+          <div className="flex items-center gap-1.5 mb-0.5">
+            <span className="text-[10px] uppercase tracking-[0.12em] text-white/25 font-medium">
               {cfg.label}
             </span>
             {isNewest && (
-              <span className="text-[9px] uppercase tracking-[0.1em] text-green-400/70 font-semibold animate-pulse">
-                Новое
+              <span className="text-[8px] uppercase tracking-[0.1em] text-orange-400/70 font-semibold animate-pulse">
+                Сейчас
               </span>
             )}
           </div>
-          <p className="text-[14px] text-white/80 leading-snug">{item.message}</p>
-          <p className="mt-1 text-[11px] text-white/30">{timeAgo(item.created_at)}</p>
+          <p className="text-[13px] text-white/75 leading-snug">{item.message}</p>
+          <p className="mt-0.5 text-[10px] text-white/25">{timeAgo(item.created_at)}</p>
         </div>
       </div>
     </div>
   );
 }
+
 
 export function PulseFeed({
   items: initialItems,

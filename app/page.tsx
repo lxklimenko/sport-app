@@ -4,9 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { LiveFeed } from "./live-feed";
 import { EventCard } from "@/components/event-card";
-import { DisciplineModal } from "@/components/discipline-modal";
 import { AnimatedCounter } from "@/components/animated-counter";
-import { Skull, Trophy, Zap, Clock, Activity, Flame, Shield, ChevronRight } from "lucide-react";
+import { Skull, Trophy, Zap, Clock, Activity, Flame, Shield, ChevronRight, Users, Calendar } from "lucide-react";
 import type { FeedItem } from "@/lib/feed";
 import type { SeasonEvent } from "@/lib/events";
 
@@ -23,6 +22,8 @@ interface WorldData {
   seasonDay: number;
   notMetTarget: number;
   eventsActive: number;
+  lastSurvivors: number;
+  totalPlayers: number;
 }
 
 // ─── Time of day ─────────────────────────────────────────────────────────────
@@ -118,6 +119,16 @@ function WorldPoster({ world }: { world: WorldData | null }) {
       text: world.overtakes[0],
       sub: "Прямо сейчас",
       color: "border-orange-900/20 bg-orange-950/10",
+    });
+  }
+
+  // Last survivors poster
+  if (world.lastSurvivors > 0 && world.lastSurvivors < 100) {
+    posters.push({
+      emoji: "⚔️",
+      text: `Осталось ${world.lastSurvivors} выживших`,
+      sub: `${Math.round((world.lastSurvivors / Math.max(world.totalPlayers, 1)) * 100)}% от старта сезона`,
+      color: "border-amber-900/20 bg-amber-950/10",
     });
   }
 
@@ -222,6 +233,74 @@ function SeasonProgress({ world }: { world: WorldData | null }) {
   );
 }
 
+// ─── Upcoming Season teaser ──────────────────────────────────────────────────
+
+function UpcomingSeasonTeaser() {
+  // Simulated countdown — in production this would come from the API
+  const [countdown, setCountdown] = useState<string>("");
+
+  useEffect(() => {
+    function calc() {
+      const now = new Date();
+      // Target: season 2 starts ~12 days from now (simulated)
+      const target = new Date(now);
+      target.setDate(target.getDate() + 12);
+      target.setHours(0, 0, 0, 0);
+
+      const diff = target.getTime() - now.getTime();
+      if (diff <= 0) {
+        setCountdown("УЖЕ НАЧАЛСЯ");
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      setCountdown(`${days}д ${hours}ч`);
+    }
+
+    calc();
+    const interval = setInterval(calc, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <section className="mb-6 animate-fade-in-up">
+      <div className="rounded-[22px] border border-white/[0.06] bg-gradient-to-br from-white/[0.02] to-white/[0.01] p-5">
+        <div className="flex items-start justify-between mb-3">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-400/70">
+              СКОРО
+            </p>
+            <h3 className="mt-1 text-[20px] font-semibold tracking-tight text-white">
+              СЕЗОН 2
+            </h3>
+          </div>
+          <div className="text-right">
+            <p className="text-[11px] text-white/30 uppercase tracking-[0.1em]">Старт через</p>
+            <p className="text-[18px] font-bold text-amber-300 tabular-nums">{countdown}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-white/[0.06] bg-white/[0.03] text-[11px] text-white/50">
+            🌙 Ночной режим
+          </span>
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-white/[0.06] bg-white/[0.03] text-[11px] text-white/50">
+            🔥 IRON WEEK
+          </span>
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-white/[0.06] bg-white/[0.03] text-[11px] text-white/50">
+            🏆 Новые дисциплины
+          </span>
+        </div>
+
+        <p className="mt-3 text-[12px] text-white/25 leading-relaxed">
+          Сезон 2 принесёт ночной режим, новые дисциплины и IRON WEEK — семь дней абсолютного выживания.
+        </p>
+      </div>
+    </section>
+  );
+}
+
 // ─── page ────────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
@@ -229,7 +308,6 @@ export default function HomePage() {
   const [events, setEvents] = useState<SeasonEvent[]>([]);
   const [world, setWorld] = useState<WorldData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedDiscipline, setSelectedDiscipline] = useState<string | null>(null);
   const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>(getTimeOfDay());
 
   const fetchData = useCallback(async () => {
@@ -317,7 +395,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* WORLD STATS */}
+        {/* WORLD STATS — global universe stats */}
         <WorldStats world={world} />
 
         {/* SEASON PROGRESS */}
@@ -326,7 +404,10 @@ export default function HomePage() {
         {/* WORLD POSTERS — narrative moments */}
         <WorldPoster world={world} />
 
-        {/* LIVE EVENTS */}
+        {/* UPCOMING SEASON TEASER */}
+        <UpcomingSeasonTeaser />
+
+        {/* LIVE EVENTS — global events anyone can see */}
         {events.length > 0 && (
           <section className="mb-6 animate-fade-in-up">
             <div className="flex items-center justify-between mb-3">
@@ -353,45 +434,6 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* DISCIPLINES */}
-        <section className="mb-6 animate-fade-in-up">
-          <div className="mb-4">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-white/30">
-              Дисциплины сезона
-            </p>
-            <h2 className="mt-1 text-[22px] font-semibold tracking-tight text-white">
-              Игроки уже внутри
-            </h2>
-          </div>
-
-          <div className="space-y-2.5">
-            {[
-              { id: "steps", emoji: "👟", name: "Шаги", desc: "10 000 шагов каждый день", atRisk: "2 184 под угрозой", atRiskColor: "text-[#FFB4AB]" },
-              { id: "running", emoji: "🏃", name: "Бег", desc: "Событие на 3 дня", atRisk: "482 уже вошли", atRiskColor: "text-orange-300" },
-              { id: "burpees", emoji: "💥", name: "Бёрпи", desc: "Скоро откроется", atRisk: "Только для выживших", atRiskColor: "text-white/40" },
-            ].map((d) => (
-              <button
-                key={d.id}
-                onClick={() => setSelectedDiscipline(d.id)}
-                className="w-full text-left rounded-[22px] border border-white/[0.06] bg-white/[0.025] p-3.5 transition-all active:scale-[0.99] hover:border-white/[0.12] hover:bg-white/[0.04]"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-white/[0.06] flex items-center justify-center text-[20px] shrink-0">
-                    {d.emoji}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[16px] font-semibold text-white leading-none">{d.name}</p>
-                    <p className="mt-1 text-xs text-white/50">{d.desc}</p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className={`text-[11px] font-medium ${d.atRiskColor}`}>{d.atRisk}</p>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </section>
-
         {/* CTA — enter season */}
         <section className="mb-6 animate-fade-in-up">
           <Link
@@ -407,17 +449,9 @@ export default function HomePage() {
           </p>
         </section>
 
-        {/* LIVE FEED */}
+        {/* LIVE FEED — compact preview of pulse */}
         <LiveFeed items={feed} />
       </div>
-
-      {/* DISCIPLINE MODAL */}
-      {selectedDiscipline && (
-        <DisciplineModal
-          disciplineId={selectedDiscipline}
-          onClose={() => setSelectedDiscipline(null)}
-        />
-      )}
     </main>
   );
 }
