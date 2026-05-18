@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { LiveFeed } from "./live-feed";
 import { EventCard } from "@/components/event-card";
 import { DisciplineModal } from "@/components/discipline-modal";
 import { TopStatusBar } from "@/components/top-status-bar";
-import { Skull, Trophy, Zap, Clock, Shield, AlertTriangle, ChevronRight, Flame, TrendingDown, Activity } from "lucide-react";
+import { AnimatedCounter } from "@/components/animated-counter";
+import { Skull, Trophy, Zap, Clock, Shield, AlertTriangle, ChevronRight, Flame, Activity } from "lucide-react";
 import type { FeedItem } from "@/lib/feed";
 import type { SeasonEvent } from "@/lib/events";
 
@@ -60,35 +61,35 @@ const TIME_CONFIG: Record<TimeOfDay, {
   subtitle: string;
   glow: string;
   accent: string;
-  heroBg: string;
+  emoji: string;
 }> = {
   morning: {
     title: "НОВЫЙ ДЕНЬ НАЧАЛСЯ",
     subtitle: "Ночь забрала слабых. Ты всё ещё здесь.",
     glow: "bg-amber-400/[0.06]",
     accent: "text-amber-300",
-    heroBg: "bg-white/[0.02]",
+    emoji: "🌅",
   },
   afternoon: {
     title: "ТЫ ПОКА ДЕРЖИШЬСЯ",
     subtitle: "Середина дня. Кто-то уже выдохся, кто-то только начинает.",
     glow: "bg-white/[0.02]",
     accent: "text-white/40",
-    heroBg: "bg-white/[0.015]",
+    emoji: "☀️",
   },
   evening: {
     title: "ДО ВЫЛЕТА ОСТАЛОСЬ",
     subtitle: "Вечер. Норма закрыта не у всех. Каждая минута решает.",
     glow: "bg-orange-500/[0.06]",
     accent: "text-orange-300",
-    heroBg: "bg-orange-500/[0.02]",
+    emoji: "🌆",
   },
   night: {
     title: "НОЧЬ РЕШАЕТ ВСЁ",
     subtitle: "Пока город спит — сезон не спит. Кто не записал — вылетает.",
     glow: "bg-indigo-500/[0.06]",
     accent: "text-indigo-300",
-    heroBg: "bg-indigo-500/[0.02]",
+    emoji: "🌙",
   },
 };
 
@@ -101,7 +102,7 @@ function WorldStatus({ world }: { world: WorldData | null }) {
   if (!hasNews) return null;
 
   return (
-    <section className="mb-5">
+    <section className="mb-5 animate-fade-in-up">
       <div className="flex items-center gap-2 mb-3">
         <div className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
         <p className="text-[11px] uppercase tracking-[0.18em] text-orange-300/70">
@@ -117,7 +118,7 @@ function WorldStatus({ world }: { world: WorldData | null }) {
             </div>
             <p className="text-[13px] text-white/70">
               <span className="font-semibold text-red-300">{world.eliminated}</span>{" "}
-              {world.eliminated === 1 ? "игрок вылетел" : "игроков вылетели"}
+              {world.eliminated === 1 ? "игрок не пережил ночь" : "игроков не пережили ночь"}
             </p>
           </div>
         )}
@@ -183,19 +184,47 @@ function DangerBadge({ level }: { level: "dead" | "danger" | "warning" | "safe" 
 function AmbientIndicator({ world }: { world: WorldData | null }) {
   if (!world) return null;
 
+  // Dramatic messages instead of static counters
+  const dramaticMessages: string[] = [];
+  if (world.eliminated > 0) {
+    dramaticMessages.push(`${world.eliminated} не пережили ночь`);
+  }
+  if (world.notMetTarget > 0) {
+    dramaticMessages.push(`${world.notMetTarget} человек под угрозой`);
+  }
+  if (world.top3Entries.length > 0) {
+    dramaticMessages.push("TOP 10 изменился");
+  }
+
+  const hasDrama = dramaticMessages.length > 0;
+
   return (
-    <div className="flex items-center gap-3 mb-5 text-[10px] text-white/20">
-      <div className="flex items-center gap-1">
-        <Activity className="w-3 h-3" />
-        <span>{world.activeNow} online</span>
-      </div>
-      <span>·</span>
-      <span>{world.totalUsers.toLocaleString("ru")} в сезоне</span>
-      {world.eventsActive > 0 && (
-        <>
+    <div className="mb-5 text-[10px] text-white/20 animate-fade-in-up">
+      {hasDrama ? (
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1">
+            <Activity className="w-3 h-3" />
+            <span>{world.activeNow} online</span>
+          </div>
+          {dramaticMessages.map((msg, i) => (
+            <span key={i} className="text-orange-300/50">{msg}</span>
+          ))}
+        </div>
+      ) : (
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1">
+            <Activity className="w-3 h-3" />
+            <span>{world.activeNow} online</span>
+          </div>
           <span>·</span>
-          <span className="text-orange-300/40">{world.eventsActive} события live</span>
-        </>
+          <span>{world.totalUsers.toLocaleString("ru")} в сезоне</span>
+          {world.eventsActive > 0 && (
+            <>
+              <span>·</span>
+              <span className="text-orange-300/40">{world.eventsActive} события live</span>
+            </>
+          )}
+        </div>
       )}
     </div>
   );
@@ -281,16 +310,18 @@ export default function HomePage() {
         <div className="relative z-10 max-w-md mx-auto px-5 pt-6 pb-28">
 
           {/* TOP STATUS BAR */}
-          <TopStatusBar
-            seasonDay={seasonDay}
-            daysLeft={daysLeft}
-            danger={session.danger}
-            userName={session.name}
-            activeNow={activeNow}
-          />
+          <div className="animate-fade-in-up">
+            <TopStatusBar
+              seasonDay={seasonDay}
+              daysLeft={daysLeft}
+              danger={session.danger}
+              userName={session.name}
+              activeNow={activeNow}
+            />
+          </div>
 
           {/* TIME OF DAY HERO */}
-          <section className="mb-5 rounded-[22px] border border-white/[0.06] bg-white/[0.02] p-4">
+          <section className="mb-5 rounded-[22px] border border-white/[0.06] bg-white/[0.02] p-4 animate-fade-in-up animate-fade-in-up-d1">
             <div className="flex items-start justify-between">
               <div>
                 <p className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${timeConfig.accent}`}>
@@ -300,12 +331,7 @@ export default function HomePage() {
                   {timeConfig.subtitle}
                 </p>
               </div>
-              <div className="text-[28px] leading-none">
-                {timeOfDay === "morning" && "🌅"}
-                {timeOfDay === "afternoon" && "☀️"}
-                {timeOfDay === "evening" && "🌆"}
-                {timeOfDay === "night" && "🌙"}
-              </div>
+              <div className="text-[28px] leading-none">{timeConfig.emoji}</div>
             </div>
           </section>
 
@@ -313,14 +339,14 @@ export default function HomePage() {
           <AmbientIndicator world={world} />
 
           {/* HERO — survival status */}
-          <section className="mb-6">
+          <section className="mb-6 animate-fade-in-up animate-fade-in-up-d2">
             <div className="flex items-start justify-between mb-2">
               <div>
                 <p className="text-[11px] uppercase tracking-[0.2em] text-white/30 mb-1">
                   Твой статус
                 </p>
                 <h2 className="text-[42px] leading-[0.88] tracking-[-0.05em] font-semibold text-[#F5F5F5]">
-                  {session.survival.total_survived} дней
+                  <AnimatedCounter value={session.survival.total_survived} suffix=" дней" />
                 </h2>
               </div>
               <DangerBadge level={session.danger} />
@@ -329,7 +355,9 @@ export default function HomePage() {
             <div className="flex items-center gap-3 mt-3">
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border border-white/[0.06] bg-white/[0.03]">
                 <Flame className="w-3 h-3 text-orange-400" />
-                <span className="text-[11px] text-white/60 font-medium">{session.survival.current_streak} дней подряд</span>
+                <span className="text-[11px] text-white/60 font-medium">
+                  <AnimatedCounter value={session.survival.current_streak} /> дней подряд
+                </span>
               </div>
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border border-white/[0.06] bg-white/[0.03]">
                 <Shield className="w-3 h-3 text-white/40" />
@@ -339,7 +367,7 @@ export default function HomePage() {
           </section>
 
           {/* SEASON PROGRESS */}
-          <section className="mb-5">
+          <section className="mb-5 animate-fade-in-up animate-fade-in-up-d3">
             <Link href="/season/current" className="block rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-4 active:scale-[0.99] transition-all">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-[11px] uppercase tracking-[0.14em] text-white/30">Прогресс сезона</p>
@@ -350,15 +378,15 @@ export default function HomePage() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-[12px] text-white/50">День {seasonDay} из 30</span>
-                <span className="text-[12px] text-white/30">Ты пережил {session.rivalsBeaten.toLocaleString("ru")} игроков</span>
+                <span className="text-[12px] text-white/30">Ты пережил <AnimatedCounter value={session.rivalsBeaten} /> игроков</span>
               </div>
             </Link>
           </section>
 
-          {/* DANGER / PRESSURE */}
+          {/* DANGER / PRESSURE — with breathing animation */}
           {isRed && (
-            <section className="mb-5">
-              <div className="rounded-[22px] border border-[#FFB4AB]/15 bg-[#FFB4AB]/[0.04] p-4">
+            <section className="mb-5 animate-fade-in-up animate-fade-in-up-d4">
+              <div className={`rounded-[22px] border border-[#FFB4AB]/15 bg-[#FFB4AB]/[0.04] p-4 ${isRed ? "animate-breathe animate-breathe-glow" : ""}`}>
                 <div className="flex items-start gap-3">
                   <div className="w-9 h-9 rounded-xl border border-[#FFB4AB]/20 bg-[#FFB4AB]/[0.08] flex items-center justify-center shrink-0">
                     <AlertTriangle className="w-4 h-4 text-[#FFB4AB]" />
@@ -391,7 +419,7 @@ export default function HomePage() {
 
           {/* LIVE EVENTS */}
           {events.length > 0 && (
-            <section className="mb-5">
+            <section className="mb-5 animate-fade-in-up animate-fade-in-up-d5">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-[11px] uppercase tracking-[0.18em] text-white/30">События</p>
                 <span className="text-[10px] text-white/20">LIVE</span>
@@ -419,8 +447,8 @@ export default function HomePage() {
           {/* LIVE FEED */}
           <LiveFeed items={feed} />
 
-          {/* QUICK ACTIONS */}
-          <section className="mt-5 grid grid-cols-2 gap-2.5">
+          {/* QUICK ACTIONS — quiet, minimal */}
+          <section className="mt-6 grid grid-cols-2 gap-2.5">
             <Link
               href="/season/current"
               className="rounded-[20px] border border-white/[0.06] bg-white/[0.02] p-4 text-center active:scale-[0.98] transition-all"
@@ -455,15 +483,17 @@ export default function HomePage() {
 
         <div className="relative z-10 max-w-md mx-auto px-5 pt-6 pb-28">
           {/* TOP BAR */}
-          <TopStatusBar
-            seasonDay={seasonDay}
-            daysLeft={daysLeft}
-            userName={session?.name}
-            activeNow={activeNow}
-          />
+          <div className="animate-fade-in-up">
+            <TopStatusBar
+              seasonDay={seasonDay}
+              daysLeft={daysLeft}
+              userName={session?.name}
+              activeNow={activeNow}
+            />
+          </div>
 
           {/* HERO */}
-          <section className="pt-8">
+          <section className="pt-8 animate-fade-in-up animate-fade-in-up-d1">
             <h1 className="text-[52px] leading-[0.9] tracking-[-0.06em] font-semibold text-[#F5F5F5]">
               Ты ещё
               <br />
@@ -510,7 +540,7 @@ export default function HomePage() {
 
       <div className="relative z-10 max-w-md mx-auto px-5 pt-6 pb-28">
         {/* TOP BAR */}
-        <header className="flex items-center justify-between">
+        <header className="flex items-center justify-between animate-fade-in-up">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse shadow-[0_0_12px_rgba(74,222,128,0.7)]" />
             <span className="text-[11px] uppercase tracking-[0.22em] text-white/35 font-medium">
@@ -526,7 +556,7 @@ export default function HomePage() {
         </header>
 
         {/* HERO */}
-        <section className="pt-14">
+        <section className="pt-14 animate-fade-in-up animate-fade-in-up-d1">
           <div className="max-w-[420px]">
             <h1 className="text-[58px] sm:text-[68px] leading-[0.92] tracking-[-0.07em] font-semibold text-[#F5F5F5]">
               НЕ
@@ -556,7 +586,7 @@ export default function HomePage() {
           </div>
 
           {/* CTA */}
-          <div className="mt-10">
+          <div className="mt-10 animate-fade-in-up animate-fade-in-up-d2">
             <Link
               href="/signup"
               className="w-full h-13 rounded-[20px] bg-[#F3F3F3] text-black text-[14px] font-semibold flex items-center justify-center active:scale-[0.985] transition-all shadow-[0_10px_40px_rgba(255,255,255,0.08)]"
@@ -571,7 +601,7 @@ export default function HomePage() {
           </div>
 
           {/* STATS */}
-          <div className="mt-8 flex items-center gap-6">
+          <div className="mt-8 flex items-center gap-6 animate-fade-in-up animate-fade-in-up-d3">
             <div>
               <p className="text-lg font-bold tracking-tight text-white">
                 {totalUsers > 0 ? totalUsers.toLocaleString("ru") : "—"}
@@ -602,12 +632,12 @@ export default function HomePage() {
         </section>
 
         {/* AMBIENT INDICATOR */}
-        <div className="mt-8">
+        <div className="mt-8 animate-fade-in-up animate-fade-in-up-d4">
           <AmbientIndicator world={world} />
         </div>
 
         {/* WORLD STATUS */}
-        <div className="mt-5">
+        <div className="mt-5 animate-fade-in-up animate-fade-in-up-d5">
           <WorldStatus world={world} />
         </div>
 
