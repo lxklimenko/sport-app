@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { LiveFeed } from "./live-feed";
 import { EventCard } from "@/components/event-card";
 import { DisciplineModal } from "@/components/discipline-modal";
-import { Skull, Trophy, Zap, Clock, Shield, AlertTriangle, ChevronRight, Flame, TrendingDown } from "lucide-react";
+import { TopStatusBar } from "@/components/top-status-bar";
+import { Skull, Trophy, Zap, Clock, Shield, AlertTriangle, ChevronRight, Flame, TrendingDown, Activity } from "lucide-react";
 import type { FeedItem } from "@/lib/feed";
 import type { SeasonEvent } from "@/lib/events";
 
@@ -42,6 +42,55 @@ interface SessionInfo {
   totalPlayers: number;
   rivalsBeaten: number;
 }
+
+// ─── Time of day ─────────────────────────────────────────────────────────────
+
+type TimeOfDay = "morning" | "afternoon" | "evening" | "night";
+
+function getTimeOfDay(): TimeOfDay {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 12) return "morning";
+  if (h >= 12 && h < 17) return "afternoon";
+  if (h >= 17 && h < 22) return "evening";
+  return "night";
+}
+
+const TIME_CONFIG: Record<TimeOfDay, {
+  title: string;
+  subtitle: string;
+  glow: string;
+  accent: string;
+  heroBg: string;
+}> = {
+  morning: {
+    title: "НОВЫЙ ДЕНЬ НАЧАЛСЯ",
+    subtitle: "Ночь забрала слабых. Ты всё ещё здесь.",
+    glow: "bg-amber-400/[0.06]",
+    accent: "text-amber-300",
+    heroBg: "bg-white/[0.02]",
+  },
+  afternoon: {
+    title: "ТЫ ПОКА ДЕРЖИШЬСЯ",
+    subtitle: "Середина дня. Кто-то уже выдохся, кто-то только начинает.",
+    glow: "bg-white/[0.02]",
+    accent: "text-white/40",
+    heroBg: "bg-white/[0.015]",
+  },
+  evening: {
+    title: "ДО ВЫЛЕТА ОСТАЛОСЬ",
+    subtitle: "Вечер. Норма закрыта не у всех. Каждая минута решает.",
+    glow: "bg-orange-500/[0.06]",
+    accent: "text-orange-300",
+    heroBg: "bg-orange-500/[0.02]",
+  },
+  night: {
+    title: "НОЧЬ РЕШАЕТ ВСЁ",
+    subtitle: "Пока город спит — сезон не спит. Кто не записал — вылетает.",
+    glow: "bg-indigo-500/[0.06]",
+    accent: "text-indigo-300",
+    heroBg: "bg-indigo-500/[0.02]",
+  },
+};
 
 // ─── WorldStatus component ───────────────────────────────────────────────────
 
@@ -129,16 +178,39 @@ function DangerBadge({ level }: { level: "dead" | "danger" | "warning" | "safe" 
   );
 }
 
+// ─── Ambient world indicator ────────────────────────────────────────────────
+
+function AmbientIndicator({ world }: { world: WorldData | null }) {
+  if (!world) return null;
+
+  return (
+    <div className="flex items-center gap-3 mb-5 text-[10px] text-white/20">
+      <div className="flex items-center gap-1">
+        <Activity className="w-3 h-3" />
+        <span>{world.activeNow} online</span>
+      </div>
+      <span>·</span>
+      <span>{world.totalUsers.toLocaleString("ru")} в сезоне</span>
+      {world.eventsActive > 0 && (
+        <>
+          <span>·</span>
+          <span className="text-orange-300/40">{world.eventsActive} события live</span>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── page ────────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
-  const router = useRouter();
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [events, setEvents] = useState<SeasonEvent[]>([]);
   const [world, setWorld] = useState<WorldData | null>(null);
   const [session, setSession] = useState<SessionInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedDiscipline, setSelectedDiscipline] = useState<string | null>(null);
+  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>(getTimeOfDay());
 
   const fetchData = useCallback(async () => {
     try {
@@ -177,6 +249,12 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, [fetchData]);
 
+  // Update time of day every minute
+  useEffect(() => {
+    const interval = setInterval(() => setTimeOfDay(getTimeOfDay()), 60000);
+    return () => clearInterval(interval);
+  }, []);
+
   const totalUsers = world?.totalUsers ?? 0;
   const activeNow = world?.activeNow ?? 0;
   const seasonDay = world?.seasonDay ?? 1;
@@ -187,6 +265,8 @@ export default function HomePage() {
   const isLoggedIn = session?.userId;
   const inSeason = session?.inSeason ?? false;
 
+  const timeConfig = TIME_CONFIG[timeOfDay];
+
   // ── LOGGED IN + IN SEASON: Survival Command Center ──────────────────────
   if (isLoggedIn && inSeason && session) {
     const isRed = session.danger === "dead" || session.danger === "danger";
@@ -194,27 +274,43 @@ export default function HomePage() {
     return (
       <main className="min-h-screen bg-[#050505] text-white overflow-hidden relative">
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className={`absolute top-[-200px] left-1/2 -translate-x-1/2 w-[700px] h-[700px] rounded-full blur-3xl transition-all duration-1000 ${isRed ? "bg-[#FFB4AB]/[0.06]" : "bg-white/[0.02]"}`} />
+          <div className={`absolute top-[-200px] left-1/2 -translate-x-1/2 w-[700px] h-[700px] rounded-full blur-3xl transition-all duration-1000 ${isRed ? "bg-[#FFB4AB]/[0.06]" : timeConfig.glow}`} />
           <div className="absolute bottom-[-200px] right-[-80px] w-[400px] h-[400px] rounded-full blur-3xl bg-orange-500/[0.04]" />
         </div>
 
         <div className="relative z-10 max-w-md mx-auto px-5 pt-6 pb-28">
 
-          {/* TOP BAR */}
-          <header className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2">
-              <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${isRed ? "bg-[#FFB4AB]" : "bg-green-400"}`} />
-              <span className="text-[11px] uppercase tracking-[0.2em] text-white/35 font-medium">
-                День {seasonDay} · Сезон 1
-              </span>
+          {/* TOP STATUS BAR */}
+          <TopStatusBar
+            seasonDay={seasonDay}
+            daysLeft={daysLeft}
+            danger={session.danger}
+            userName={session.name}
+            activeNow={activeNow}
+          />
+
+          {/* TIME OF DAY HERO */}
+          <section className="mb-5 rounded-[22px] border border-white/[0.06] bg-white/[0.02] p-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${timeConfig.accent}`}>
+                  {timeConfig.title}
+                </p>
+                <p className="mt-1 text-[12px] text-white/35 leading-relaxed max-w-[260px]">
+                  {timeConfig.subtitle}
+                </p>
+              </div>
+              <div className="text-[28px] leading-none">
+                {timeOfDay === "morning" && "🌅"}
+                {timeOfDay === "afternoon" && "☀️"}
+                {timeOfDay === "evening" && "🌆"}
+                {timeOfDay === "night" && "🌙"}
+              </div>
             </div>
-            <Link
-              href="/profile"
-              className="h-9 px-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] text-[12px] text-white/50 flex items-center gap-1 active:scale-[0.98] transition-all"
-            >
-              {session.name ?? "Ты"} <ChevronRight className="w-3 h-3" />
-            </Link>
-          </header>
+          </section>
+
+          {/* AMBIENT INDICATOR */}
+          <AmbientIndicator world={world} />
 
           {/* HERO — survival status */}
           <section className="mb-6">
@@ -359,20 +455,12 @@ export default function HomePage() {
 
         <div className="relative z-10 max-w-md mx-auto px-5 pt-6 pb-28">
           {/* TOP BAR */}
-          <header className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-[11px] uppercase tracking-[0.2em] text-white/35 font-medium">
-                СЕЗОН 1 АКТИВЕН
-              </span>
-            </div>
-            <Link
-              href="/profile"
-              className="h-9 px-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] text-[12px] text-white/50 flex items-center gap-1"
-            >
-              {session?.name ?? "Ты"} <ChevronRight className="w-3 h-3" />
-            </Link>
-          </header>
+          <TopStatusBar
+            seasonDay={seasonDay}
+            daysLeft={daysLeft}
+            userName={session?.name}
+            activeNow={activeNow}
+          />
 
           {/* HERO */}
           <section className="pt-8">
@@ -395,8 +483,13 @@ export default function HomePage() {
             </Link>
           </section>
 
-          {/* WORLD STATUS */}
+          {/* AMBIENT INDICATOR */}
           <div className="mt-8">
+            <AmbientIndicator world={world} />
+          </div>
+
+          {/* WORLD STATUS */}
+          <div className="mt-5">
             <WorldStatus world={world} />
           </div>
 
@@ -508,8 +601,13 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* WORLD STATUS */}
+        {/* AMBIENT INDICATOR */}
         <div className="mt-8">
+          <AmbientIndicator world={world} />
+        </div>
+
+        {/* WORLD STATUS */}
+        <div className="mt-5">
           <WorldStatus world={world} />
         </div>
 
